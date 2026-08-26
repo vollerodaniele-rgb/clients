@@ -128,8 +128,78 @@ function clientCard({ name, plan, requests }) {
       <a class="btn-mini" href="../${name}/">Portal</a>
       <a class="btn-mini" href="../${name}/schedule.html">Plan</a>
     </div>
+    <p class="form-msg card-msg"></p>
   `;
+
+  card.querySelector(".client-links").appendChild(removeButton(name, card));
   return card;
+}
+
+/* Removing takes the whole client away, so it asks twice and names
+   what it is about to delete. The commit stays in the history, so a
+   mistake can still be undone. */
+function removeButton(name, card) {
+  const btn = document.createElement("button");
+  btn.className = "btn-mini";
+  btn.textContent = "Remove";
+  let armed = false;
+
+  btn.addEventListener("click", async () => {
+    const msg = card.querySelector(".card-msg");
+
+    if (!armed) {
+      armed = true;
+      btn.textContent = `Delete ${name}?`;
+      msg.textContent = "This removes the portal, the plan and the admin.";
+      setTimeout(() => {
+        if (!armed) return;
+        armed = false;
+        btn.textContent = "Remove";
+        msg.textContent = "";
+      }, 5000);
+      return;
+    }
+
+    if (!token()) { msg.textContent = "Save your access key first."; return; }
+
+    btn.disabled = true;
+    msg.textContent = "Removing...";
+
+    try {
+      await deleteClient(name);
+      msg.textContent = "Removed.";
+      card.style.opacity = "0.4";
+      loadClients();
+    } catch (err) {
+      console.error("remove failed:", err);
+      msg.textContent = "Could not remove it: " + err.message;
+      btn.disabled = false;
+      armed = false;
+      btn.textContent = "Remove";
+    }
+  });
+
+  return btn;
+}
+
+async function deleteClient(name) {
+  const headers = {
+    "Authorization": "Bearer " + token(),
+    "Accept": "application/vnd.github+json"
+  };
+
+  // whatever the folder actually holds, so nothing is left behind
+  const res = await fetch(
+    `https://api.github.com/repos/${OWNER}/${REPO}/contents/${encodeURIComponent(name)}`,
+    { headers, cache: "no-store" }
+  );
+
+  const paths = res.ok
+    ? (await res.json()).filter((f) => f.type === "file").map((f) => f.path)
+    : [];
+  paths.push(`data/${name}.json`);
+
+  await commitFiles(null, `Remove ${name}`, paths);
 }
 
 function describeShoot(date) {
@@ -252,8 +322,11 @@ function blankPlan(displayName) {
   };
 }
 
-/* One commit holding every file, built with the git data API */
-async function commitFiles(files, message) {
+/* One commit holding every change, built with the git data API.
+   `files` is a map of path to content to write, `removePaths` a list
+   of paths to delete. Doing both in a single commit means a client is
+   never half added or half removed. */
+async function commitFiles(files, message, removePaths) {
   const api = `https://api.github.com/repos/${OWNER}/${REPO}/git`;
   const headers = {
     "Authorization": "Bearer " + token(),
@@ -274,9 +347,15 @@ async function commitFiles(files, message) {
     method: "POST",
     body: JSON.stringify({
       base_tree: baseCommit.tree.sha,
-      tree: Object.entries(files).map(([path, content]) => ({
-        path, mode: "100644", type: "blob", content
-      }))
+      tree: [
+        ...Object.entries(files || {}).map(([path, content]) => ({
+          path, mode: "100644", type: "blob", content
+        })),
+        // a null sha is how the tree API says "drop this file"
+        ...(removePaths || []).map((path) => ({
+          path, mode: "100644", type: "blob", sha: null
+        }))
+      ]
     })
   });
 

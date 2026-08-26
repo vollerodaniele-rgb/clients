@@ -35,6 +35,14 @@ Either way there is no new repo, DNS record, Pages setting or relay
 change, and the same key opens it.
 
 
+## Removing a client
+
+The Remove button on a client card deletes its folder and its data
+file in one commit. It asks twice and names the client before doing
+it. The commit stays in the git history, so a mistake can be undone.
+Any requests that client sent stay as issues; they are history rather
+than part of the portal.
+
 ## How it fits together
 
 - `assets/` holds the only copy of the styles and the three scripts.
