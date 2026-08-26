@@ -91,17 +91,25 @@
     </div>
 
     <div class="panel" style="margin-top:1.8rem">
-      <h2>Adding a client</h2>
-      <p class="how">
-        1. Copy <code>data/_example.json</code> to <code>data/&lt;client&gt;.json</code> and fill it in.<br>
-        2. Copy the three files in <code>_template/</code> into a new folder named <code>&lt;client&gt;/</code>.<br>
-        3. Commit. It appears here on its own, live at
-        <code>clients.noiraunoir.com/&lt;client&gt;/</code>.
-      </p>
-      <p class="how" style="margin-top:0.8rem">
-        No new repo, no DNS record, no Pages setting, no relay change, and this
+      <h2>Add a client</h2>
+      <p class="how" style="margin-bottom:1rem">
+        Type the name and it builds the portal, the posting plan and the admin,
+        all from the template. No repo, no DNS record, no Pages setting, and this
         same key opens it.
       </p>
+      <div class="row">
+        <label class="field" style="flex:1; min-width:12rem"><span>Client name</span>
+          <input id="new-name" type="text" maxlength="40" placeholder="Fema Laser &amp; Skin Clinic">
+        </label>
+        <label class="field" style="flex:1; min-width:10rem"><span>Address</span>
+          <input id="new-slug" type="text" maxlength="30" placeholder="fema">
+        </label>
+        <button class="btn-mini solid" id="create-client" style="align-self:flex-end">Create</button>
+      </div>
+      <p class="how" style="margin-top:0.6rem">
+        It will live at <code id="new-preview">clients.noiraunoir.com/&lt;address&gt;/</code>
+      </p>
+      <p class="form-msg" id="create-msg" style="margin-top:0.7rem"></p>
     </div>
   </div>
   <script src="../assets/dashboard.js"></script>

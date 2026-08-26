@@ -147,3 +147,146 @@ function escHtml(s) {
   div.textContent = s == null ? "" : String(s);
   return div.innerHTML;
 }
+
+/* ============ ADDING A CLIENT ============ */
+/* Writes the four files as a single commit, so a client is never
+   left half created if something fails partway. */
+
+const TEMPLATE_FILES = ["index.html", "schedule.html", "admin.html"];
+
+document.addEventListener("DOMContentLoaded", () => {
+  const nameInput = $("new-name");
+  const slugInput = $("new-slug");
+  const preview = $("new-preview");
+
+  const showPreview = () => {
+    const s = slugify(slugInput.value || nameInput.value);
+    preview.textContent = "clients.noiraunoir.com/" + (s || "<address>") + "/";
+  };
+
+  // the address follows the name until it is edited by hand
+  let slugTouched = false;
+  nameInput.addEventListener("input", () => {
+    if (!slugTouched) slugInput.value = slugify(nameInput.value);
+    showPreview();
+  });
+  slugInput.addEventListener("input", () => { slugTouched = true; showPreview(); });
+
+  $("create-client").addEventListener("click", createClient);
+});
+
+function slugify(s) {
+  return String(s).toLowerCase().trim()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 30);
+}
+
+async function createClient() {
+  const msg = $("create-msg");
+  const btn = $("create-client");
+  const displayName = $("new-name").value.trim();
+  const slug = slugify($("new-slug").value || displayName);
+
+  if (!token()) { msg.textContent = "Save your access key first."; return; }
+  if (!displayName) { msg.textContent = "Give the client a name."; return; }
+  if (!/^[a-z0-9][a-z0-9-]{0,29}$/.test(slug)) {
+    msg.textContent = "That address will not work. Use letters and numbers, for example fema.";
+    return;
+  }
+  if (RESERVED.includes(slug)) {
+    msg.textContent = `"${slug}" is used by the site itself. Pick another address.`;
+    return;
+  }
+
+  btn.disabled = true;
+  msg.textContent = "Building the portal...";
+
+  try {
+    const existing = await listClientNames();
+    if (existing.includes(slug)) {
+      msg.textContent = `There is already a client at /${slug}/.`;
+      btn.disabled = false;
+      return;
+    }
+
+    const pages = await Promise.all(TEMPLATE_FILES.map(async (f) => {
+      const res = await fetch(`../_template/${f}`, { cache: "no-store" });
+      if (!res.ok) throw new Error(`template ${f} is not readable (${res.status})`);
+      return [`${slug}/${f}`, await res.text()];
+    }));
+
+    const files = Object.fromEntries(pages);
+    files[`data/${slug}.json`] = JSON.stringify(blankPlan(displayName), null, 2) + "\n";
+
+    await commitFiles(files, `Add ${displayName} as a client`);
+
+    msg.innerHTML = `<b>${escHtml(displayName)}</b> is ready. ` +
+      `It goes live in about a minute at clients.noiraunoir.com/${escHtml(slug)}/ ` +
+      `<a href="../${escHtml(slug)}/admin.html">Open its admin</a>`;
+    $("new-name").value = "";
+    $("new-slug").value = "";
+    loadClients();
+  } catch (err) {
+    console.error("create client failed:", err);
+    msg.textContent = "Could not create it: " + err.message +
+      (/40[13]/.test(err.message) ? " (the key needs Contents read and write)" : "");
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+function blankPlan(displayName) {
+  return {
+    name: displayName.toUpperCase(),
+    tagline: "",
+    dealNotes: "",
+    deal: [],
+    nextShoot: { date: "", time: "", location: "", focus: "", checklist: [] },
+    filmPlan: { month: "", items: [] },
+    months: [],
+    documents: [],
+    invoices: [],
+    posts: [],
+    contact: { line: displayName.toUpperCase() + " x NOIR AU NOIR", email: "info@noiraunoir.com" }
+  };
+}
+
+/* One commit holding every file, built with the git data API */
+async function commitFiles(files, message) {
+  const api = `https://api.github.com/repos/${OWNER}/${REPO}/git`;
+  const headers = {
+    "Authorization": "Bearer " + token(),
+    "Accept": "application/vnd.github+json",
+    "Content-Type": "application/json"
+  };
+
+  const call = async (path, init) => {
+    const res = await fetch(api + path, { headers, ...init });
+    if (!res.ok) throw new Error("GitHub " + res.status + " on " + path);
+    return res.json();
+  };
+
+  const ref = await call("/ref/heads/main", {});
+  const baseCommit = await call("/commits/" + ref.object.sha, {});
+
+  const tree = await call("/trees", {
+    method: "POST",
+    body: JSON.stringify({
+      base_tree: baseCommit.tree.sha,
+      tree: Object.entries(files).map(([path, content]) => ({
+        path, mode: "100644", type: "blob", content
+      }))
+    })
+  });
+
+  const commit = await call("/commits", {
+    method: "POST",
+    body: JSON.stringify({ message, tree: tree.sha, parents: [ref.object.sha] })
+  });
+
+  await call("/refs/heads/main", {
+    method: "PATCH",
+    body: JSON.stringify({ sha: commit.sha })
+  });
+}

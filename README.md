@@ -22,17 +22,18 @@ itself, so they cannot be used as client names.
 
 ## Adding a client
 
-There is no code to write. Three steps, all doable on github.com:
+Use the Create button on the dashboard: type the name, check the
+address it suggests, press Create. It copies the three template files
+into a new folder, writes the data file and commits all four at once,
+so a client is never half created. It is live about a minute later.
 
-1. Copy `data/_example.json` to `data/<client>.json` and fill it in.
-   The `name` field is what appears as the big title.
-2. Copy the three files from `_template/` into a new folder named
-   `<client>/`. They are identical for every client: the pages work out
-   which client they belong to from the folder name in the URL.
-3. Commit. The portal is live at `clients.noiraunoir.com/<client>/`.
+By hand is still possible: copy  to
+, copy the three files from  into a
+ folder, commit.
 
-Nothing else needs touching: no DNS record, no new repo, no Pages
-setting, no change to the relay, and the same admin key works.
+Either way there is no new repo, DNS record, Pages setting or relay
+change, and the same key opens it.
+
 
 ## How it fits together
 
