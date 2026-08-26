@@ -71,6 +71,20 @@ pings Telegram.
 The old proposal.noiraunoir.com forwards here, so links already sent
 still work.
 
+## Idea boxes
+
+Standalone pages where anyone can send an idea, with a picture or a
+voice message and no account, in the shape of Last Chapter:
+
+- `boxes/<slug>.json` holds the wording
+- `i/<slug>/` holds two files copied from `_box/`: the page and its
+  moderation page
+- ideas are issues labelled `idea` and `box:<slug>`, so one box never
+  shows another one
+
+The dashboard creates, lists and removes them, and Telegram names the
+box on every new idea.
+
 ## How it fits together
 
 - `assets/` holds the only copy of the styles and the three scripts.

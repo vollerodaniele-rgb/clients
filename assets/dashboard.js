@@ -10,7 +10,7 @@ const TOKEN_KEY = "clients-admin-token";
 const RELAY = "https://kresha-idea-box.vollerodaniele.workers.dev";
 
 // folders that are part of the site rather than a client
-const RESERVED = ["admin", "assets", "data", "_template", "p", "proposals", "_proposal"];
+const RESERVED = ["admin", "assets", "data", "_template", "p", "proposals", "_proposal", "i", "boxes", "_box", "uploads"];
 
 const $ = (id) => document.getElementById(id);
 const token = () => localStorage.getItem(TOKEN_KEY) || "";

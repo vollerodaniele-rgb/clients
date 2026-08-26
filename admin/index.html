@@ -178,6 +178,35 @@
       </div>
     </div>
 
+    <div class="panel" id="box-panel">
+      <h2>Idea boxes</h2>
+      <div id="box-list"><p class="muted" style="font-size:0.9rem">Loading idea boxes...</p></div>
+
+      <div style="border-top:1px solid var(--line-soft); margin-top:1.2rem; padding-top:1.2rem">
+        <p class="how" style="margin-bottom:0.9rem">
+          A page where anyone can send an idea, with a picture or a voice
+          message, no account needed. Same as Last Chapter.
+        </p>
+        <div class="row">
+          <label class="field" style="flex:1; min-width:9rem"><span>Address</span>
+            <input id="box-slug" type="text" maxlength="30" placeholder="kresha">
+          </label>
+          <label class="field" style="flex:1; min-width:9rem"><span>Small line on top</span>
+            <input id="box-kicker" type="text" maxlength="40" placeholder="MC KRESHA">
+          </label>
+          <label class="field" style="flex:1; min-width:9rem"><span>Big title</span>
+            <input id="box-title" type="text" maxlength="40" placeholder="Last Chapter">
+          </label>
+          <button class="btn-mini solid" id="box-create" style="align-self:flex-end">Create</button>
+        </div>
+        <label class="field" style="margin-top:0.6rem"><span>Opening words</span>
+          <input id="box-intro" type="text" maxlength="300"
+            placeholder="A concept, a feeling, a place. Even if it is just a thought, write it down.">
+        </label>
+        <p class="form-msg" id="box-msg" style="margin-top:0.7rem"></p>
+      </div>
+    </div>
+
     <div class="panel" style="margin-top:1.8rem">
       <h2>Add a client</h2>
       <p class="how" style="margin-bottom:1rem">
@@ -202,5 +231,6 @@
   </div>
   <script src="../assets/dashboard.js"></script>
   <script src="../assets/proposals.js"></script>
+  <script src="../assets/boxes.js"></script>
 </body>
 </html>
