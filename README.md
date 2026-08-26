@@ -27,9 +27,9 @@ address it suggests, press Create. It copies the three template files
 into a new folder, writes the data file and commits all four at once,
 so a client is never half created. It is live about a minute later.
 
-By hand is still possible: copy  to
-, copy the three files from  into a
- folder, commit.
+By hand is still possible: copy `data/_example.json` to
+`data/<client>.json`, copy the three files from `_template/` into a
+`<client>/` folder, commit.
 
 Either way there is no new repo, DNS record, Pages setting or relay
 change, and the same key opens it.
