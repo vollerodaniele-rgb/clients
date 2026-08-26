@@ -10,7 +10,7 @@ const TOKEN_KEY = "clients-admin-token";
 const RELAY = "https://kresha-idea-box.vollerodaniele.workers.dev";
 
 // folders that are part of the site rather than a client
-const RESERVED = ["admin", "assets", "data", "_template"];
+const RESERVED = ["admin", "assets", "data", "_template", "p", "proposals", "_proposal"];
 
 const $ = (id) => document.getElementById(id);
 const token = () => localStorage.getItem(TOKEN_KEY) || "";
@@ -336,8 +336,8 @@ function blankPlan(displayName) {
    `files` is a map of path to content to write, `removePaths` a list
    of paths to delete. Doing both in a single commit means a client is
    never half added or half removed. */
-async function commitFiles(files, message, removePaths) {
-  const api = `https://api.github.com/repos/${OWNER}/${REPO}/git`;
+async function commitFiles(files, message, removePaths, repo) {
+  const api = `https://api.github.com/repos/${OWNER}/${repo || REPO}/git`;
   const headers = {
     "Authorization": "Bearer " + token(),
     "Accept": "application/vnd.github+json",

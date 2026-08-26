@@ -53,6 +53,24 @@ the panel shows nothing at all.
 The admin key therefore needs Contents read and write on that private
 repo as well as on this one.
 
+## Proposals
+
+Proposals live here too, so there is one repo to manage:
+
+- `proposals/<slug>.json` holds one proposal
+- `p/<slug>/index.html` is copied from `_proposal/` and is the same
+  file for every proposal
+- the dashboard creates, edits and removes them, and shows which ones
+  have been accepted
+
+Addresses are random rather than readable, because a proposal carries
+prices and often a discount meant for one client alone. Choosing a
+package files an issue labeled `accepted` and `proposal:<slug>` and
+pings Telegram.
+
+The old proposal.noiraunoir.com forwards here, so links already sent
+still work.
+
 ## How it fits together
 
 - `assets/` holds the only copy of the styles and the three scripts.

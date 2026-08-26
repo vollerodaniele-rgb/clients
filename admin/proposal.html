@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Edit proposal</title>
+  <meta name="robots" content="noindex, nofollow">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/styles.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📄</text></svg>">
+  <style>
+    .dash { max-width: 52rem; margin: 0 auto; padding: 3rem 1.5rem 6rem; }
+    .dash-title { font-family: var(--font-display); font-size: 2.2rem; font-weight: 700; }
+    .dash-sub { color: var(--dim); margin: 0.4rem 0 2rem; }
+    a.back { color: var(--dim); font-size: 0.85rem; text-decoration: none; }
+    a.back:hover { color: var(--text); }
+
+    .panel {
+      border: 1px solid var(--line); border-radius: var(--radius);
+      padding: 1.4rem 1.5rem; margin-bottom: 1.4rem;
+    }
+    .panel h2 {
+      font-family: var(--font-display); font-size: 1.3rem; font-weight: 600;
+      margin-bottom: 1rem;
+    }
+    .row { display: flex; gap: 0.8rem; flex-wrap: wrap; margin-bottom: 0.8rem; }
+    .row .field { min-width: 9rem; }
+    .field textarea { min-height: 4rem; }
+
+    .item {
+      border: 1px solid var(--line-soft); border-radius: 8px;
+      padding: 0.9rem 1rem 0.4rem; margin-bottom: 0.9rem; position: relative;
+    }
+    .item .remove { position: absolute; top: 0.7rem; right: 0.8rem; }
+
+    .btn-mini {
+      font-size: 0.72rem; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase;
+      background: none; border: 1px solid var(--line); color: var(--dim);
+      border-radius: 999px; padding: 0.3rem 0.9rem; cursor: pointer;
+      text-decoration: none; display: inline-block;
+      transition: color 0.15s, border-color 0.15s;
+    }
+    .btn-mini:hover { color: var(--text); border-color: var(--text); }
+
+    .savebar {
+      position: sticky; bottom: 0; background: var(--bg);
+      border-top: 1px solid var(--line); padding: 1rem 0;
+      display: flex; gap: 1rem; align-items: center; flex-wrap: wrap;
+    }
+    .savebar .form-msg { flex: 1; }
+
+    select {
+      background: var(--bg); border: 1px solid var(--line); border-radius: 8px;
+      color: var(--text); font-family: var(--font-body); font-size: 0.95rem;
+      padding: 0.68rem 0.9rem;
+    }
+    label.check { display: flex; align-items: center; gap: 0.5rem; font-size: 0.85rem; color: var(--dim); }
+  </style>
+</head>
+<body>
+  <div class="dash">
+    <a class="back" href="index.html">&larr; back to the dashboard</a>
+    <h1 class="dash-title" id="editor-title">Proposal</h1>
+    <p class="dash-sub" id="editor-sub">Change anything, then Save &amp; Publish.</p>
+
+    <div id="app"><p class="muted">Loading...</p></div>
+
+    <div class="savebar">
+      <button class="btn-send" id="save-btn">Save &amp; Publish</button>
+      <a class="btn-mini" id="view-link" href="#" target="_blank" rel="noopener">Open the proposal</a>
+      <p class="form-msg" id="save-msg"></p>
+    </div>
+  </div>
+  <script src="../assets/proposal-editor.js"></script>
+</body>
+</html>

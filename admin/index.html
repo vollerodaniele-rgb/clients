@@ -142,6 +142,39 @@
       <p class="muted">Loading clients...</p>
     </div>
 
+    <div class="panel" id="proposal-panel">
+      <h2>Proposals</h2>
+      <div id="proposal-list"><p class="muted" style="font-size:0.9rem">Loading proposals...</p></div>
+
+      <div style="border-top:1px solid var(--line-soft); margin-top:1.2rem; padding-top:1.2rem">
+        <p class="how" style="margin-bottom:0.9rem">
+          Fill in the brand and the prices and it builds the page, at an address
+          nobody can guess. You can change everything afterwards.
+        </p>
+        <div class="row">
+          <label class="field" style="flex:1; min-width:10rem"><span>Brand</span>
+            <input id="prop-client" type="text" maxlength="40" placeholder="Fema">
+          </label>
+          <label class="field" style="flex:1; min-width:10rem"><span>Under the name</span>
+            <input id="prop-sub" type="text" maxlength="60" placeholder="Laser &amp; Skin Clinic">
+          </label>
+        </div>
+        <div class="row" style="margin-top:0.6rem">
+          <label class="field" style="min-width:8rem"><span>Package 1 &euro;</span>
+            <input id="prop-p1" type="text" maxlength="12" placeholder="950">
+          </label>
+          <label class="field" style="min-width:8rem"><span>Package 2 &euro;</span>
+            <input id="prop-p2" type="text" maxlength="12" placeholder="1.500">
+          </label>
+          <label class="field" style="min-width:8rem"><span>Package 3 &euro;</span>
+            <input id="prop-p3" type="text" maxlength="12" placeholder="2.700">
+          </label>
+          <button class="btn-mini solid" id="prop-create" style="align-self:flex-end">Create</button>
+        </div>
+        <p class="form-msg" id="prop-msg" style="margin-top:0.7rem"></p>
+      </div>
+    </div>
+
     <div class="panel" style="margin-top:1.8rem">
       <h2>Add a client</h2>
       <p class="how" style="margin-bottom:1rem">
@@ -165,5 +198,6 @@
     </div>
   </div>
   <script src="../assets/dashboard.js"></script>
+  <script src="../assets/proposals.js"></script>
 </body>
 </html>
