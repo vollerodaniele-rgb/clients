@@ -1,4 +1,4 @@
-/* SAKAS Portal Admin
+/* Client Portal Admin (shared)
    ------------------------------------------------------------
    Loads data/plan.json into editable forms and publishes changes
    back to GitHub with the Contents API. The access token is a
@@ -66,7 +66,7 @@ function render() {
   app.innerHTML = "";
 
   app.appendChild(panel("Intro texts", (body) => {
-    body.appendChild(textField("Tagline (under the big SAKAS title)", plan, "tagline", true));
+    body.appendChild(textField("Tagline (under the big title)", plan, "tagline", true));
     body.appendChild(textField("Deal intro line", plan, "dealNotes", true));
   }));
 

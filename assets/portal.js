@@ -1,4 +1,4 @@
-/* SAKAS Content Portal
+/* Client Portal (shared)
    ------------------------------------------------------------
    Everything on this page comes from data/plan.json.
    Edit that one file to update the portal.
@@ -287,7 +287,7 @@ function renderInvoices(invoices) {
 
 function renderFooter(contact) {
   if (!contact) return;
-  $("contact-line").textContent = contact.line || "SAKAS x STUDIO";
+  $("contact-line").textContent = contact.line || "NOIR AU NOIR";
   if (contact.email) {
     const p = document.querySelector(".footer .muted");
     p.innerHTML = `Questions about planning or content? <a href="mailto:${esc(contact.email)}">${esc(contact.email)}</a>`;

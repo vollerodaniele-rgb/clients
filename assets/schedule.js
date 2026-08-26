@@ -1,4 +1,4 @@
-/* SAKAS Posting Schedule
+/* Posting Plan (shared)
    ------------------------------------------------------------
    Reads the same data/plan.json as the portal. Posts live under
    "posts" and are edited from the admin page, so there is still
