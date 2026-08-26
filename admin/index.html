@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NOIR AU NOIR | Clients</title>
+  <meta name="robots" content="noindex, nofollow">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/styles.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎛️</text></svg>">
+  <style>
+    .dash { max-width: 56rem; margin: 0 auto; padding: 3rem 1.5rem 5rem; }
+    .dash-title { font-family: var(--font-display); font-size: 2.4rem; font-weight: 700; }
+    .dash-sub { color: var(--dim); margin: 0.4rem 0 2rem; }
+
+    .panel {
+      border: 1px solid var(--line); border-radius: var(--radius);
+      padding: 1.4rem 1.5rem; margin-bottom: 1.8rem;
+    }
+    .panel h2 {
+      font-family: var(--font-display); font-size: 1.3rem; font-weight: 600;
+      margin-bottom: 0.9rem;
+    }
+    .row { display: flex; gap: 0.8rem; flex-wrap: wrap; align-items: flex-end; }
+
+    .btn-mini {
+      font-size: 0.72rem; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase;
+      background: none; border: 1px solid var(--line); color: var(--dim);
+      border-radius: 999px; padding: 0.4rem 0.95rem; cursor: pointer;
+      text-decoration: none; display: inline-block;
+      transition: color 0.15s, border-color 0.15s;
+    }
+    .btn-mini:hover { color: var(--text); border-color: var(--text); }
+    .btn-mini.solid { color: var(--bg); background: var(--text); border-color: var(--text); }
+
+    .client-grid {
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr));
+      gap: 1.1rem;
+    }
+    .client-card {
+      border: 1px solid var(--line); border-radius: var(--radius);
+      padding: 1.3rem 1.4rem; display: flex; flex-direction: column; gap: 0.5rem;
+      transition: border-color 0.2s;
+    }
+    .client-card:hover { border-color: var(--text); }
+    .client-name {
+      font-family: var(--font-display); font-size: 1.5rem; font-weight: 600;
+    }
+    .client-line { font-size: 0.85rem; color: var(--dim); }
+    .client-flag {
+      font-size: 0.68rem; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase;
+      border: 1px solid var(--text); border-radius: 999px; padding: 0.15rem 0.6rem;
+      align-self: flex-start;
+    }
+    .client-links { display: flex; gap: 0.45rem; flex-wrap: wrap; margin-top: auto; padding-top: 0.7rem; }
+    .client-links a { font-size: 0.68rem; padding: 0.32rem 0.75rem; }
+
+    .how { font-size: 0.9rem; color: var(--dim); line-height: 1.7; }
+    .how code {
+      color: var(--text); border: 1px solid var(--line-soft);
+      border-radius: 5px; padding: 0.05rem 0.35rem; font-size: 0.85rem;
+    }
+  </style>
+</head>
+<body>
+  <div class="dash">
+    <h1 class="dash-title">Clients</h1>
+    <p class="dash-sub">Every portal in one place. Pick one to edit it.</p>
+
+    <div class="panel">
+      <h2>Access key</h2>
+      <p class="muted" style="margin-bottom:0.9rem; font-size:0.9rem">
+        Paste your GitHub token once here and it works for every client on this
+        site. It needs Contents and Issues, read and write, on the clients repo.
+        It is stored only in this browser.
+      </p>
+      <div class="row">
+        <label class="field" style="flex:1; min-width:14rem"><span>Token</span>
+          <input id="token-input" type="password" placeholder="github_pat_...">
+        </label>
+        <button class="btn-mini" id="token-save">Save key</button>
+        <button class="btn-mini" id="token-clear">Forget key</button>
+      </div>
+      <p class="form-msg" id="token-msg" style="margin-top:0.7rem"></p>
+    </div>
+
+    <div class="client-grid" id="client-grid">
+      <p class="muted">Loading clients...</p>
+    </div>
+
+    <div class="panel" style="margin-top:1.8rem">
+      <h2>Adding a client</h2>
+      <p class="how">
+        1. Copy <code>data/_example.json</code> to <code>data/&lt;client&gt;.json</code> and fill it in.<br>
+        2. Copy the three files in <code>_template/</code> into a new folder named <code>&lt;client&gt;/</code>.<br>
+        3. Commit. It appears here on its own, live at
+        <code>clients.noiraunoir.com/&lt;client&gt;/</code>.
+      </p>
+      <p class="how" style="margin-top:0.8rem">
+        No new repo, no DNS record, no Pages setting, no relay change, and this
+        same key opens it.
+      </p>
+    </div>
+  </div>
+  <script src="../assets/dashboard.js"></script>
+</body>
+</html>

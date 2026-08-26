@@ -10,6 +10,16 @@ Every client portal lives in this one repo and is served from
 The root and any unknown address show only the studio name, so the
 domain gives nothing away on its own.
 
+## The dashboard
+
+`clients.noiraunoir.com/admin/` lists every client and links to each
+portal, plan and admin. It finds clients by reading the data folder, so
+it needs no list of its own. It also holds the access key: paste it
+there once and every client admin on this site can use it.
+
+The names `admin`, `assets`, `data` and `_template` belong to the site
+itself, so they cannot be used as client names.
+
 ## Adding a client
 
 There is no code to write. Three steps, all doable on github.com:
