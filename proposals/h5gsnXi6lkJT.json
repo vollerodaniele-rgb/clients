@@ -1,0 +1,119 @@
+{
+  "studio": "NOIR AU NOIR",
+  "client": "patt a pecr",
+  "subtitle": "strunz",
+  "kicker": "Videography Proposal · Monthly",
+  "footer": "Prepared for patt a pecr strunz",
+  "intro": {
+    "lead": "Three ways to work together",
+    "text": ""
+  },
+  "packages": [
+    {
+      "num": "01 · Entry level",
+      "name": "Essential",
+      "tag": "A steady monthly presence",
+      "price": "€1000",
+      "per": "per month · VAT incl.",
+      "featured": false,
+      "badge": "",
+      "features": [
+        {
+          "what": "",
+          "sub": ""
+        }
+      ]
+    },
+    {
+      "num": "02 · The working month",
+      "name": "Signature",
+      "tag": "A full month of content, planned as one",
+      "price": "€100000",
+      "per": "per month · VAT incl.",
+      "featured": false,
+      "badge": "",
+      "features": [
+        {
+          "what": "",
+          "sub": ""
+        }
+      ]
+    },
+    {
+      "num": "03 · The full build",
+      "name": "Rebrand",
+      "tag": "A new identity, then the production to carry it",
+      "price": "€1000000",
+      "per": "per month · VAT incl.",
+      "featured": true,
+      "badge": "Most complete",
+      "features": [
+        {
+          "what": "",
+          "sub": ""
+        }
+      ]
+    }
+  ],
+  "notes": [
+    {
+      "title": "What a reel means here",
+      "body": "Ten reels means ten finished pieces, not ten single unbroken takes. A long continuous take is used when it earns its place."
+    },
+    {
+      "title": "Your client portal",
+      "body": "Every collaboration comes with a personal portal, included in all packages. The plan for the month, the shoot day, the finished deliverables and the posting calendar all live in one place, updated as we work."
+    }
+  ],
+  "process": {
+    "num": "How it works",
+    "title": "The Shape of a Month",
+    "steps": [
+      {
+        "n": "01",
+        "title": "Plan",
+        "text": "We agree the pieces for the month and the day to film them."
+      },
+      {
+        "n": "02",
+        "title": "Film",
+        "text": "One session on site. Everything for the month is captured in that day."
+      },
+      {
+        "n": "03",
+        "title": "Deliver",
+        "text": "You receive the finished pieces with the posting guide telling you what goes out and when."
+      }
+    ]
+  },
+  "terms": [
+    {
+      "k": "Prices",
+      "v": "Per month, VAT included, no hidden production costs"
+    },
+    {
+      "k": "Deposit",
+      "v": "33 percent on the first month, once only, to reserve the shoot"
+    },
+    {
+      "k": "Balance",
+      "v": "On delivery. Every month after is settled in one payment"
+    },
+    {
+      "k": "Invoices",
+      "v": "Payable within 30 days"
+    },
+    {
+      "k": "Shoot day",
+      "v": "One session per month, fixed together in advance"
+    },
+    {
+      "k": "Client portal",
+      "v": "Included in every package, from the first day"
+    },
+    {
+      "k": "Notice",
+      "v": "30 days before the next month"
+    }
+  ]
+}
