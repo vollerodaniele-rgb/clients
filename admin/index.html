@@ -38,6 +38,9 @@
     .client-grid {
       display: grid; grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr));
       gap: 1.1rem;
+      /* the panels below carry their own bottom margin, so the cards
+         need one too or they sit flush against Proposals */
+      margin-bottom: 1.8rem;
     }
     .client-card {
       border: 1px solid var(--line); border-radius: var(--radius);
