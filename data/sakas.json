@@ -1,0 +1,126 @@
+{
+  "name": "SAKAS",
+  "tagline": "Monthly reels and photography for Sakas, Gent. Everything about our collaboration in one place: planning, deliveries, documents and billing.",
+  "dealNotes": "What we deliver every month, agreed August 2026. Adjust anytime, this page always shows the current agreement.",
+  "deal": [
+    {
+      "num": "12",
+      "label": "Reels per month"
+    },
+    {
+      "num": "10-15",
+      "label": "Photos per month"
+    },
+    {
+      "num": "10 Days",
+      "label": "Delivery after shoot"
+    }
+  ],
+  "nextShoot": {
+    "date": "2026-08-31",
+    "time": "10:00",
+    "location": "Sakas, Gent",
+    "focus": "First shoot of the partnership",
+    "checklist": [
+      "Menu highlights chosen",
+      "Staff availability confirmed",
+      "Tables by the window reserved",
+      "Specials list sent to us"
+    ]
+  },
+  "filmPlan": {
+    "month": "September 2026",
+    "items": [
+      {
+        "what": "Signature dish reel",
+        "note": "Close-up plating of the chef's signature dish, kitchen to table"
+      },
+      {
+        "what": "Kitchen action reel",
+        "note": "Fast cuts of the team during service, fire and movement"
+      },
+      {
+        "what": "Atmosphere reel",
+        "note": "Golden hour interior, guests, details of the room"
+      },
+      {
+        "what": "Team introduction reel",
+        "note": "Short portraits of the chef and the crew"
+      },
+      {
+        "what": "Photo set",
+        "note": "Dishes, interior and team photos for socials and the website"
+      }
+    ]
+  },
+  "months": [
+    {
+      "label": "September 2026",
+      "status": "active",
+      "reels": {
+        "done": 0,
+        "total": 12
+      },
+      "photos": {
+        "done": 0,
+        "total": 15
+      },
+      "notes": "First month of the partnership. Focus: introducing the kitchen and the team."
+    },
+    {
+      "label": "November 2026",
+      "status": "planned",
+      "reels": {
+        "done": 0,
+        "total": 12
+      },
+      "photos": {
+        "done": 0,
+        "total": 15
+      },
+      "notes": "planning kaitai"
+    },
+    {
+      "label": "January 2027",
+      "status": "planned",
+      "reels": {
+        "done": 0,
+        "total": 12
+      },
+      "photos": {
+        "done": 0,
+        "total": 15
+      },
+      "notes": "Holiday season teasers and gift card push."
+    }
+  ],
+  "documents": [
+    {
+      "type": "Delivery",
+      "title": "September content package",
+      "note": "Available after the shoot",
+      "url": ""
+    }
+  ],
+  "invoices": [
+    {
+      "number": "2026-SAK-1005",
+      "period": "September 2026",
+      "issued": "2026-07-06",
+      "status": "paid",
+      "url": ""
+    },
+    {
+      "number": "second half",
+      "period": "Septomber 2026",
+      "issued": "",
+      "status": "upcoming",
+      "url": ""
+    }
+  ],
+  "contact": {
+    "line": "SAKAS x NOIR AU NOIR",
+    "email": "info@noiraunoir.com"
+  },
+  "posts": []
+}

@@ -1,0 +1,34 @@
+{
+  "name": "CLIENT NAME",
+  "tagline": "One line about the collaboration.",
+  "dealNotes": "What we deliver every month.",
+  "deal": [
+    {
+      "num": "12",
+      "label": "Reels per month"
+    },
+    {
+      "num": "10-15",
+      "label": "Photos per month"
+    }
+  ],
+  "nextShoot": {
+    "date": "",
+    "time": "",
+    "location": "",
+    "focus": "",
+    "checklist": []
+  },
+  "filmPlan": {
+    "month": "",
+    "items": []
+  },
+  "months": [],
+  "documents": [],
+  "invoices": [],
+  "posts": [],
+  "contact": {
+    "line": "CLIENT x NOIR AU NOIR",
+    "email": "info@noiraunoir.com"
+  }
+}
