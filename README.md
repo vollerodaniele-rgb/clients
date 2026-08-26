@@ -43,6 +43,16 @@ it. The commit stays in the git history, so a mistake can be undone.
 Any requests that client sent stay as issues; they are history rather
 than part of the portal.
 
+## Money
+
+Amounts never go in a client data file, because those pages are public.
+They live in a separate **private** repo, `studio-private`, in
+`money.json`, which the dashboard reads with your key. Without the key
+the panel shows nothing at all.
+
+The admin key therefore needs Contents read and write on that private
+repo as well as on this one.
+
 ## How it fits together
 
 - `assets/` holds the only copy of the styles and the three scripts.

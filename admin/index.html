@@ -58,6 +58,26 @@
     .client-links a, .client-links button { font-size: 0.68rem; padding: 0.32rem 0.75rem; }
     .card-msg { font-size: 0.78rem; margin-top: 0.5rem; }
 
+    .totals { display: flex; gap: 2.4rem; flex-wrap: wrap; }
+    .total .num {
+      font-family: var(--font-display); font-size: 2.4rem; font-weight: 700; line-height: 1.1;
+    }
+    .total .lbl {
+      font-size: 0.68rem; font-weight: 600; letter-spacing: 0.14em;
+      text-transform: uppercase; color: var(--dim); margin-top: 0.2rem;
+    }
+    .total.quiet .num { color: var(--dim); font-size: 1.7rem; }
+
+    .pay-row {
+      display: flex; gap: 1rem; align-items: baseline; flex-wrap: wrap;
+      padding: 0.7rem 0; border-bottom: 1px solid var(--line-soft); font-size: 0.88rem;
+    }
+    .pay-row .when { color: var(--dim); min-width: 5.5rem; font-size: 0.8rem; }
+    .pay-row .who { font-weight: 600; min-width: 6rem; }
+    .pay-row .what { color: var(--dim); flex: 1; min-width: 8rem; }
+    .pay-row .amt { font-weight: 600; min-width: 5rem; text-align: right; }
+    .pay-row.open .amt { color: var(--dim); }
+
     .how { font-size: 0.9rem; color: var(--dim); line-height: 1.7; }
     .how code {
       color: var(--text); border: 1px solid var(--line-soft);
@@ -85,6 +105,37 @@
         <button class="btn-mini" id="token-clear">Forget key</button>
       </div>
       <p class="form-msg" id="token-msg" style="margin-top:0.7rem"></p>
+    </div>
+
+    <div class="panel" id="money-panel">
+      <h2>Money</h2>
+      <div class="totals" id="money-totals"></div>
+
+      <div class="row" style="margin-top:1.2rem">
+        <label class="field" style="min-width:7rem"><span>Date</span>
+          <input id="pay-date" type="date">
+        </label>
+        <label class="field" style="min-width:8rem"><span>Client</span>
+          <input id="pay-client" type="text" list="client-options" placeholder="sakas">
+          <datalist id="client-options"></datalist>
+        </label>
+        <label class="field" style="flex:1; min-width:10rem"><span>What for</span>
+          <input id="pay-what" type="text" maxlength="60" placeholder="September retainer">
+        </label>
+        <label class="field" style="min-width:6rem"><span>Amount &euro;</span>
+          <input id="pay-amount" type="number" min="0" step="1" placeholder="1500">
+        </label>
+        <label class="field" style="min-width:7rem"><span>Status</span>
+          <select id="pay-status">
+            <option value="paid">paid</option>
+            <option value="open">open</option>
+          </select>
+        </label>
+        <button class="btn-mini solid" id="pay-add" style="align-self:flex-end">Add</button>
+      </div>
+      <p class="form-msg" id="money-msg" style="margin-top:0.7rem"></p>
+
+      <div id="money-list" style="margin-top:1.2rem"></div>
     </div>
 
     <div class="client-grid" id="client-grid">

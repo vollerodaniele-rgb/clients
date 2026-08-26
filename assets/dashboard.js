@@ -69,6 +69,16 @@ async function loadClients() {
 
   grid.innerHTML = "";
   for (const c of clients) grid.appendChild(clientCard(c));
+
+  const options = $("client-options");
+  if (options) {
+    options.innerHTML = "";
+    for (const n of names) {
+      const opt = document.createElement("option");
+      opt.value = n;
+      options.appendChild(opt);
+    }
+  }
 }
 
 async function listClientNames() {
@@ -368,4 +378,206 @@ async function commitFiles(files, message, removePaths) {
     method: "PATCH",
     body: JSON.stringify({ sha: commit.sha })
   });
+}
+
+/* ============ MONEY ============ */
+/* Amounts never touch the client data files, because those pages are
+   public. They live in a separate private repo that only a request
+   carrying the key can read, so a visitor here sees nothing at all. */
+
+const MONEY_REPO = "studio-private";
+const MONEY_FILE = "money.json";
+
+let money = { entries: [] };
+let moneySha = null;
+
+document.addEventListener("DOMContentLoaded", () => {
+  const today = new Date();
+  $("pay-date").value = today.getFullYear() + "-" +
+    String(today.getMonth() + 1).padStart(2, "0") + "-" +
+    String(today.getDate()).padStart(2, "0");
+
+  $("pay-add").addEventListener("click", addPayment);
+  loadMoney();
+});
+
+async function loadMoney() {
+  const msg = $("money-msg");
+
+  if (!token()) {
+    $("money-totals").innerHTML = '<p class="muted" style="font-size:0.9rem">Save your access key to see the money.</p>';
+    return;
+  }
+
+  try {
+    const res = await fetch(
+      `https://api.github.com/repos/${OWNER}/${MONEY_REPO}/contents/${MONEY_FILE}`,
+      { headers: { Authorization: "Bearer " + token(), Accept: "application/vnd.github+json" }, cache: "no-store" }
+    );
+
+    if (res.status === 404) {
+      // nothing recorded yet, or the private repo is not there yet
+      money = { entries: [] };
+      moneySha = null;
+      msg.textContent = "No money file yet. Adding the first payment creates it.";
+      drawMoney();
+      return;
+    }
+    if (!res.ok) throw new Error(String(res.status));
+
+    const file = await res.json();
+    moneySha = file.sha;
+    money = JSON.parse(decodeURIComponent(escape(atob(file.content.replace(/\n/g, "")))));
+    if (!Array.isArray(money.entries)) money.entries = [];
+    msg.textContent = "";
+    drawMoney();
+  } catch (err) {
+    console.error("money load failed:", err);
+    $("money-totals").innerHTML = "";
+    msg.textContent = err.message === "403" || err.message === "401"
+      ? "The key cannot read the private money repo yet."
+      : "Could not load the money file (" + err.message + ").";
+  }
+}
+
+function drawMoney() {
+  const now = new Date();
+  const year = now.getFullYear();
+  const thisMonth = year + "-" + String(now.getMonth() + 1).padStart(2, "0");
+
+  const paid = money.entries.filter((e) => e.status === "paid");
+  const open = money.entries.filter((e) => e.status !== "paid");
+
+  const sum = (list) => list.reduce((t, e) => t + (Number(e.amount) || 0), 0);
+  const paidThisYear = sum(paid.filter((e) => String(e.date).startsWith(String(year))));
+  const paidThisMonth = sum(paid.filter((e) => String(e.date).startsWith(thisMonth)));
+  const outstanding = sum(open);
+
+  // anything unpaid past the thirty day term
+  const overdue = open.filter((e) => {
+    const d = new Date(e.date + "T00:00:00");
+    return (now - d) / 86400000 > 30;
+  });
+
+  $("money-totals").innerHTML = `
+    <div class="total"><div class="num">${euro(paidThisYear)}</div><div class="lbl">Paid in ${year}</div></div>
+    <div class="total quiet"><div class="num">${euro(paidThisMonth)}</div><div class="lbl">This month</div></div>
+    <div class="total quiet"><div class="num">${euro(outstanding)}</div><div class="lbl">Outstanding${overdue.length ? ", " + overdue.length + " overdue" : ""}</div></div>
+  `;
+
+  const list = $("money-list");
+  list.innerHTML = "";
+  const recent = [...money.entries].sort((a, b) => String(b.date).localeCompare(String(a.date))).slice(0, 12);
+
+  for (const e of recent) {
+    const row = document.createElement("div");
+    row.className = "pay-row" + (e.status === "paid" ? "" : " open");
+    row.innerHTML = `
+      <span class="when">${escHtml(e.date)}</span>
+      <span class="who">${escHtml(e.client || "")}</span>
+      <span class="what">${escHtml(e.what || "")}</span>
+      <span class="amt">${euro(e.amount)}</span>
+    `;
+
+    const action = document.createElement("button");
+    action.className = "btn-mini";
+    action.style.padding = "0.25rem 0.7rem";
+    action.textContent = e.status === "paid" ? "Undo" : "Mark paid";
+    action.addEventListener("click", async () => {
+      e.status = e.status === "paid" ? "open" : "paid";
+      await saveMoney(e.status === "paid" ? "Mark paid" : "Mark open");
+    });
+
+    const remove = document.createElement("button");
+    remove.className = "btn-mini";
+    remove.style.padding = "0.25rem 0.7rem";
+    remove.textContent = "Remove";
+    let armed = false;
+    remove.addEventListener("click", async () => {
+      if (!armed) {
+        armed = true;
+        remove.textContent = "Sure?";
+        setTimeout(() => { if (armed) { armed = false; remove.textContent = "Remove"; } }, 4000);
+        return;
+      }
+      money.entries = money.entries.filter((x) => x !== e);
+      await saveMoney("Remove a payment");
+    });
+
+    row.append(action, remove);
+    list.appendChild(row);
+  }
+
+  if (money.entries.length > recent.length) {
+    const more = document.createElement("p");
+    more.className = "muted";
+    more.style.cssText = "font-size:0.8rem;margin-top:0.6rem";
+    more.textContent = `${money.entries.length - recent.length} older entries not shown, still counted in the totals.`;
+    list.appendChild(more);
+  }
+}
+
+async function addPayment() {
+  const msg = $("money-msg");
+  const amount = Number($("pay-amount").value);
+  const entry = {
+    date: $("pay-date").value,
+    client: $("pay-client").value.trim().toLowerCase(),
+    what: $("pay-what").value.trim(),
+    amount,
+    status: $("pay-status").value
+  };
+
+  if (!token()) { msg.textContent = "Save your access key first."; return; }
+  if (!entry.date) { msg.textContent = "Pick a date."; return; }
+  if (!(amount > 0)) { msg.textContent = "Put in an amount."; return; }
+
+  money.entries.push(entry);
+  const ok = await saveMoney(`Add ${entry.client || "payment"} ${entry.amount}`);
+  if (ok) {
+    $("pay-what").value = "";
+    $("pay-amount").value = "";
+  }
+}
+
+async function saveMoney(message) {
+  const msg = $("money-msg");
+  msg.textContent = "Saving...";
+
+  try {
+    const body = {
+      message,
+      content: btoa(unescape(encodeURIComponent(JSON.stringify(money, null, 2) + "\n")))
+    };
+    if (moneySha) body.sha = moneySha;
+
+    const res = await fetch(
+      `https://api.github.com/repos/${OWNER}/${MONEY_REPO}/contents/${MONEY_FILE}`,
+      {
+        method: "PUT",
+        headers: {
+          Authorization: "Bearer " + token(),
+          Accept: "application/vnd.github+json",
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(body)
+      }
+    );
+
+    if (!res.ok) throw new Error(String(res.status));
+    moneySha = (await res.json()).content.sha;
+    msg.textContent = "Saved.";
+    drawMoney();
+    return true;
+  } catch (err) {
+    console.error("money save failed:", err);
+    msg.textContent = "Could not save (" + err.message + ")" +
+      (/40[134]/.test(err.message) ? ": the key needs Contents read and write on the private repo." : ".");
+    await loadMoney();
+    return false;
+  }
+}
+
+function euro(n) {
+  return "€" + Math.round(Number(n) || 0).toLocaleString("nl-BE");
 }
