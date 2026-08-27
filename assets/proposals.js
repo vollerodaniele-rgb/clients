@@ -131,7 +131,12 @@ function proposalRow({ slug, name, accepted }) {
     }
   });
 
-  row.append(open, edit, copy, remove);
+  const message = messageButton("proposal", {
+    name,
+    url: `${PROPOSAL_SITE}/p/${slug}/`
+  }, row);
+
+  row.append(open, edit, copy, message, remove);
   return row;
 }
 
@@ -254,50 +259,4 @@ function blankProposal(client, subtitle, prices) {
       { k: "Notice", v: "30 days before the next month" }
     ]
   };
-}
-
-/* Copying a link should just work. The modern clipboard call needs a
-   secure page, a real click and a focused document, and quietly throws
-   when any of that is missing, so fall back to the old select and copy
-   trick before giving up. */
-async function copyText(text) {
-  try {
-    if (navigator.clipboard && window.isSecureContext) {
-      await navigator.clipboard.writeText(text);
-      return true;
-    }
-  } catch { /* fall through to the older way */ }
-
-  try {
-    const ta = document.createElement("textarea");
-    ta.value = text;
-    ta.setAttribute("readonly", "");
-    ta.style.cssText = "position:fixed;top:0;left:0;width:1px;height:1px;opacity:0";
-    document.body.appendChild(ta);
-    ta.select();
-    ta.setSelectionRange(0, text.length);
-    const ok = document.execCommand("copy");
-    document.body.removeChild(ta);
-    return ok;
-  } catch {
-    return false;
-  }
-}
-
-/* Last resort: put the link on screen, already selected, so the
-   keyboard can take it. */
-function showForManualCopy(row, url) {
-  let box = row.querySelector(".manual-copy");
-  if (!box) {
-    box = document.createElement("input");
-    box.className = "manual-copy";
-    box.readOnly = true;
-    box.style.cssText = "flex-basis:100%;margin-top:0.5rem;background:var(--bg);" +
-      "border:1px solid var(--text);border-radius:8px;color:var(--text);" +
-      "font-family:var(--font-body);font-size:0.82rem;padding:0.5rem 0.7rem";
-    row.appendChild(box);
-  }
-  box.value = url;
-  box.focus();
-  box.select();
 }

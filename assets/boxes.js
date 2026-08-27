@@ -128,7 +128,12 @@ function boxRow({ slug, title, ideas }) {
     }
   });
 
-  row.append(open, moderate, copy, remove);
+  const message = messageButton("box", {
+    title,
+    url: `${location.origin}/i/${slug}/`
+  }, row);
+
+  row.append(open, moderate, copy, message, remove);
   return row;
 }
 

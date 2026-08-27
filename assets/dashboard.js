@@ -141,7 +141,12 @@ function clientCard({ name, plan, requests }) {
     <p class="form-msg card-msg"></p>
   `;
 
-  card.querySelector(".client-links").appendChild(removeButton(name, card));
+  const links = card.querySelector(".client-links");
+  links.appendChild(messageButton("portal", {
+    name: plan.name || name,
+    url: `${location.origin}/${name}/`
+  }, links));
+  links.appendChild(removeButton(name, card));
   return card;
 }
 
@@ -580,4 +585,111 @@ async function saveMoney(message) {
 
 function euro(n) {
   return "€" + Math.round(Number(n) || 0).toLocaleString("nl-BE");
+}
+
+/* ============ COPYING, AND THE MESSAGE TO SEND ============ */
+
+/* Copying should just work. The modern clipboard call needs a secure
+   page, a real click and a focused document, and throws quietly when
+   any of that is missing, so fall back to the old select and copy
+   trick before giving up. */
+async function copyText(text) {
+  try {
+    if (navigator.clipboard && window.isSecureContext) {
+      await navigator.clipboard.writeText(text);
+      return true;
+    }
+  } catch { /* fall through to the older way */ }
+
+  try {
+    const ta = document.createElement("textarea");
+    ta.value = text;
+    ta.setAttribute("readonly", "");
+    ta.style.cssText = "position:fixed;top:0;left:0;width:1px;height:1px;opacity:0";
+    document.body.appendChild(ta);
+    ta.select();
+    ta.setSelectionRange(0, text.length);
+    const ok = document.execCommand("copy");
+    document.body.removeChild(ta);
+    return ok;
+  } catch {
+    return false;
+  }
+}
+
+/* Last resort: put the text on screen, already selected, so the
+   keyboard can take it. */
+function showForManualCopy(row, text) {
+  let box = row.querySelector(".manual-copy");
+  if (!box) {
+    box = document.createElement("textarea");
+    box.className = "manual-copy";
+    box.readOnly = true;
+    box.rows = text.length > 90 ? 4 : 1;
+    box.style.cssText = "flex-basis:100%;margin-top:0.5rem;background:var(--bg);" +
+      "border:1px solid var(--text);border-radius:8px;color:var(--text);" +
+      "font-family:var(--font-body);font-size:0.82rem;padding:0.5rem 0.7rem;resize:vertical";
+    row.appendChild(box);
+  }
+  box.value = text;
+  box.focus();
+  box.select();
+}
+
+/* The line you would otherwise type by hand every time. Written to be
+   pasted straight into WhatsApp, so it is short and says what the
+   person can do with the link. */
+function composeMessage(kind, { name, url, title }) {
+  const who = name ? `Hi ${greetable(name)},` : "Hi,";
+
+  if (kind === "portal") {
+    return `${who}\n\nYour portal is live: ${url}\n\n` +
+      `You will find the plan for the month, the shoot date and what we are filming, ` +
+      `plus the posting plan with the captions ready to copy.\n\n` +
+      `Anything you would like us to film, drop it in the requests box at the bottom ` +
+      `and it comes straight to me.`;
+  }
+
+  if (kind === "proposal") {
+    return `${who}\n\nHere is the proposal: ${url}\n\n` +
+      `Three ways we could work together, with what is included in each and what it costs. ` +
+      `If one of them fits, press the button on it and I will come back to you the same day.`;
+  }
+
+  if (kind === "box") {
+    return `${title || "The idea box"} is open: ${url}\n\n` +
+      `Send an idea in a line of text, a picture or a voice message. ` +
+      `No account, no sign up, it takes ten seconds.`;
+  }
+
+  return url;
+}
+
+/* A button that copies that message, used by clients, proposals and
+   idea boxes alike. */
+function messageButton(kind, details, row) {
+  const btn = document.createElement("button");
+  btn.className = "btn-mini";
+  btn.style.padding = "0.25rem 0.7rem";
+  btn.textContent = "Message";
+  btn.title = "Copy a ready to send message with the link";
+
+  btn.addEventListener("click", async () => {
+    const text = composeMessage(kind, details);
+    const done = await copyText(text);
+    btn.textContent = done ? "Copied" : "Press Ctrl C";
+    setTimeout(() => { btn.textContent = "Message"; }, 1800);
+    if (!done) showForManualCopy(row, text);
+  });
+
+  return btn;
+}
+
+/* Portal titles are set in capitals because that is how they look on
+   the page. Shouting at someone in a message is a different matter, so
+   an all-caps name gets softened for the greeting. */
+function greetable(name) {
+  const s = String(name).trim();
+  if (s !== s.toUpperCase()) return s;
+  return s.toLowerCase().replace(/(^|[\s'-])([a-z])/g, (_, before, letter) => before + letter.toUpperCase());
 }
