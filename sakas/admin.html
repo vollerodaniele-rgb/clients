@@ -8,7 +8,26 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="../assets/styles.css">
+  <!-- GitHub Pages tells the browser to keep these files for ten
+       minutes. On a public page that is welcome. Here it means saving a
+       change and not seeing it, so both are asked for with a timestamp
+       and this page always runs the current code. They are inserted
+       ahead of this script, which is where the plain tags used to sit,
+       so the styles below still override the stylesheet. -->
+  <script>
+    (function () {
+      var stamp = Date.now();
+      var here = document.currentScript;
+      var css = document.createElement("link");
+      css.rel = "stylesheet";
+      css.href = "../assets/styles.css?t=" + stamp;
+      here.parentNode.insertBefore(css, here);
+      var js = document.createElement("script");
+      js.src = "../assets/admin.js?t=" + stamp;
+      js.async = false;
+      here.parentNode.insertBefore(js, here);
+    })();
+  </script>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎛️</text></svg>">
   <style>
     .admin-wrap { max-width: 52rem; margin: 0 auto; padding: 3rem 1.5rem 5rem; }
@@ -82,6 +101,5 @@
       <p class="form-msg" id="save-msg"></p>
     </div>
   </div>
-  <script src="../assets/admin.js"></script>
 </body>
 </html>

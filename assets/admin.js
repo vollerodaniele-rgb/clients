@@ -23,7 +23,17 @@ let plan = null;
 
 const $ = (id) => document.getElementById(id);
 
-document.addEventListener("DOMContentLoaded", async () => {
+/* The page loads this file with a timestamp to dodge the ten minute
+   cache, which means it can arrive after the document is already
+   parsed. Waiting for an event that has been and gone would leave a
+   blank page, so check before listening. */
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", boot);
+} else {
+  boot();
+}
+
+async function boot() {
   wireTokenPanel();
   // the key panel is written into the page rather than built here, so
   // it has to be folded up separately
@@ -40,7 +50,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     $("app").innerHTML = `<p class="muted">Could not load ${FILE}: ${err}</p>`;
   }
   $("save-btn").addEventListener("click", save);
-});
+}
 
 /* ============ TOKEN ============ */
 
