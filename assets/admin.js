@@ -25,6 +25,9 @@ const $ = (id) => document.getElementById(id);
 
 document.addEventListener("DOMContentLoaded", async () => {
   wireTokenPanel();
+  // the key panel is written into the page rather than built here, so
+  // it has to be folded up separately
+  makeCollapsible($("token-panel"));
   try {
     const titleEl = $("admin-title");
     if (titleEl) titleEl.textContent = CLIENT.toUpperCase() + " Admin";
@@ -75,7 +78,7 @@ function render() {
       textField("Number (e.g. 12 or 1 week)", item, "num"),
       textField("Label", item, "label")
     ));
-  }));
+  }, count(plan.deal, "tiles")));
 
   app.appendChild(panel("Next shoot", (body) => {
     body.appendChild(row(
@@ -88,7 +91,7 @@ function render() {
     ));
     body.appendChild(linesField("Checklist for the client (one per line)", plan.nextShoot, "checklist"));
     body.appendChild(clearShootControl());
-  }));
+  }, plan.nextShoot.date || "not planned"));
 
   app.appendChild(shootPickPanel());
 
@@ -100,7 +103,7 @@ function render() {
         textField("Note", item, "note")
       ));
     }, "Add shot"));
-  }));
+  }, count(plan.filmPlan.items, "shots")));
 
   app.appendChild(listPanel("Months", plan.months, () => ({
     label: "", status: "planned",
@@ -117,7 +120,7 @@ function render() {
       numField("Photos total", m.photos, "total")
     ));
     body.appendChild(textField("Notes", m, "notes", true));
-  }));
+  }, count(plan.months, "months")));
 
   if (!plan.posts) plan.posts = [];
   app.appendChild(listPanel("Posting schedule", plan.posts, () => ({
@@ -132,7 +135,9 @@ function render() {
     ));
     body.appendChild(textField("What goes out", post, "title"));
     body.appendChild(textField("Caption", post, "caption", true));
-  }));
+  }, plan.posts.length
+    ? plan.posts.filter((p) => p.status === "posted").length + " of " + plan.posts.length + " posted"
+    : "empty"));
 
   app.appendChild(importPanel());
 
@@ -147,7 +152,7 @@ function render() {
       textField("Note", doc, "note"),
       textField("Link (WeTransfer, Drive...)", doc, "url")
     ));
-  }));
+  }, count(plan.documents, "files")));
 
   app.appendChild(listPanel("Invoices", plan.invoices, () => ({
     number: "", period: "", issued: "", status: "upcoming", url: ""
@@ -161,7 +166,9 @@ function render() {
       selectField("Status", inv, "status", ["upcoming", "open", "paid"]),
       textField("Link to PDF (optional)", inv, "url")
     ));
-  }));
+  }, plan.invoices.length
+    ? plan.invoices.filter((i) => i.status === "open").length + " open"
+    : "empty"));
 
   app.appendChild(requestsPanel());
 
@@ -505,7 +512,7 @@ function shootPickPanel() {
       "portal with the dates above. Use it to offer new dates, to change a date you already " +
       "confirmed, or to put the example portal back the way it was.";
     body.appendChild(resetNote);
-  });
+  }, pick.asked ? count(pick.options, "dates") + " offered" : "off");
 
   loadPicks();
   return box;
@@ -743,6 +750,7 @@ async function loadRequests() {
     const [open, closed] = await Promise.all([fetchRequests("open"), fetchRequests("closed")]);
     drawRequests($("req-list"), open, false);
     drawRequests($("req-removed"), closed, true);
+    setPanelSummary("Ideas & requests", open.length ? open.length + " waiting" : "none waiting");
     const msg = $("req-msg");
     if (msg) {
       msg.textContent = requestKeyRejected
@@ -899,18 +907,127 @@ async function setIssueState(number, state) {
   if (!res.ok) throw new Error(String(res.status));
 }
 
-function panel(title, fill) {
+function panel(title, fill, summary) {
   const div = document.createElement("div");
   div.className = "panel";
   div.innerHTML = `<h2>${title}</h2>`;
   fill(div);
-  return div;
+  return makeCollapsible(div, summary);
 }
 
-function listPanel(title, arr, blank, fillItem) {
+/* summary is the finished line shown on the closed heading, so a panel
+   that wants to say more than a count just says it */
+function listPanel(title, arr, blank, fillItem, summary) {
   return panel(title, (body) => {
     body.appendChild(sublist(arr, blank, fillItem, "Add"));
+  }, summary);
+}
+
+/* ============ FOLDING THE PANELS AWAY ============ */
+/* There are thirteen of these now, which is more scrolling than any of
+   them is worth. Everything starts shut, with the heading carrying
+   enough of a summary that you rarely need to open it at all. What you
+   left open is remembered, because saving redraws the whole page and
+   the panel you were working in must not slam shut. */
+
+const OPEN_KEY = "clients-admin-open:" + CLIENT;
+
+function makeCollapsible(box, summary) {
+  if (!box) return box;
+  const heading = box.querySelector("h2");
+  if (!heading) return box;
+
+  const name = heading.textContent.trim();
+
+  const body = document.createElement("div");
+  body.className = "panel-body";
+  while (heading.nextSibling) body.appendChild(heading.nextSibling);
+  heading.remove();
+
+  const head = document.createElement("button");
+  head.type = "button";
+  head.className = "panel-head";
+
+  const title = document.createElement("span");
+  title.className = "panel-title";
+  title.textContent = name;
+
+  const note = document.createElement("span");
+  note.className = "panel-summary";
+  note.textContent = summary || "";
+
+  head.append(title, note, chevron());
+  box.classList.add("collapsible");
+  box.append(head, body);
+
+  setPanelOpen(box, openPanels().includes(name));
+
+  head.addEventListener("click", () => {
+    const open = head.getAttribute("aria-expanded") !== "true";
+    setPanelOpen(box, open);
+    rememberPanel(name, open);
   });
+
+  return box;
+}
+
+function setPanelOpen(box, open) {
+  box.classList.toggle("open", open);
+  box.querySelector(".panel-head").setAttribute("aria-expanded", open ? "true" : "false");
+  box.querySelector(".panel-body").hidden = !open;
+}
+
+function openPanels() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(OPEN_KEY));
+    return Array.isArray(saved) ? saved : [];
+  } catch {
+    return [];
+  }
+}
+
+function rememberPanel(name, open) {
+  const list = openPanels().filter((n) => n !== name);
+  if (open) list.push(name);
+  try {
+    localStorage.setItem(OPEN_KEY, JSON.stringify(list));
+  } catch (err) {
+    console.error("could not remember the open panels:", err);
+  }
+}
+
+/* Counts that arrive later, once a network call has finished. */
+function setPanelSummary(name, text) {
+  for (const t of document.querySelectorAll(".panel-title")) {
+    if (t.textContent.trim() === name) {
+      const note = t.parentElement.querySelector(".panel-summary");
+      if (note) note.textContent = text;
+      return;
+    }
+  }
+}
+
+function count(arr, noun) {
+  const n = (arr || []).length;
+  if (!n) return "empty";
+  return n + " " + (n === 1 && noun ? noun.replace(/s$/, "") : noun || "");
+}
+
+function chevron() {
+  const ns = "http://www.w3.org/2000/svg";
+  const svg = document.createElementNS(ns, "svg");
+  svg.setAttribute("class", "panel-arrow");
+  svg.setAttribute("viewBox", "0 0 24 24");
+  svg.setAttribute("aria-hidden", "true");
+  const path = document.createElementNS(ns, "path");
+  path.setAttribute("d", "M9 5l7 7-7 7");
+  path.setAttribute("fill", "none");
+  path.setAttribute("stroke", "currentColor");
+  path.setAttribute("stroke-width", "1.6");
+  path.setAttribute("stroke-linecap", "round");
+  path.setAttribute("stroke-linejoin", "round");
+  svg.appendChild(path);
+  return svg;
 }
 
 function sublist(arr, blank, fillItem, addLabel) {
