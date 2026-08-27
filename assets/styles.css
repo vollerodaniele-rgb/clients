@@ -265,10 +265,35 @@ body {
   transition: border-color 0.15s;
 }
 
-.pick-card:hover,
-.pick-card.armed { border-color: var(--text); }
+.pick-card:hover { border-color: var(--text); }
 .pick-card:focus-visible { outline: 2px solid var(--text); outline-offset: 3px; }
 .pick-card:disabled { cursor: default; opacity: 0.45; }
+
+/* The chosen date flips to white on black. A border alone was almost
+   invisible on a phone: black on black, twice over. */
+.pick-card.chosen {
+  background: var(--text);
+  color: var(--bg);
+  border-color: var(--text);
+}
+
+.pick-card.chosen .pick-meta { color: var(--line); }
+.pick-card.chosen .pick-cta { color: var(--bg); }
+
+.pick-confirm {
+  display: flex;
+  align-items: center;
+  gap: 1.2rem;
+  flex-wrap: wrap;
+  margin-top: 1.4rem;
+}
+
+.pick-chosen {
+  flex: 1;
+  min-width: 12rem;
+  color: var(--dim);
+  font-size: 0.95rem;
+}
 
 .pick-day {
   font-family: var(--font-display);

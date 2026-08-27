@@ -205,8 +205,8 @@ const PICK_SITE = "shoot";
 // this regex, so the admin can lift the date straight back out
 const PICK_RE = /Picked (\d{4}-\d{2}-\d{2})(?: at (\d{1,2}:\d{2}))?/;
 
-let armedPick = null;
-let armedTimer = null;
+// the option the client has tapped, held until they press Send
+let picked = null;
 
 async function setupShootPick(pick) {
   const options = ((pick && pick.options) || []).filter((o) => o && o.date);
@@ -252,16 +252,27 @@ function drawOptions(wrap, options, note) {
   wrap.innerHTML = `
     <p class="pick-lede">${esc(note || "Pick whichever date suits you and we lock it in.")}</p>
     <div class="pick-grid"></div>
+    <div class="pick-confirm" hidden>
+      <p class="pick-chosen"></p>
+      <button type="button" class="btn-send pick-send">Send</button>
+    </div>
     <p class="form-msg" id="pick-msg" role="status"></p>
   `;
+
+  picked = null;
   const grid = wrap.querySelector(".pick-grid");
   for (const opt of options) grid.appendChild(pickCard(wrap, opt));
+
+  wrap.querySelector(".pick-send").addEventListener("click", () => {
+    if (picked) sendPick(wrap, picked);
+  });
 }
 
 function pickCard(wrap, opt) {
   const btn = document.createElement("button");
   btn.type = "button";
   btn.className = "pick-card";
+  btn.setAttribute("aria-pressed", "false");
   btn.innerHTML = `
     <span class="pick-day">${esc(longDate(opt.date))}</span>
     ${opt.time ? `<span class="pick-meta">${esc(opt.time)}</span>` : ""}
@@ -270,41 +281,36 @@ function pickCard(wrap, opt) {
     <span class="pick-cta">Pick this one</span>
   `;
 
-  btn.addEventListener("click", () => {
-    // a mis-tap must never book a shoot, so it takes two
-    if (armedPick !== btn) {
-      clearArmed();
-      armedPick = btn;
-      btn.classList.add("armed");
-      setCta(btn, "Tap again to confirm");
-      armedTimer = setTimeout(clearArmed, 5000);
-      return;
-    }
-    clearArmed();
-    sendPick(wrap, opt);
-  });
+  // tapping only chooses, it never sends. Sending is the button below,
+  // so a mis-tap costs nothing and the choice is plain to see.
+  btn.addEventListener("click", () => selectPick(wrap, btn, opt));
 
   return btn;
 }
 
-function setCta(btn, text) {
-  const cta = btn.querySelector(".pick-cta");
-  if (cta) cta.textContent = text;
-}
+function selectPick(wrap, btn, opt) {
+  picked = opt;
 
-function clearArmed() {
-  clearTimeout(armedTimer);
-  if (armedPick) {
-    armedPick.classList.remove("armed");
-    setCta(armedPick, "Pick this one");
+  for (const card of wrap.querySelectorAll(".pick-card")) {
+    const on = card === btn;
+    card.classList.toggle("chosen", on);
+    card.setAttribute("aria-pressed", on ? "true" : "false");
+    const cta = card.querySelector(".pick-cta");
+    if (cta) cta.textContent = on ? "Chosen" : "Pick this one";
   }
-  armedPick = null;
+
+  wrap.querySelector(".pick-chosen").textContent =
+    longDate(opt.date) + (opt.time ? " at " + opt.time : "") + ". Send it and we lock it in.";
+  wrap.querySelector(".pick-confirm").hidden = false;
+  wrap.querySelector("#pick-msg").textContent = "";
 }
 
 async function sendPick(wrap, opt) {
   const msg = wrap.querySelector("#pick-msg");
   const buttons = wrap.querySelectorAll(".pick-card");
+  const send = wrap.querySelector(".pick-send");
   buttons.forEach((b) => { b.disabled = true; });
+  if (send) send.disabled = true;
   msg.textContent = "Sending...";
 
   const idea =
@@ -324,6 +330,7 @@ async function sendPick(wrap, opt) {
     console.error("pick submit failed:", err);
     msg.textContent = "Could not send that right now. Try again in a minute.";
     buttons.forEach((b) => { b.disabled = false; });
+    if (send) send.disabled = false;
   }
 }
 
