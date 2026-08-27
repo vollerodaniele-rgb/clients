@@ -87,6 +87,7 @@ function render() {
       textField("Focus (one line)", plan.nextShoot, "focus")
     ));
     body.appendChild(linesField("Checklist for the client (one per line)", plan.nextShoot, "checklist"));
+    body.appendChild(clearShootControl());
   }));
 
   app.appendChild(shootPickPanel());
@@ -353,6 +354,76 @@ function normalizeDate(raw) {
 /* ============ IDEAS & REQUESTS ============ */
 /* These are GitHub issues, not part of plan.json, so this panel acts
    on GitHub straight away. Nothing here waits for Save & Publish. */
+
+/* Wipes the shoot once it is done or once it is called off, so the
+   portal goes back to saying it is still to be planned rather than
+   showing a date that has been and gone. */
+
+function clearShootControl() {
+  const wrap = document.createElement("div");
+
+  const btn = document.createElement("button");
+  btn.className = "btn-mini danger";
+  btn.style.marginTop = "0.3rem";
+  btn.textContent = "Clear the next shoot";
+
+  let armed = false;
+  btn.addEventListener("click", () => {
+    // it changes what the client sees, so it takes two taps
+    if (!armed) {
+      armed = true;
+      btn.textContent = "Sure?";
+      setTimeout(() => {
+        if (armed) { armed = false; btn.textContent = "Clear the next shoot"; }
+      }, 4000);
+      return;
+    }
+    armed = false;
+    clearNextShoot(btn);
+  });
+
+  const note = document.createElement("p");
+  note.className = "muted";
+  note.style.cssText = "font-size:0.82rem;margin-top:0.5rem";
+  note.textContent = "Empties the date, time, focus and checklist, so the portal goes back to " +
+    "saying the next shoot is still to be planned. The location stays. To hand the choice " +
+    "of a new date to the client, use Ask again in the panel below.";
+
+  const msg = document.createElement("p");
+  msg.className = "form-msg";
+  msg.id = "shoot-msg";
+
+  wrap.append(btn, note, msg);
+  return wrap;
+}
+
+async function clearNextShoot(btn) {
+  const msg = $("shoot-msg");
+  if (!localStorage.getItem(TOKEN_KEY)) {
+    msg.textContent = "Save your access key first (top of the page).";
+    return;
+  }
+
+  btn.disabled = true;
+  msg.textContent = "Clearing...";
+
+  const before = JSON.parse(JSON.stringify(plan.nextShoot));
+  plan.nextShoot.date = "";
+  plan.nextShoot.time = "";
+  plan.nextShoot.focus = "";
+  plan.nextShoot.checklist = [];
+
+  if (!await save()) {
+    plan.nextShoot = before;
+    msg.textContent = "Nothing was changed. See the message at the bottom of the page.";
+    btn.disabled = false;
+    return;
+  }
+
+  render();
+  const after = $("shoot-msg");
+  if (after) after.textContent = "Cleared. The portal says the next shoot is still to be planned.";
+}
 
 /* ============ LET THE CLIENT PICK THE DATE ============ */
 /* Offer a few dates on the portal, the client taps one, it arrives as
