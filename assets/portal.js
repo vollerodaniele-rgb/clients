@@ -44,6 +44,16 @@ async function loadPlan() {
   $("tagline").textContent = data.tagline || "";
   $("deal-notes").textContent = data.dealNotes || "";
 
+  // an optional line under the tagline, used by the example portal to
+  // say it is an example. Built here rather than in the template so
+  // every existing client picks it up without being touched.
+  if (data.notice) {
+    const note = document.createElement("p");
+    note.className = "hero-notice";
+    note.textContent = data.notice;
+    $("tagline").after(note);
+  }
+
   renderDeal(data.deal || []);
   renderShoot(data.nextShoot);
   renderFilmPlan(data.filmPlan);

@@ -185,6 +185,9 @@ function renderNotes(notes) {
     <div class="note">
       ${n.title ? `<div class="t">${esc(n.title)}</div>` : ""}
       ${String(n.body || "").split("\n\n").map((para) => `<p>${esc(para)}</p>`).join("")}
+      ${n.link && n.link.url
+        ? `<p><a class="note-link" href="${esc(n.link.url)}" target="_blank" rel="noopener">${esc(n.link.text || "Have a look")}</a></p>`
+        : ""}
     </div>
   `).join("");
 }

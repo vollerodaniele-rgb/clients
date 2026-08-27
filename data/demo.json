@@ -1,0 +1,123 @@
+{
+  "name": "CAFÉ NORD",
+  "notice": "An example portal, so you can see what yours would look like. The business, the numbers and the names are invented.",
+  "tagline": "Monthly reels and photography for Café Nord. Everything about the collaboration in one place: planning, deliveries, documents and billing.",
+  "dealNotes": "What we deliver every month, agreed in June. Adjust anytime, this page always shows the current agreement.",
+  "deal": [
+    { "num": "12", "label": "Reels per month" },
+    { "num": "10-15", "label": "Photos per month" },
+    { "num": "1", "label": "Shoot day per month" },
+    { "num": "10 days", "label": "Delivery after shoot" }
+  ],
+  "nextShoot": {
+    "date": "2026-09-08",
+    "time": "15:00",
+    "location": "Café Nord, Gent",
+    "focus": "Autumn menu, the new roast, and the room at golden hour",
+    "checklist": [
+      "Menu highlights chosen",
+      "Staff availability confirmed",
+      "Window tables kept free from 18:00",
+      "New roast in stock"
+    ]
+  },
+  "filmPlan": {
+    "month": "September 2026",
+    "items": [
+      { "what": "Autumn plate, close up", "note": "Plating from the pass to the table, one continuous move." },
+      { "what": "The new roast", "note": "Grinder, pour, first cup. Sound led, no voice." },
+      { "what": "Barista on camera", "note": "Ninety seconds on why the roast changed, answering what regulars ask." },
+      { "what": "The room at golden hour", "note": "Wide, slow, no people in focus. For the top of the grid." },
+      { "what": "Team introduction", "note": "Short portraits of the three on the floor." },
+      { "what": "Photo set", "note": "Dishes, room and team, framed for feed and stories." }
+    ]
+  },
+  "months": [
+    {
+      "label": "July 2026",
+      "status": "done",
+      "reels": { "done": 12, "total": 12 },
+      "photos": { "done": 14, "total": 15 },
+      "notes": "First month. Focus on the room and the regulars."
+    },
+    {
+      "label": "August 2026",
+      "status": "done",
+      "reels": { "done": 12, "total": 12 },
+      "photos": { "done": 15, "total": 15 },
+      "notes": "Summer terrace, iced drinks, the late evening light."
+    },
+    {
+      "label": "September 2026",
+      "status": "active",
+      "reels": { "done": 4, "total": 12 },
+      "photos": { "done": 6, "total": 15 },
+      "notes": "Autumn menu launch and the new roast."
+    }
+  ],
+  "documents": [
+    { "type": "Contract", "title": "Collaboration agreement", "note": "Signed June 2026", "url": "" },
+    { "type": "Brief", "title": "Visual guideline", "note": "Tone, framing, what we never shoot", "url": "" },
+    { "type": "Delivery", "title": "August content package", "note": "12 reels and 15 photographs", "url": "" },
+    { "type": "Delivery", "title": "July content package", "note": "12 reels and 14 photographs", "url": "" }
+  ],
+  "invoices": [
+    { "number": "2026-CN-003", "period": "September 2026", "issued": "2026-09-30", "status": "upcoming", "url": "" },
+    { "number": "2026-CN-002", "period": "August 2026", "issued": "2026-08-31", "status": "open", "url": "" },
+    { "number": "2026-CN-001", "period": "July 2026", "issued": "2026-07-31", "status": "paid", "url": "" }
+  ],
+  "posts": [
+    {
+      "date": "2026-09-02",
+      "time": "12:30",
+      "platform": "Instagram Photo",
+      "title": "Window seat, short break",
+      "status": "posted",
+      "caption": "Midday at Nord. One coffee, one hour, nobody rushing you.\n\n#gent #cafegent #cafenord"
+    },
+    {
+      "date": "2026-09-05",
+      "time": "18:00",
+      "platform": "Instagram Reel",
+      "title": "The new roast",
+      "status": "posted",
+      "caption": "Darker, rounder, a little sweeter. The new roast lands this week.\n\n#coffee #gent #cafenord"
+    },
+    {
+      "date": "2026-09-11",
+      "time": "19:00",
+      "platform": "Instagram Reel",
+      "title": "Autumn plate, close up",
+      "status": "planned",
+      "caption": "The first plate of the autumn menu. It took four attempts to get right and about nine seconds to disappear.\n\n#autumnmenu #gent #cafenord"
+    },
+    {
+      "date": "2026-09-15",
+      "time": "11:00",
+      "platform": "Story",
+      "title": "Behind the bar, morning",
+      "status": "planned",
+      "caption": "How the morning starts here, before anyone is allowed to speak."
+    },
+    {
+      "date": "2026-09-18",
+      "time": "18:30",
+      "platform": "Instagram Reel",
+      "title": "Barista on camera",
+      "status": "planned",
+      "caption": "Why we changed the roast, from the person who had to taste all of them.\n\n#coffee #gent"
+    },
+    {
+      "date": "2026-09-24",
+      "time": "17:30",
+      "platform": "Carousel",
+      "title": "The room at golden hour",
+      "status": "planned",
+      "caption": "Twenty minutes a day the room does this on its own. We just turned up on time.\n\n#gent #cafenord"
+    }
+  ],
+  "contact": {
+    "line": "CAFÉ NORD x NOIR AU NOIR",
+    "email": "info@noiraunoir.com"
+  }
+}

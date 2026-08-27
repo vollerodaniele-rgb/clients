@@ -822,3 +822,15 @@ body {
   color: var(--dim);
 }
 
+
+/* a quiet line under the tagline, used by the example portal */
+.hero-notice {
+  margin-top: 0.9rem;
+  max-width: 32rem;
+  font-size: 0.8rem;
+  letter-spacing: 0.02em;
+  color: var(--dim);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 0.4rem 1rem;
+}

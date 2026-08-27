@@ -16,9 +16,18 @@
       "price": "€950",
       "per": "per month · VAT incl.",
       "features": [
-        { "what": "4 planned reels", "sub": "Chosen and written before the shoot day, filmed in one session at the clinic." },
-        { "what": "1 interview reel", "sub": "One of your specialists on camera, answering a question your clients actually ask." },
-        { "what": "10 ready to post photographs", "sub": "Edited, correctly framed for feed and stories, delivered with the reels." }
+        {
+          "what": "4 planned reels",
+          "sub": "Chosen and written before the shoot day, filmed in one session at the clinic."
+        },
+        {
+          "what": "1 interview reel",
+          "sub": "One of your specialists on camera, answering a question your clients actually ask."
+        },
+        {
+          "what": "10 ready to post photographs",
+          "sub": "Edited, correctly framed for feed and stories, delivered with the reels."
+        }
       ]
     },
     {
@@ -28,14 +37,33 @@
       "price": "€1.500",
       "per": "per month · VAT incl.",
       "features": [
-        { "what": "10 reels, planned every month", "sub": "A mix of formats agreed in advance, so the feed keeps a rhythm instead of repeating itself." },
-        { "what": "Recurring formats that build recognition", "sub": "Treatment of the week, interview setups, ASMR of the treatment room, and more." },
-        { "what": "10 to 20 ready to post photographs", "sub": "Enough to carry the feed, the stories and the website between shoots." },
-        { "what": "Posting guide", "sub": "What goes out, on which day, in which order, with the caption direction per piece." }
+        {
+          "what": "10 reels, planned every month",
+          "sub": "A mix of formats agreed in advance, so the feed keeps a rhythm instead of repeating itself."
+        },
+        {
+          "what": "Recurring formats that build recognition",
+          "sub": "Treatment of the week, interview setups, ASMR of the treatment room, and more."
+        },
+        {
+          "what": "10 to 20 ready to post photographs",
+          "sub": "Enough to carry the feed, the stories and the website between shoots."
+        },
+        {
+          "what": "Posting guide",
+          "sub": "What goes out, on which day, in which order, with the caption direction per piece."
+        }
       ],
       "mix": {
         "label": "Format mix, agreed each month",
-        "chips": ["Treatment of the week", "Interview setup", "ASMR", "Before and after", "Clinic atmosphere", "Question and answer"]
+        "chips": [
+          "Treatment of the week",
+          "Interview setup",
+          "ASMR",
+          "Before and after",
+          "Clinic atmosphere",
+          "Question and answer"
+        ]
       }
     },
     {
@@ -49,16 +77,39 @@
       "per": "per month · VAT incl.",
       "off": "Reduced for Fema",
       "features": [
-        { "what": "We redesign the whole social media page", "sub": "Grid, covers, highlights, tone of voice and the visual rules that hold it together. This happens in the first month, before anything is filmed." },
-        { "what": "One full day of brainstorming", "sub": "Your team and ours in one room, deciding what the clinic stands for and how that gets said on camera." },
-        { "what": "Everything in Signature, at a higher production level", "sub": "The full month of reels and photographs, filmed with a larger setup." },
-        { "what": "More interview and explanation reels", "sub": "Longer takes, real answers, the kind of piece that makes a hesitant client book." },
-        { "what": "Full production included", "sub": "Direction, lighting, sound, edit and grade. No separate crew or gear line on the invoice." },
-        { "what": "Visibility control, every month", "sub": "A short written read of what performed, what did not, and what we change in the next plan." }
+        {
+          "what": "We redesign the whole social media page",
+          "sub": "Grid, covers, highlights, tone of voice and the visual rules that hold it together. This happens in the first month, before anything is filmed."
+        },
+        {
+          "what": "One full day of brainstorming",
+          "sub": "Your team and ours in one room, deciding what the clinic stands for and how that gets said on camera."
+        },
+        {
+          "what": "Everything in Signature, at a higher production level",
+          "sub": "The full month of reels and photographs, filmed with a larger setup."
+        },
+        {
+          "what": "More interview and explanation reels",
+          "sub": "Longer takes, real answers, the kind of piece that makes a hesitant client book."
+        },
+        {
+          "what": "Full production included",
+          "sub": "Direction, lighting, sound, edit and grade. No separate crew or gear line on the invoice."
+        },
+        {
+          "what": "Visibility control, every month",
+          "sub": "A short written read of what performed, what did not, and what we change in the next plan."
+        }
       ],
       "mix": {
         "label": "Included in the first month",
-        "chips": ["1 · Brand day", "1 · Page redesign", "1 · Visual guideline", "Monthly performance read"]
+        "chips": [
+          "1 · Brand day",
+          "1 · Page redesign",
+          "1 · Visual guideline",
+          "Monthly performance read"
+        ]
       }
     }
   ],
@@ -73,25 +124,62 @@
     },
     {
       "title": "Your client portal",
-      "body": "Every collaboration comes with a personal portal, included in all three packages. Each step we take, plan or consider is visible there, so you always know where the month stands without having to ask.\n\nThe plan for the month, the shoot day, the pieces in edit, the finished deliverables and the posting calendar all live in one place, updated as we work."
+      "body": "Every collaboration comes with a personal portal, included in all three packages. Each step we take, plan or consider is visible there, so you always know where the month stands without having to ask.\n\nThe plan for the month, the shoot day, the pieces in edit, the finished deliverables and the posting calendar all live in one place, updated as we work.",
+      "link": {
+        "text": "See an example portal",
+        "url": "https://clients.noiraunoir.com/demo/"
+      }
     }
   ],
   "process": {
     "num": "04 · How it works",
     "title": "The Shape of a Month",
     "steps": [
-      { "n": "01", "title": "Plan", "text": "We agree the pieces for the month and the day to film them, chosen around your consultation hours so the clinic keeps running." },
-      { "n": "02", "title": "Film", "text": "One session on site. Everything for the month is captured in that day, reels and photographs together, worked calmly against the plan." },
-      { "n": "03", "title": "Deliver", "text": "You receive the finished pieces with the posting guide telling you what goes out and when across the coming weeks." }
+      {
+        "n": "01",
+        "title": "Plan",
+        "text": "We agree the pieces for the month and the day to film them, chosen around your consultation hours so the clinic keeps running."
+      },
+      {
+        "n": "02",
+        "title": "Film",
+        "text": "One session on site. Everything for the month is captured in that day, reels and photographs together, worked calmly against the plan."
+      },
+      {
+        "n": "03",
+        "title": "Deliver",
+        "text": "You receive the finished pieces with the posting guide telling you what goes out and when across the coming weeks."
+      }
     ]
   },
   "terms": [
-    { "k": "Prices", "v": "Per month, VAT included, no hidden production costs" },
-    { "k": "Deposit", "v": "33 percent on the first month, once only, to reserve the shoot" },
-    { "k": "Balance", "v": "On delivery. Every month after is settled in one payment" },
-    { "k": "Invoices", "v": "Payable within 30 days" },
-    { "k": "Shoot day", "v": "One session per month, fixed together in advance" },
-    { "k": "Client portal", "v": "Included in every package, from the first day" },
-    { "k": "Notice", "v": "30 days before the next month" }
+    {
+      "k": "Prices",
+      "v": "Per month, VAT included, no hidden production costs"
+    },
+    {
+      "k": "Deposit",
+      "v": "33 percent on the first month, once only, to reserve the shoot"
+    },
+    {
+      "k": "Balance",
+      "v": "On delivery. Every month after is settled in one payment"
+    },
+    {
+      "k": "Invoices",
+      "v": "Payable within 30 days"
+    },
+    {
+      "k": "Shoot day",
+      "v": "One session per month, fixed together in advance"
+    },
+    {
+      "k": "Client portal",
+      "v": "Included in every package, from the first day"
+    },
+    {
+      "k": "Notice",
+      "v": "30 days before the next month"
+    }
   ]
 }
