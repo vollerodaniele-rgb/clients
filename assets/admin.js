@@ -89,6 +89,8 @@ function render() {
     body.appendChild(linesField("Checklist for the client (one per line)", plan.nextShoot, "checklist"));
   }));
 
+  app.appendChild(shootPickPanel());
+
   app.appendChild(panel("What we film this month", (body) => {
     body.appendChild(textField("Month title (e.g. September 2026)", plan.filmPlan, "month"));
     body.appendChild(sublist(plan.filmPlan.items, () => ({ what: "", note: "" }), (item, wrap) => {
@@ -352,6 +354,278 @@ function normalizeDate(raw) {
 /* These are GitHub issues, not part of plan.json, so this panel acts
    on GitHub straight away. Nothing here waits for Save & Publish. */
 
+/* ============ LET THE CLIENT PICK THE DATE ============ */
+/* Offer a few dates on the portal, the client taps one, it arrives as
+   a "shoot" labelled issue and as a Telegram message. Confirming here
+   writes the pick into Next shoot and stops the portal asking. */
+
+function shootPickPanel() {
+  if (!plan.shootPick) plan.shootPick = { asked: false, note: "", options: [] };
+  const pick = plan.shootPick;
+  if (!Array.isArray(pick.options)) pick.options = [];
+  if (!plan.nextShoot) plan.nextShoot = {};
+
+  const box = panel("Let the client pick the date", (body) => {
+    const note = document.createElement("p");
+    note.className = "muted";
+    note.style.cssText = "font-size:0.9rem;margin-bottom:1rem";
+    note.textContent = "Offer two or three dates. While this is switched on the portal shows " +
+      "them in place of the next shoot card. The client taps one, you get a Telegram message, " +
+      "and confirming it below writes it into Next shoot above and switches the question off.";
+    body.appendChild(note);
+
+    body.appendChild(checkField("Show these dates on the portal", pick, "asked"));
+    body.appendChild(textField("Line above the dates (optional)", pick, "note", true));
+
+    body.appendChild(sublist(pick.options, () => ({
+      date: "",
+      time: plan.nextShoot.time || "",
+      location: plan.nextShoot.location || "",
+      focus: ""
+    }), (opt, wrap) => {
+      wrap.appendChild(row(
+        textField("Date (YYYY-MM-DD)", opt, "date"),
+        textField("Time", opt, "time")
+      ));
+      wrap.appendChild(row(
+        textField("Location", opt, "location"),
+        textField("Focus (one line)", opt, "focus")
+      ));
+    }, "Add a date"));
+
+    const head = document.createElement("h3");
+    head.style.cssText = "font-family:var(--font-display);font-size:1.05rem;margin:1.5rem 0 0.7rem";
+    head.textContent = "Picked so far";
+    body.appendChild(head);
+
+    const msg = document.createElement("p");
+    msg.className = "form-msg";
+    msg.id = "pick-msg";
+    body.appendChild(msg);
+
+    const list = document.createElement("div");
+    list.id = "pick-list";
+    list.innerHTML = '<p class="muted" style="font-size:0.9rem">Loading picks...</p>';
+    body.appendChild(list);
+
+    const reset = document.createElement("button");
+    reset.className = "btn-mini danger";
+    reset.style.marginTop = "0.8rem";
+    reset.textContent = "Ask again";
+    let armed = false;
+    reset.addEventListener("click", () => {
+      // it changes what the client sees, so it takes two taps like
+      // every other live change on this page
+      if (!armed) {
+        armed = true;
+        reset.textContent = "Sure?";
+        setTimeout(() => { if (armed) { armed = false; reset.textContent = "Ask again"; } }, 4000);
+        return;
+      }
+      armed = false;
+      resetPicks(reset);
+    });
+    body.appendChild(reset);
+
+    const resetNote = document.createElement("p");
+    resetNote.className = "muted";
+    resetNote.style.cssText = "font-size:0.82rem;margin-top:0.5rem";
+    resetNote.textContent = "Clears anything already picked and puts the question back on the " +
+      "portal with the dates above. Use it to offer new dates, to change a date you already " +
+      "confirmed, or to put the example portal back the way it was.";
+    body.appendChild(resetNote);
+  });
+
+  loadPicks();
+  return box;
+}
+
+async function loadPicks() {
+  try {
+    // read first, then look the element up: this panel is not in the
+    // page yet at the moment the call is made
+    const picks = await fetchRequests("open", "shoot");
+    drawPicks($("pick-list"), picks);
+  } catch (err) {
+    console.error("picks load failed:", err);
+    const list = $("pick-list");
+    if (list) {
+      list.innerHTML = '<p class="muted" style="font-size:0.9rem">Could not load picks (' +
+        err.message + ').</p>';
+    }
+  }
+}
+
+function drawPicks(wrap, items) {
+  if (!wrap) return;
+  wrap.innerHTML = "";
+
+  // anything that is not machine readable is not a pick we can confirm
+  const picks = items
+    .map((i) => Object.assign({ pick: parsePick(i.text) }, i))
+    .filter((i) => i.pick);
+
+  if (!picks.length) {
+    const p = document.createElement("p");
+    p.className = "muted";
+    p.style.fontSize = "0.9rem";
+    p.textContent = "Nothing picked yet.";
+    wrap.appendChild(p);
+    return;
+  }
+
+  for (const item of picks) {
+    const el = document.createElement("div");
+    el.className = "item";
+
+    const btn = document.createElement("button");
+    btn.className = "btn-mini remove";
+    btn.textContent = "Confirm";
+    btn.addEventListener("click", () => confirmPick(item, btn));
+
+    const p = document.createElement("p");
+    p.style.cssText = "font-size:0.92rem;padding-right:7rem";
+    p.textContent = item.text.split("\n").filter(Boolean).join(" · ");
+
+    const meta = document.createElement("p");
+    meta.className = "muted";
+    meta.style.cssText = "font-size:0.78rem;margin-top:0.4rem";
+    meta.textContent = "picked " + item.date;
+
+    el.append(btn, p, meta);
+    wrap.appendChild(el);
+  }
+}
+
+function parsePick(text) {
+  const s = String(text || "");
+  const when = s.match(/Picked (\d{4}-\d{2}-\d{2})(?: at (\d{1,2}:\d{2}))?/);
+  if (!when) return null;
+  const where = s.match(/^Where: (.+)$/m);
+  const focus = s.match(/^Focus: (.+)$/m);
+  return {
+    date: when[1],
+    time: when[2] || "",
+    location: where ? where[1].trim() : "",
+    focus: focus ? focus[1].trim() : ""
+  };
+}
+
+async function confirmPick(item, btn) {
+  const msg = $("pick-msg");
+  if (!localStorage.getItem(TOKEN_KEY)) {
+    msg.textContent = "Save your access key first (top of the page).";
+    return;
+  }
+
+  btn.disabled = true;
+  msg.textContent = "Confirming...";
+
+  // keep a copy: if publishing fails, the page must not be left showing
+  // a shoot date that was never saved
+  const before = {
+    nextShoot: JSON.parse(JSON.stringify(plan.nextShoot)),
+    shootPick: JSON.parse(JSON.stringify(plan.shootPick))
+  };
+
+  plan.nextShoot.date = item.pick.date;
+  plan.nextShoot.time = item.pick.time || plan.nextShoot.time || "";
+  if (item.pick.location) plan.nextShoot.location = item.pick.location;
+  if (item.pick.focus) plan.nextShoot.focus = item.pick.focus;
+  // the dates stay in the file: "Ask again" below reuses them, which is
+  // how you change a date you already confirmed
+  plan.shootPick.asked = false;
+
+  if (!await save()) {
+    plan.nextShoot = before.nextShoot;
+    plan.shootPick = before.shootPick;
+    msg.textContent = "Nothing was changed. See the message at the bottom of the page.";
+    btn.disabled = false;
+    return;
+  }
+
+  // the pick is answered, so take it off the list. A failure here is
+  // harmless: the portal has already stopped asking.
+  let closed = true;
+  try {
+    await setIssueState(item.number, "closed");
+  } catch (err) {
+    console.error("could not close the pick:", err);
+    closed = false;
+  }
+
+  render();
+  const after = $("pick-msg");
+  if (after) {
+    after.textContent = closed
+      ? "Confirmed. That is the next shoot now and the portal has stopped asking."
+      : "Confirmed and published, but the pick could not be ticked off. Check the key has Issues read and write.";
+  }
+}
+
+/* Puts the question back: clears every pick made so far and switches
+   the portal back to asking. This is also how the example portal gets
+   put back after somebody has tapped a date on it. */
+async function resetPicks(btn) {
+  const msg = $("pick-msg");
+  if (!localStorage.getItem(TOKEN_KEY)) {
+    msg.textContent = "Save your access key first (top of the page).";
+    return;
+  }
+
+  btn.disabled = true;
+  msg.textContent = "Putting the question back...";
+
+  let stuck = 0;
+  try {
+    for (const p of await fetchRequests("open", "shoot")) {
+      try {
+        await setIssueState(p.number, "closed");
+      } catch (err) {
+        console.error("could not clear a pick:", err);
+        stuck++;
+      }
+    }
+  } catch (err) {
+    console.error("could not read the picks:", err);
+    msg.textContent = "Could not read the picks (" + err.message + "). Nothing was changed.";
+    btn.disabled = false;
+    return;
+  }
+
+  const before = JSON.parse(JSON.stringify(plan.shootPick));
+  plan.shootPick.asked = true;
+
+  if (!await save()) {
+    plan.shootPick = before;
+    msg.textContent = "The picks were cleared, but the portal setting could not be published. " +
+      "See the message at the bottom of the page.";
+    btn.disabled = false;
+    return;
+  }
+
+  render();
+  const after = $("pick-msg");
+  if (after) {
+    after.textContent = stuck
+      ? "Put back, but " + stuck + " pick(s) could not be cleared. Check the key has Issues read and write."
+      : "Put back. The portal is asking again and anything picked before is cleared.";
+  }
+}
+
+function checkField(label, obj, key) {
+  const lab = document.createElement("label");
+  lab.className = "field check";
+  const input = document.createElement("input");
+  input.type = "checkbox";
+  input.checked = !!obj[key];
+  input.addEventListener("change", () => { obj[key] = input.checked; });
+  const span = document.createElement("span");
+  span.textContent = label;
+  lab.append(input, span);
+  return lab;
+}
+
 function requestsPanel() {
   const box = panel("Ideas & requests", (body) => {
     const note = document.createElement("p");
@@ -416,9 +690,11 @@ async function loadRequests() {
 
 let requestKeyRejected = false;
 
-async function fetchRequests(state) {
+/* Reads this client's issues for one label: "idea" is a request,
+   "shoot" is a date the client picked on the portal. */
+async function fetchRequests(state, label) {
   const url = `https://api.github.com/repos/${OWNER}/${REPO}/issues` +
-    `?labels=${encodeURIComponent("idea," + CLIENT_LABEL)}` +
+    `?labels=${encodeURIComponent((label || "idea") + "," + CLIENT_LABEL)}` +
     `&state=${state}&sort=created&direction=desc&per_page=100`;
 
   const t = localStorage.getItem(TOKEN_KEY);
@@ -446,11 +722,12 @@ async function fetchRequests(state) {
   return (await res.json()).filter((i) => !i.pull_request).map((i) => {
     let body = i.body || "";
     let author = i.user ? i.user.login : "anonymous";
-    const m = body.match(/\n*-{3,}\nSubmitted by: (.+?) \(via the idea box\)\s*$/);
+    // the wording after "via" differs per site, so match any of them
+    const m = body.match(/\n*-{3,}\nSubmitted by: (.+?) \(via [^)]*\)\s*$/);
     if (m) { author = m[1]; body = body.slice(0, m.index); }
     return {
       number: i.number,
-      text: body.trim() || i.title.replace(/^Idea:\s*/, ""),
+      text: body.trim() || i.title.replace(/^(Idea|Shoot|Accepted):\s*/, ""),
       author,
       date: new Date(i.created_at).toLocaleDateString("en-GB",
         { day: "numeric", month: "short", year: "numeric" })
@@ -518,16 +795,7 @@ async function setRequestState(item, state, btn) {
   msg.textContent = state === "closed" ? "Removing..." : "Restoring...";
 
   try {
-    const res = await fetch(`https://api.github.com/repos/${OWNER}/${REPO}/issues/${item.number}`, {
-      method: "PATCH",
-      headers: {
-        "Authorization": "Bearer " + token,
-        "Accept": "application/vnd.github+json",
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({ state })
-    });
-    if (!res.ok) throw new Error(String(res.status));
+    await setIssueState(item.number, state);
 
     msg.textContent = state === "closed"
       ? "Removed from the portal."
@@ -542,6 +810,22 @@ async function setRequestState(item, state, btn) {
         : ".");
     btn.disabled = false;
   }
+}
+
+/* Opening or closing an issue: a removed request and a confirmed pick
+   are the same GitHub call. Throws the status code so the caller can
+   tell a permissions problem from anything else. */
+async function setIssueState(number, state) {
+  const res = await fetch(`https://api.github.com/repos/${OWNER}/${REPO}/issues/${number}`, {
+    method: "PATCH",
+    headers: {
+      "Authorization": "Bearer " + localStorage.getItem(TOKEN_KEY),
+      "Accept": "application/vnd.github+json",
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({ state })
+  });
+  if (!res.ok) throw new Error(String(res.status));
 }
 
 function panel(title, fill) {
@@ -677,10 +961,12 @@ async function save() {
     if (!put.ok) throw new Error("publish failed (" + put.status + ")");
 
     msg.textContent = "Published! The live site updates in about a minute.";
+    return true;
   } catch (err) {
     console.error("save failed:", err);
     msg.textContent = "Error: " + err.message + (String(err.message).includes("401") || String(err.message).includes("403")
       ? " (check the access key and its permissions)" : "");
+    return false;
   } finally {
     btn.disabled = false;
   }

@@ -212,6 +212,98 @@ body {
   padding: 0.28rem 0.9rem;
 }
 
+/* A yes/no switch in the admin. Every other field stacks its label on
+   top, this one sits beside the box, so it needs its own rule. */
+.field.check {
+  flex: 0 0 100%;
+  flex-direction: row;
+  align-items: center;
+  gap: 0.6rem;
+  margin-bottom: 0.9rem;
+}
+
+.field.check input {
+  width: 1.05rem;
+  height: 1.05rem;
+  padding: 0;
+  border: 0;
+  accent-color: #ffffff;
+  cursor: pointer;
+}
+
+.field.check span {
+  font-size: 0.95rem;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--text);
+}
+
+/* ============ PICK A SHOOT DATE ============ */
+/* Stands in for the shoot card while we are asking the client to
+   choose, so the section never shows a date and a question at once. */
+.pick-lede { color: var(--dim); margin-bottom: 1.2rem; }
+
+.pick-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+  gap: 1rem;
+}
+
+.pick-card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.1rem;
+  text-align: left;
+  background: none;
+  color: var(--text);
+  font-family: var(--font-body);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 1.5rem 1.6rem;
+  cursor: pointer;
+  transition: border-color 0.15s;
+}
+
+.pick-card:hover,
+.pick-card.armed { border-color: var(--text); }
+.pick-card:focus-visible { outline: 2px solid var(--text); outline-offset: 3px; }
+.pick-card:disabled { cursor: default; opacity: 0.45; }
+
+.pick-day {
+  font-family: var(--font-display);
+  font-size: 1.45rem;
+  font-weight: 600;
+  line-height: 1.25;
+}
+
+.pick-meta { color: var(--dim); font-size: 0.9rem; }
+
+.pick-cta {
+  margin-top: 0.9rem;
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.pick-done {
+  border: 1px solid var(--text);
+  border-radius: var(--radius);
+  padding: 2rem 2.2rem;
+}
+
+.pick-kicker {
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--dim);
+  margin-bottom: 0.6rem;
+}
+
+.pick-done .pick-meta { margin-top: 0.7rem; max-width: 34rem; }
+
 /* ============ FILM PLAN ============ */
 .plan-list {
   list-style: none;
@@ -494,6 +586,8 @@ body {
 @media (max-width: 600px) {
   .hero { min-height: 55vh; }
   .shoot-card { padding: 1.5rem 1.4rem; }
+  .pick-card,
+  .pick-done { padding: 1.3rem 1.4rem; }
 }
 
 /* ============ POSTING SCHEDULE ============ */

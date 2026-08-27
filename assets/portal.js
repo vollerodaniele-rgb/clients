@@ -56,6 +56,7 @@ async function loadPlan() {
 
   renderDeal(data.deal || []);
   renderShoot(data.nextShoot);
+  setupShootPick(data.shootPick);
   renderFilmPlan(data.filmPlan);
   renderMonths(data.months || []);
   renderDocs(data.documents || []);
@@ -170,9 +171,7 @@ function renderShoot(shoot) {
   }
 
   const d = new Date(shoot.date + "T00:00:00");
-  const dateStr = d.toLocaleDateString("en-GB", {
-    weekday: "long", day: "numeric", month: "long", year: "numeric"
-  });
+  const dateStr = longDate(shoot.date);
   const days = Math.ceil((d - new Date()) / 86400000);
   const countdown =
     days > 1 ? `<div class="num">${days}</div><div class="lbl">days to go</div>` :
@@ -191,6 +190,159 @@ function renderShoot(shoot) {
       ? `<div class="shoot-checklist">${shoot.checklist.map((c) => `<span>${esc(c)}</span>`).join("")}</div>`
       : ""}
   `;
+}
+
+/* ============ PICK A SHOOT DATE ============ */
+/* Rather than a mail thread, the portal can offer a few dates and let
+   the client tap one. The tap rides the same relay as a request but is
+   labelled "shoot" instead of "idea", so it pings Telegram straight
+   away and never shows up on the requests wall. Nothing is written to
+   the site from here: the pick is an issue until it is confirmed in
+   the admin, so this page needs no key of any kind. */
+
+const PICK_SITE = "shoot";
+// the first line of a pick is written to be read by both a person and
+// this regex, so the admin can lift the date straight back out
+const PICK_RE = /Picked (\d{4}-\d{2}-\d{2})(?: at (\d{1,2}:\d{2}))?/;
+
+let armedPick = null;
+let armedTimer = null;
+
+async function setupShootPick(pick) {
+  const options = ((pick && pick.options) || []).filter((o) => o && o.date);
+  if (!pick || !pick.asked || !options.length) return;
+
+  // while we are asking, the picker stands in for the shoot card
+  const card = $("shoot-card");
+  card.hidden = true;
+
+  const wrap = document.createElement("div");
+  wrap.id = "pick-wrap";
+  card.after(wrap);
+
+  const already = await loadExistingPick();
+  if (already) {
+    drawPicked(wrap, already);
+    return;
+  }
+  drawOptions(wrap, options, pick.note);
+}
+
+/* A pick that was already made shows as picked, so reloading the page
+   or opening it on another phone cannot book the shoot twice. */
+async function loadExistingPick() {
+  try {
+    const res = await fetch(
+      `${CONFIG.submitUrl}/ideas?site=${PICK_SITE}&client=${encodeURIComponent(CLIENT)}`,
+      { cache: "no-store" }
+    );
+    if (!res.ok) throw new Error("relay " + res.status);
+    const { ideas } = await res.json();
+    for (const item of ideas || []) {
+      const m = String(item.text || "").match(PICK_RE);
+      if (m) return { date: m[1], time: m[2] || "" };
+    }
+  } catch (err) {
+    console.error("pick load failed:", err);
+  }
+  return null;
+}
+
+function drawOptions(wrap, options, note) {
+  wrap.innerHTML = `
+    <p class="pick-lede">${esc(note || "Pick whichever date suits you and we lock it in.")}</p>
+    <div class="pick-grid"></div>
+    <p class="form-msg" id="pick-msg" role="status"></p>
+  `;
+  const grid = wrap.querySelector(".pick-grid");
+  for (const opt of options) grid.appendChild(pickCard(wrap, opt));
+}
+
+function pickCard(wrap, opt) {
+  const btn = document.createElement("button");
+  btn.type = "button";
+  btn.className = "pick-card";
+  btn.innerHTML = `
+    <span class="pick-day">${esc(longDate(opt.date))}</span>
+    ${opt.time ? `<span class="pick-meta">${esc(opt.time)}</span>` : ""}
+    ${opt.location ? `<span class="pick-meta">${esc(opt.location)}</span>` : ""}
+    ${opt.focus ? `<span class="pick-meta">${esc(opt.focus)}</span>` : ""}
+    <span class="pick-cta">Pick this one</span>
+  `;
+
+  btn.addEventListener("click", () => {
+    // a mis-tap must never book a shoot, so it takes two
+    if (armedPick !== btn) {
+      clearArmed();
+      armedPick = btn;
+      btn.classList.add("armed");
+      setCta(btn, "Tap again to confirm");
+      armedTimer = setTimeout(clearArmed, 5000);
+      return;
+    }
+    clearArmed();
+    sendPick(wrap, opt);
+  });
+
+  return btn;
+}
+
+function setCta(btn, text) {
+  const cta = btn.querySelector(".pick-cta");
+  if (cta) cta.textContent = text;
+}
+
+function clearArmed() {
+  clearTimeout(armedTimer);
+  if (armedPick) {
+    armedPick.classList.remove("armed");
+    setCta(armedPick, "Pick this one");
+  }
+  armedPick = null;
+}
+
+async function sendPick(wrap, opt) {
+  const msg = wrap.querySelector("#pick-msg");
+  const buttons = wrap.querySelectorAll(".pick-card");
+  buttons.forEach((b) => { b.disabled = true; });
+  msg.textContent = "Sending...";
+
+  const idea =
+    `Picked ${opt.date}${opt.time ? " at " + opt.time : ""} (${longDate(opt.date)})` +
+    (opt.location ? `\nWhere: ${opt.location}` : "") +
+    (opt.focus ? `\nFocus: ${opt.focus}` : "");
+
+  try {
+    const res = await fetch(CONFIG.submitUrl, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ site: PICK_SITE, client: CLIENT, idea, name: "" })
+    });
+    if (!res.ok) throw new Error("relay " + res.status);
+    drawPicked(wrap, { date: opt.date, time: opt.time || "" });
+  } catch (err) {
+    console.error("pick submit failed:", err);
+    msg.textContent = "Could not send that right now. Try again in a minute.";
+    buttons.forEach((b) => { b.disabled = false; });
+  }
+}
+
+function drawPicked(wrap, chosen) {
+  wrap.innerHTML = `
+    <div class="pick-done">
+      <p class="pick-kicker">Your pick is in</p>
+      <div class="shoot-date">${esc(longDate(chosen.date))}${chosen.time ? " · " + esc(chosen.time) : ""}</div>
+      <p class="pick-meta">Thanks. We confirm it shortly and this page fills in with the full details.</p>
+    </div>
+  `;
+}
+
+function longDate(iso) {
+  const d = new Date(iso + "T00:00:00");
+  if (isNaN(d.getTime())) return iso;
+  return d.toLocaleDateString("en-GB", {
+    weekday: "long", day: "numeric", month: "long", year: "numeric"
+  });
 }
 
 function renderFilmPlan(plan) {

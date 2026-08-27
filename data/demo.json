@@ -4,10 +4,22 @@
   "tagline": "Monthly reels and photography for Café Nord. Everything about the collaboration in one place: planning, deliveries, documents and billing.",
   "dealNotes": "What we deliver every month, agreed in June. Adjust anytime, this page always shows the current agreement.",
   "deal": [
-    { "num": "12", "label": "Reels per month" },
-    { "num": "10-15", "label": "Photos per month" },
-    { "num": "1", "label": "Shoot day per month" },
-    { "num": "10 days", "label": "Delivery after shoot" }
+    {
+      "num": "12",
+      "label": "Reels per month"
+    },
+    {
+      "num": "10-15",
+      "label": "Photos per month"
+    },
+    {
+      "num": "1",
+      "label": "Shoot day per month"
+    },
+    {
+      "num": "10 days",
+      "label": "Delivery after shoot"
+    }
   ],
   "nextShoot": {
     "date": "2026-09-08",
@@ -24,47 +36,121 @@
   "filmPlan": {
     "month": "September 2026",
     "items": [
-      { "what": "Autumn plate, close up", "note": "Plating from the pass to the table, one continuous move." },
-      { "what": "The new roast", "note": "Grinder, pour, first cup. Sound led, no voice." },
-      { "what": "Barista on camera", "note": "Ninety seconds on why the roast changed, answering what regulars ask." },
-      { "what": "The room at golden hour", "note": "Wide, slow, no people in focus. For the top of the grid." },
-      { "what": "Team introduction", "note": "Short portraits of the three on the floor." },
-      { "what": "Photo set", "note": "Dishes, room and team, framed for feed and stories." }
+      {
+        "what": "Autumn plate, close up",
+        "note": "Plating from the pass to the table, one continuous move."
+      },
+      {
+        "what": "The new roast",
+        "note": "Grinder, pour, first cup. Sound led, no voice."
+      },
+      {
+        "what": "Barista on camera",
+        "note": "Ninety seconds on why the roast changed, answering what regulars ask."
+      },
+      {
+        "what": "The room at golden hour",
+        "note": "Wide, slow, no people in focus. For the top of the grid."
+      },
+      {
+        "what": "Team introduction",
+        "note": "Short portraits of the three on the floor."
+      },
+      {
+        "what": "Photo set",
+        "note": "Dishes, room and team, framed for feed and stories."
+      }
     ]
   },
   "months": [
     {
       "label": "July 2026",
       "status": "done",
-      "reels": { "done": 12, "total": 12 },
-      "photos": { "done": 14, "total": 15 },
+      "reels": {
+        "done": 12,
+        "total": 12
+      },
+      "photos": {
+        "done": 14,
+        "total": 15
+      },
       "notes": "First month. Focus on the room and the regulars."
     },
     {
       "label": "August 2026",
       "status": "done",
-      "reels": { "done": 12, "total": 12 },
-      "photos": { "done": 15, "total": 15 },
+      "reels": {
+        "done": 12,
+        "total": 12
+      },
+      "photos": {
+        "done": 15,
+        "total": 15
+      },
       "notes": "Summer terrace, iced drinks, the late evening light."
     },
     {
       "label": "September 2026",
       "status": "active",
-      "reels": { "done": 4, "total": 12 },
-      "photos": { "done": 6, "total": 15 },
+      "reels": {
+        "done": 4,
+        "total": 12
+      },
+      "photos": {
+        "done": 6,
+        "total": 15
+      },
       "notes": "Autumn menu launch and the new roast."
     }
   ],
   "documents": [
-    { "type": "Contract", "title": "Collaboration agreement", "note": "Signed June 2026", "url": "" },
-    { "type": "Brief", "title": "Visual guideline", "note": "Tone, framing, what we never shoot", "url": "" },
-    { "type": "Delivery", "title": "August content package", "note": "12 reels and 15 photographs", "url": "" },
-    { "type": "Delivery", "title": "July content package", "note": "12 reels and 14 photographs", "url": "" }
+    {
+      "type": "Contract",
+      "title": "Collaboration agreement",
+      "note": "Signed June 2026",
+      "url": ""
+    },
+    {
+      "type": "Brief",
+      "title": "Visual guideline",
+      "note": "Tone, framing, what we never shoot",
+      "url": ""
+    },
+    {
+      "type": "Delivery",
+      "title": "August content package",
+      "note": "12 reels and 15 photographs",
+      "url": ""
+    },
+    {
+      "type": "Delivery",
+      "title": "July content package",
+      "note": "12 reels and 14 photographs",
+      "url": ""
+    }
   ],
   "invoices": [
-    { "number": "2026-CN-003", "period": "September 2026", "issued": "2026-09-30", "status": "upcoming", "url": "" },
-    { "number": "2026-CN-002", "period": "August 2026", "issued": "2026-08-31", "status": "open", "url": "" },
-    { "number": "2026-CN-001", "period": "July 2026", "issued": "2026-07-31", "status": "paid", "url": "" }
+    {
+      "number": "2026-CN-003",
+      "period": "September 2026",
+      "issued": "2026-09-30",
+      "status": "upcoming",
+      "url": ""
+    },
+    {
+      "number": "2026-CN-002",
+      "period": "August 2026",
+      "issued": "2026-08-31",
+      "status": "open",
+      "url": ""
+    },
+    {
+      "number": "2026-CN-001",
+      "period": "July 2026",
+      "issued": "2026-07-31",
+      "status": "paid",
+      "url": ""
+    }
   ],
   "posts": [
     {
@@ -119,5 +205,29 @@
   "contact": {
     "line": "CAFÉ NORD x NOIR AU NOIR",
     "email": "info@noiraunoir.com"
+  },
+  "shootPick": {
+    "asked": true,
+    "note": "Three dates for the September shoot. Tap whichever suits you and we lock it in.",
+    "options": [
+      {
+        "date": "2026-09-10",
+        "time": "19:00",
+        "location": "Café Nord, Gent",
+        "focus": "Autumn menu"
+      },
+      {
+        "date": "2026-09-15",
+        "time": "10:00",
+        "location": "Café Nord, Gent",
+        "focus": "Autumn menu"
+      },
+      {
+        "date": "2026-09-22",
+        "time": "14:30",
+        "location": "Café Nord, Gent",
+        "focus": "Team portraits"
+      }
+    ]
   }
 }

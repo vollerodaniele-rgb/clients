@@ -19,6 +19,11 @@
     "focus": "",
     "checklist": []
   },
+  "shootPick": {
+    "asked": false,
+    "note": "",
+    "options": []
+  },
   "filmPlan": {
     "month": "",
     "items": []
