@@ -8,7 +8,26 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="../assets/styles.css">
+  <!-- GitHub Pages keeps these for ten minutes, which on a page you
+       work in means saving a change and being shown the old file.
+       Asking with a timestamp keeps this page current. Inserted where
+       the plain tags used to sit, so the styles below still win. -->
+  <script>
+    (function () {
+      var stamp = Date.now();
+      var here = document.currentScript;
+      var css = document.createElement("link");
+      css.rel = "stylesheet";
+      css.href = "../assets/styles.css?t=" + stamp;
+      here.parentNode.insertBefore(css, here);
+      ["dashboard.js", "proposals.js", "boxes.js"].forEach(function (file) {
+        var js = document.createElement("script");
+        js.src = "../assets/" + file + "?t=" + stamp;
+        js.async = false;
+        here.parentNode.insertBefore(js, here);
+      });
+    })();
+  </script>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎛️</text></svg>">
   <style>
     .dash { max-width: 56rem; margin: 0 auto; padding: 3rem 1.5rem 5rem; }
@@ -221,6 +240,12 @@
         <label class="field" style="flex:1; min-width:10rem"><span>Address</span>
           <input id="new-slug" type="text" maxlength="30" placeholder="fema">
         </label>
+        <label class="field" style="min-width:11rem"><span>Kind of job</span>
+          <select id="new-kind">
+            <option value="">Monthly deal</option>
+            <option value="project">One off job</option>
+          </select>
+        </label>
         <button class="btn-mini solid" id="create-client" style="align-self:flex-end">Create</button>
       </div>
       <p class="how" style="margin-top:0.6rem">
@@ -229,8 +254,5 @@
       <p class="form-msg" id="create-msg" style="margin-top:0.7rem"></p>
     </div>
   </div>
-  <script src="../assets/dashboard.js"></script>
-  <script src="../assets/proposals.js"></script>
-  <script src="../assets/boxes.js"></script>
 </body>
 </html>

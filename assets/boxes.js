@@ -10,7 +10,7 @@
 
 const BOX_FILES = ["index.html", "admin.html"];
 
-document.addEventListener("DOMContentLoaded", () => {
+onReady(() => {
   $("box-create").addEventListener("click", createBox);
 
   // typing a title suggests the address, until it is edited by hand

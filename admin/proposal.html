@@ -8,7 +8,22 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="../assets/styles.css">
+  <!-- asked for with a timestamp, so this page never runs the ten
+       minute old copy GitHub Pages would otherwise hand back -->
+  <script>
+    (function () {
+      var stamp = Date.now();
+      var here = document.currentScript;
+      var css = document.createElement("link");
+      css.rel = "stylesheet";
+      css.href = "../assets/styles.css?t=" + stamp;
+      here.parentNode.insertBefore(css, here);
+      var js = document.createElement("script");
+      js.src = "../assets/proposal-editor.js?t=" + stamp;
+      js.async = false;
+      here.parentNode.insertBefore(js, here);
+    })();
+  </script>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📄</text></svg>">
   <style>
     .dash { max-width: 52rem; margin: 0 auto; padding: 3rem 1.5rem 6rem; }
@@ -73,6 +88,5 @@
       <p class="form-msg" id="save-msg"></p>
     </div>
   </div>
-  <script src="../assets/proposal-editor.js"></script>
 </body>
 </html>

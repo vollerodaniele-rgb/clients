@@ -18,7 +18,17 @@ let plan = null;
 const $ = (id) => document.getElementById(id);
 const token = () => localStorage.getItem(TOKEN_KEY) || "";
 
-document.addEventListener("DOMContentLoaded", async () => {
+/* This page loads this file alone, so it carries its own copy rather
+   than borrowing the dashboard's. Loaded with a timestamp to dodge the
+   ten minute cache, it can arrive after the document is parsed, and
+   waiting for an event that has already fired would leave a blank
+   page. */
+function onReady(fn) {
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", fn);
+  else fn();
+}
+
+onReady(async () => {
   $("view-link").href = `../p/${SLUG}/`;
   $("save-btn").addEventListener("click", save);
 

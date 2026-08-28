@@ -1,3 +1,11 @@
+/* Loaded with a timestamp to dodge the ten minute cache, so this
+   file can arrive after the document is already parsed. Waiting for an
+   event that has been and gone would leave a blank page. */
+function onReady(fn) {
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", fn);
+  else fn();
+}
+
 /* Clients dashboard
    ------------------------------------------------------------
    Lists every client by reading the data folder from GitHub, so a
@@ -15,7 +23,7 @@ const RESERVED = ["admin", "assets", "data", "_template", "p", "proposals", "_pr
 const $ = (id) => document.getElementById(id);
 const token = () => localStorage.getItem(TOKEN_KEY) || "";
 
-document.addEventListener("DOMContentLoaded", () => {
+onReady(() => {
   wireTokenPanel();
   loadClients();
 });
@@ -256,7 +264,7 @@ function escHtml(s) {
 
 const TEMPLATE_FILES = ["index.html", "schedule.html", "admin.html"];
 
-document.addEventListener("DOMContentLoaded", () => {
+onReady(() => {
   const nameInput = $("new-name");
   const slugInput = $("new-slug");
   const preview = $("new-preview");
@@ -319,7 +327,8 @@ async function createClient() {
     }));
 
     const files = Object.fromEntries(pages);
-    files[`data/${slug}.json`] = JSON.stringify(blankPlan(displayName), null, 2) + "\n";
+    const kind = $("new-kind") ? $("new-kind").value : "";
+    files[`data/${slug}.json`] = JSON.stringify(blankPlan(displayName, kind), null, 2) + "\n";
 
     await commitFiles(files, `Add ${displayName} as a client`);
 
@@ -338,8 +347,8 @@ async function createClient() {
   }
 }
 
-function blankPlan(displayName) {
-  return {
+function blankPlan(displayName, kind) {
+  const plan = {
     name: displayName.toUpperCase(),
     tagline: "",
     dealNotes: "",
@@ -350,15 +359,46 @@ function blankPlan(displayName) {
     documents: [],
     invoices: [],
     posts: [],
-    contact: { line: displayName.toUpperCase() + " x NOIR AU NOIR", email: "info@noiraunoir.com" }
+    contact: { line: displayName.toUpperCase() + " x NOIR AU NOIR", email: "info@noiraunoir.com", note: "" }
   };
+
+  // a one off starts with the stages already in place, so the portal
+  // says something the moment it exists
+  if (kind === "project") {
+    plan.kind = "project";
+    plan.project = {
+      what: "",
+      stages: ["Booked", "Filmed", "Editing", "Delivered"],
+      stage: 0,
+      deliverBy: ""
+    };
+  }
+
+  return plan;
 }
 
 /* One commit holding every change, built with the git data API.
    `files` is a map of path to content to write, `removePaths` a list
    of paths to delete. Doing both in a single commit means a client is
    never half added or half removed. */
+/* GitHub can answer "where is main" with a position that is a moment
+   out of date, usually just after something else has pushed. The
+   commit then looks like it is not a fast forward and the branch
+   update comes back 422. Nothing is wrong and nothing was written, so
+   the cure is simply to look again and redo it. Each attempt re-reads
+   the branch, so a stale answer corrects itself. */
 async function commitFiles(files, message, removePaths, repo) {
+  for (let attempt = 0; ; attempt++) {
+    try {
+      return await commitOnce(files, message, removePaths, repo);
+    } catch (err) {
+      if (attempt >= 3 || !/\b422\b/.test(err.message)) throw err;
+      await new Promise((r) => setTimeout(r, 400 * (attempt + 1)));
+    }
+  }
+}
+
+async function commitOnce(files, message, removePaths, repo) {
   const api = `https://api.github.com/repos/${OWNER}/${repo || REPO}/git`;
   const headers = {
     "Authorization": "Bearer " + token(),
@@ -413,7 +453,7 @@ const MONEY_FILE = "money.json";
 let money = { entries: [] };
 let moneySha = null;
 
-document.addEventListener("DOMContentLoaded", () => {
+onReady(() => {
   const today = new Date();
   $("pay-date").value = today.getFullYear() + "-" +
     String(today.getMonth() + 1).padStart(2, "0") + "-" +

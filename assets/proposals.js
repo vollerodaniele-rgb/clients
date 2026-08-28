@@ -11,7 +11,7 @@
 
 const PROPOSAL_SITE = location.origin;
 
-document.addEventListener("DOMContentLoaded", () => {
+onReady(() => {
   $("prop-create").addEventListener("click", createProposal);
   loadProposals();
 });
@@ -192,7 +192,8 @@ async function createProposal() {
   } catch (err) {
     console.error("create proposal failed:", err);
     msg.textContent = "Could not create it: " + err.message +
-      (/40[13]/.test(err.message) ? " (the key needs Contents read and write)" : "");
+      (/40[13]/.test(err.message) ? " (the key needs Contents read and write)" : "") +
+      (/\b422\b/.test(err.message) ? " (something else was saving at the same moment, try again)" : "");
   } finally {
     btn.disabled = false;
   }
