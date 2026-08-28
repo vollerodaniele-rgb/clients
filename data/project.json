@@ -1,0 +1,117 @@
+{
+  "name": "DE SMET WEDDING",
+  "notice": "An example portal, so you can see what yours would look like. The business, the numbers and the names are invented.",
+  "tagline": "Wedding film and photography, 3 October 2026, Sint-Niklaas.",
+  "dealNotes": "Everything agreed for the day, in one place.",
+  "deal": [
+    {
+      "num": "1",
+      "label": "Highlight film"
+    },
+    {
+      "num": "4",
+      "label": "Short reels"
+    },
+    {
+      "num": "250",
+      "label": "Photographs"
+    }
+  ],
+  "nextShoot": {
+    "date": "2026-10-03",
+    "time": "11:00",
+    "location": "Sint-Niklaas",
+    "focus": "The full day",
+    "checklist": [
+      "Running order confirmed",
+      "Speeches timed",
+      "Photographer briefed"
+    ]
+  },
+  "filmPlan": {
+    "month": "",
+    "items": [
+      {
+        "what": "Getting ready, both houses",
+        "note": "Two locations before noon."
+      },
+      {
+        "what": "Ceremony, full coverage",
+        "note": ""
+      },
+      {
+        "what": "Portraits, golden hour",
+        "note": "20 minutes away from guests."
+      },
+      {
+        "what": "Speeches and first dance",
+        "note": ""
+      }
+    ]
+  },
+  "months": [],
+  "documents": [
+    {
+      "type": "Contract",
+      "title": "Collaboration agreement",
+      "note": "Signed June 2026",
+      "url": ""
+    },
+    {
+      "type": "Brief",
+      "title": "Visual guideline",
+      "note": "Tone, framing, what we never shoot",
+      "url": ""
+    },
+    {
+      "type": "Delivery",
+      "title": "August content package",
+      "note": "12 reels and 15 photographs",
+      "url": ""
+    },
+    {
+      "type": "Delivery",
+      "title": "July content package",
+      "note": "12 reels and 14 photographs",
+      "url": ""
+    }
+  ],
+  "invoices": [
+    {
+      "number": "2026-DS-001",
+      "period": "Deposit",
+      "issued": "2026-08-01",
+      "status": "paid",
+      "url": ""
+    },
+    {
+      "number": "2026-DS-002",
+      "period": "Balance",
+      "issued": "2026-10-03",
+      "status": "upcoming",
+      "url": ""
+    }
+  ],
+  "posts": [],
+  "contact": {
+    "line": "CAFÉ NORD x NOIR AU NOIR",
+    "email": "info@noiraunoir.com"
+  },
+  "shootPick": {
+    "asked": false,
+    "note": "",
+    "options": []
+  },
+  "kind": "project",
+  "project": {
+    "what": "A full day, from getting ready to the first dance.",
+    "stages": [
+      "Booked",
+      "Filmed",
+      "Editing",
+      "Delivered"
+    ],
+    "stage": 2,
+    "deliverBy": "2026-10-24"
+  }
+}

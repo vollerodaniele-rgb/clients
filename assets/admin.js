@@ -78,6 +78,13 @@ function render() {
   const app = $("app");
   app.innerHTML = "";
 
+  // a retainer repeats every month, a one off runs once and finishes.
+  // anything without a kind is a retainer, so nothing that predates
+  // this changes
+  const isProject = plan.kind === "project";
+
+  app.appendChild(kindPanel(isProject));
+
   app.appendChild(panel("Intro texts", (body) => {
     body.appendChild(textField("Tagline (under the big title)", plan, "tagline", true));
     body.appendChild(textField("Deal intro line", plan, "dealNotes", true));
@@ -105,8 +112,11 @@ function render() {
 
   app.appendChild(shootPickPanel());
 
-  app.appendChild(panel("What we film this month", (body) => {
-    body.appendChild(textField("Month title (e.g. September 2026)", plan.filmPlan, "month"));
+  app.appendChild(panel(isProject ? "What we film" : "What we film this month", (body) => {
+    // a one off has no month to name
+    if (!isProject) {
+      body.appendChild(textField("Month title (e.g. September 2026)", plan.filmPlan, "month"));
+    }
     body.appendChild(sublist(plan.filmPlan.items, () => ({ what: "", note: "" }), (item, wrap) => {
       wrap.appendChild(row(
         textField("What", item, "what"),
@@ -115,41 +125,46 @@ function render() {
     }, "Add shot"));
   }, count(plan.filmPlan.items, "shots")));
 
-  app.appendChild(listPanel("Months", plan.months, () => ({
-    label: "", status: "planned",
-    reels: { done: 0, total: 12 }, photos: { done: 0, total: 20 }, notes: ""
-  }), (m, body) => {
-    body.appendChild(row(
-      textField("Month label", m, "label"),
-      selectField("Status", m, "status", ["planned", "active", "done"])
-    ));
-    body.appendChild(row(
-      numField("Reels done", m.reels, "done"),
-      numField("Reels total", m.reels, "total"),
-      numField("Photos done", m.photos, "done"),
-      numField("Photos total", m.photos, "total")
-    ));
-    body.appendChild(textField("Notes", m, "notes", true));
-  }, count(plan.months, "months")));
+  // months and a posting plan only mean something for a repeating deal
+  if (!isProject) {
+    app.appendChild(listPanel("Months", plan.months, () => ({
+      label: "", status: "planned",
+      reels: { done: 0, total: 12 }, photos: { done: 0, total: 20 }, notes: ""
+    }), (m, body) => {
+      body.appendChild(row(
+        textField("Month label", m, "label"),
+        selectField("Status", m, "status", ["planned", "active", "done"])
+      ));
+      body.appendChild(row(
+        numField("Reels done", m.reels, "done"),
+        numField("Reels total", m.reels, "total"),
+        numField("Photos done", m.photos, "done"),
+        numField("Photos total", m.photos, "total")
+      ));
+      body.appendChild(textField("Notes", m, "notes", true));
+    }, count(plan.months, "months")));
+  }
 
   if (!plan.posts) plan.posts = [];
-  app.appendChild(listPanel("Posting schedule", plan.posts, () => ({
-    date: "", time: "", platform: "Instagram Reel", title: "", caption: "", status: "planned"
-  }), (post, body) => {
-    body.appendChild(row(
-      textField("Date (YYYY-MM-DD)", post, "date"),
-      textField("Time", post, "time"),
-      selectField("Where", post, "platform",
-        ["Instagram Reel", "Instagram Photo", "Carousel", "Story", "TikTok", "Facebook", "Other"]),
-      selectField("Status", post, "status", ["planned", "posted"])
-    ));
-    body.appendChild(textField("What goes out", post, "title"));
-    body.appendChild(textField("Caption", post, "caption", true));
-  }, plan.posts.length
-    ? plan.posts.filter((p) => p.status === "posted").length + " of " + plan.posts.length + " posted"
-    : "empty"));
+  if (!isProject) {
+    app.appendChild(listPanel("Posting schedule", plan.posts, () => ({
+      date: "", time: "", platform: "Instagram Reel", title: "", caption: "", status: "planned"
+    }), (post, body) => {
+      body.appendChild(row(
+        textField("Date (YYYY-MM-DD)", post, "date"),
+        textField("Time", post, "time"),
+        selectField("Where", post, "platform",
+          ["Instagram Reel", "Instagram Photo", "Carousel", "Story", "TikTok", "Facebook", "Other"]),
+        selectField("Status", post, "status", ["planned", "posted"])
+      ));
+      body.appendChild(textField("What goes out", post, "title"));
+      body.appendChild(textField("Caption", post, "caption", true));
+    }, plan.posts.length
+      ? plan.posts.filter((p) => p.status === "posted").length + " of " + plan.posts.length + " posted"
+      : "empty"));
 
-  app.appendChild(importPanel());
+    app.appendChild(importPanel());
+  }
 
   app.appendChild(listPanel("Documents & deliveries", plan.documents, () => ({
     type: "Delivery", title: "", note: "", url: ""
@@ -371,6 +386,105 @@ function normalizeDate(raw) {
 /* ============ IDEAS & REQUESTS ============ */
 /* These are GitHub issues, not part of plan.json, so this panel acts
    on GitHub straight away. Nothing here waits for Save & Publish. */
+
+/* ============ WHAT KIND OF JOB ============ */
+/* One switch decides which half of the portal applies. A retainer
+   repeats: months, a posting plan, progress per month. A one off runs
+   once: a stage tracker and a delivery date instead. */
+
+const DEFAULT_STAGES = ["Booked", "Filmed", "Editing", "Delivered"];
+
+function kindPanel(isProject) {
+  if (!plan.project) plan.project = { what: "", stages: [...DEFAULT_STAGES], stage: 0, deliverBy: "" };
+  const project = plan.project;
+  if (!Array.isArray(project.stages) || !project.stages.length) {
+    project.stages = [...DEFAULT_STAGES];
+  }
+
+  return panel("Kind of job", (body) => {
+    const note = document.createElement("p");
+    note.className = "muted";
+    note.style.cssText = "font-size:0.9rem;margin-bottom:1rem";
+    note.textContent = "A monthly deal shows months and a posting plan. A one off job shows " +
+      "where the work has got to and when it lands, and hides the monthly parts on both the " +
+      "portal and this page.";
+    body.appendChild(note);
+
+    // changing this changes which panels exist, so it redraws
+    body.appendChild(switchField("This is a", plan, "kind",
+      [["", "Monthly deal"], ["project", "One off job"]], render));
+
+    if (!isProject) return;
+
+    body.appendChild(textField("What the job is (one line)", project, "what"));
+    body.appendChild(row(
+      textField("Delivered by (YYYY-MM-DD)", project, "deliverBy"),
+      stageField(project)
+    ));
+    body.appendChild(linesField("The stages, in order, one per line", project, "stages"));
+
+    const hint = document.createElement("p");
+    hint.className = "muted";
+    hint.style.cssText = "font-size:0.82rem;margin-top:0.5rem";
+    hint.textContent = "Rename these to whatever you call them. The client sees the one you " +
+      "are on marked, everything before it filled in, everything after it grey.";
+    body.appendChild(hint);
+  }, isProject ? stageSummary(project) : "monthly");
+}
+
+function stageSummary(project) {
+  const list = project.stages || DEFAULT_STAGES;
+  const at = Math.max(0, Math.min(list.length - 1, Number(project.stage) || 0));
+  return String(list[at] || "").toLowerCase() || "one off";
+}
+
+/* The current stage is picked by name but stored as a position, so
+   renaming a stage never loses where the job is. */
+function stageField(project) {
+  const lab = document.createElement("label");
+  lab.className = "field";
+  const span = document.createElement("span");
+  span.textContent = "Where it is now";
+  const sel = document.createElement("select");
+
+  (project.stages || DEFAULT_STAGES).forEach((name, i) => {
+    const opt = document.createElement("option");
+    opt.value = String(i);
+    opt.textContent = name;
+    if (Number(project.stage) === i) opt.selected = true;
+    sel.appendChild(opt);
+  });
+
+  sel.addEventListener("change", () => { project.stage = Number(sel.value); });
+  lab.append(span, sel);
+  return lab;
+}
+
+/* Like selectField, but the stored value and the label differ and a
+   change can trigger something, which the kind switch needs. */
+function switchField(label, obj, key, pairs, onChange) {
+  const lab = document.createElement("label");
+  lab.className = "field";
+  const span = document.createElement("span");
+  span.textContent = label;
+  const sel = document.createElement("select");
+
+  for (const [value, text] of pairs) {
+    const opt = document.createElement("option");
+    opt.value = value;
+    opt.textContent = text;
+    if ((obj[key] || "") === value) opt.selected = true;
+    sel.appendChild(opt);
+  }
+
+  sel.addEventListener("change", () => {
+    obj[key] = sel.value;
+    if (onChange) onChange();
+  });
+
+  lab.append(span, sel);
+  return lab;
+}
 
 /* Wipes the shoot once it is done or once it is called off, so the
    portal goes back to saying it is still to be planned rather than

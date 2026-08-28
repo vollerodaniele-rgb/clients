@@ -301,6 +301,77 @@ body {
   color: var(--text);
 }
 
+/* ============ WHERE WE ARE (one off projects) ============ */
+/* A line with four marks on it. Done and current are white, still to
+   come is grey. No colour and no shadow, so the state is carried by
+   weight and fill alone. */
+.stage-row {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
+  gap: 0.5rem;
+}
+
+.stage {
+  position: relative;
+  border-top: 1px solid var(--line);
+  padding-top: 1.3rem;
+  min-width: 0;
+}
+
+.stage::before {
+  content: "";
+  position: absolute;
+  top: -5px;
+  left: 0;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--bg);
+  border: 1px solid var(--line);
+}
+
+.stage.done,
+.stage.now { border-top-color: var(--text); }
+
+.stage.done::before,
+.stage.now::before {
+  background: var(--text);
+  border-color: var(--text);
+}
+
+/* the one they are on reads loudest */
+.stage.now::before {
+  top: -7px;
+  width: 13px;
+  height: 13px;
+}
+
+.stage-name {
+  display: block;
+  font-size: 0.78rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--dim);
+  overflow-wrap: break-word;
+}
+
+.stage.done .stage-name { color: var(--text); }
+.stage.now .stage-name { color: var(--text); font-weight: 600; }
+
+.stage-note {
+  margin-top: 1.4rem;
+  font-family: var(--font-display);
+  font-size: clamp(1.2rem, 3vw, 1.6rem);
+  font-weight: 600;
+}
+
+@media (max-width: 600px) {
+  .stage-row { gap: 0.35rem; }
+  .stage { padding-top: 1.1rem; }
+  .stage-name { font-size: 0.62rem; letter-spacing: 0.06em; }
+}
+
 /* ============ PICK A SHOOT DATE ============ */
 /* Stands in for the shoot card while we are asking the client to
    choose, so the section never shows a date and a question at once. */

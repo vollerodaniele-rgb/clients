@@ -62,6 +62,8 @@ async function loadPlan() {
   renderDocs(data.documents || []);
   renderInvoices(data.invoices || []);
   renderFooter(data.contact);
+  // last, so it can override headings the renders above just set
+  if (data.kind === "project") setupProject(data);
 
   loadRequests();
   if (CONFIG.submitUrl) setupRequestForm();
@@ -190,6 +192,72 @@ function renderShoot(shoot) {
       ? `<div class="shoot-checklist">${shoot.checklist.map((c) => `<span>${esc(c)}</span>`).join("")}</div>`
       : ""}
   `;
+}
+
+/* ============ ONE OFF PROJECTS ============ */
+/* A retainer is organised around time: months repeating, a posting
+   plan, progress bars per month. A one off is organised around
+   progress: there is one job, and the only thing the client wants to
+   know is where it is and when they get it. Same portal, same files,
+   one field in the data decides which sections apply. Anything without
+   a kind is a retainer, so every client that predates this is
+   untouched. */
+
+const DEFAULT_STAGES = ["Booked", "Filmed", "Editing", "Delivered"];
+
+function setupProject(data) {
+  const project = data.project || {};
+
+  // months and the posting plan measure a repeating deal, so neither
+  // means anything for a single job
+  const months = $("months");
+  if (months) months.hidden = true;
+  const nav = document.querySelector(".hero-nav");
+  if (nav) nav.hidden = true;
+
+  const dealHead = document.querySelector("#deal .section-head h2");
+  if (dealHead) dealHead.textContent = "What You Get";
+  const filmTitle = $("filmplan-title");
+  if (filmTitle) filmTitle.textContent = "What We Film";
+
+  renderStages(project);
+}
+
+/* The strip that answers "where is my film" without an email. */
+function renderStages(project) {
+  const stages = (project.stages || []).filter(Boolean);
+  const list = stages.length ? stages : DEFAULT_STAGES;
+  const at = Math.max(0, Math.min(list.length - 1, Number(project.stage) || 0));
+  const done = at === list.length - 1;
+
+  const section = document.createElement("section");
+  section.id = "progress";
+  section.className = "section";
+  section.innerHTML = `
+    <div class="section-head"><h2>Where We Are</h2></div>
+    ${project.what ? `<p class="section-lede">${esc(project.what)}</p>` : ""}
+    <div class="stage-row">
+      ${list.map((name, i) => `
+        <div class="stage ${i < at ? "done" : i === at ? "now" : ""}">
+          <span class="stage-name">${esc(name)}</span>
+        </div>
+      `).join("")}
+    </div>
+    ${deliveryLine(project, done)}
+  `;
+
+  const deal = $("deal");
+  if (deal) deal.before(section);
+}
+
+function deliveryLine(project, done) {
+  if (done) {
+    return `<p class="stage-note">${project.deliverBy
+      ? "Delivered on " + esc(longDate(project.deliverBy)) + "."
+      : "Delivered."}</p>`;
+  }
+  if (!project.deliverBy) return "";
+  return `<p class="stage-note">Delivered by ${esc(longDate(project.deliverBy))}.</p>`;
 }
 
 /* ============ PICK A SHOOT DATE ============ */

@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Posting Plan</title>
+  <meta name="robots" content="noindex, nofollow">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/styles.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🗓️</text></svg>">
+</head>
+<body>
+
+  <header class="hero">
+    <p class="hero-kicker" id="client-name">&nbsp;</p>
+    <h1 class="hero-title">Posting Plan</h1>
+    <p class="hero-sub">
+      What goes out, on which day, and the caption ready to copy.
+      Everything for the month in one place.
+    </p>
+    <nav class="hero-nav">
+      <a href="index.html">Back to the portal</a>
+      <a href="#calendar">Calendar</a>
+      <a href="#posts">The posts</a>
+    </nav>
+  </header>
+
+  <main>
+    <section id="calendar" class="section">
+      <div class="section-head">
+        <h2 id="month-title">Loading...</h2>
+        <div class="month-nav">
+          <button type="button" class="btn-month" id="prev-month" aria-label="Previous month">&larr;</button>
+          <button type="button" class="btn-month" id="today-month">This month</button>
+          <button type="button" class="btn-month" id="next-month" aria-label="Next month">&rarr;</button>
+        </div>
+      </div>
+      <div class="cal" id="cal"></div>
+      <p class="cal-legend">
+        <span class="legend-item"><span class="dot planned"></span> planned</span>
+        <span class="legend-item"><span class="dot posted"></span> posted</span>
+      </p>
+    </section>
+
+    <section id="posts" class="section">
+      <div class="section-head"><h2>The Posts</h2></div>
+      <p class="section-lede" id="posts-lede">Tap a caption to copy it.</p>
+      <div class="post-list" id="post-list"></div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <p id="contact-line">NOIR AU NOIR</p>
+    <p class="muted">Questions about the plan? One message away.</p>
+  </footer>
+
+  <script src="../assets/schedule.js"></script>
+</body>
+</html>

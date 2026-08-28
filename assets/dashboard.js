@@ -106,6 +106,17 @@ async function listClientNames() {
     .sort();
 }
 
+function describeStage(project) {
+  const p = project || {};
+  const stages = (p.stages || []).filter(Boolean);
+  const list = stages.length ? stages : ["Booked", "Filmed", "Editing", "Delivered"];
+  const at = Math.max(0, Math.min(list.length - 1, Number(p.stage) || 0));
+  const where = list[at];
+  return at === list.length - 1
+    ? where
+    : where + (p.deliverBy ? ", due " + p.deliverBy : "");
+}
+
 async function countRequests(name) {
   try {
     const res = await fetch(`${RELAY}/ideas?site=clients&client=${encodeURIComponent(name)}`);
@@ -125,18 +136,24 @@ function clientCard({ name, plan, requests }) {
     ? describeShoot(plan.nextShoot.date)
     : "No shoot planned";
 
+  // a one off job has no posting plan to report on, so the card shows
+  // how far the work has got instead
+  const isProject = plan.kind === "project";
   const posts = (plan.posts || []).length;
   const planned = (plan.posts || []).filter((p) => p.status !== "posted").length;
+  const second = isProject
+    ? describeStage(plan.project)
+    : posts ? `${planned} of ${posts} posts still to go out` : "No posting plan yet";
 
   card.innerHTML = `
     <div class="client-name">${escHtml(title)}</div>
     <div class="client-line">${escHtml(shoot)}</div>
-    <div class="client-line">${posts ? `${planned} of ${posts} posts still to go out` : "No posting plan yet"}</div>
+    <div class="client-line">${escHtml(second)}</div>
     ${requests ? `<span class="client-flag">${requests} request${requests === 1 ? "" : "s"} waiting</span>` : ""}
     <div class="client-links">
       <a class="btn-mini solid" href="../${name}/admin.html">Edit</a>
       <a class="btn-mini" href="../${name}/">Portal</a>
-      <a class="btn-mini" href="../${name}/schedule.html">Plan</a>
+      ${isProject ? "" : `<a class="btn-mini" href="../${name}/schedule.html">Plan</a>`}
     </div>
     <p class="form-msg card-msg"></p>
   `;
