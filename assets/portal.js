@@ -61,9 +61,10 @@ async function loadPlan() {
   renderMonths(data.months || []);
   renderDocs(data.documents || []);
   renderInvoices(data.invoices || []);
-  renderFooter(data.contact);
+  const isProject = data.kind === "project";
+  renderFooter(data.contact, isProject);
   // last, so it can override headings the renders above just set
-  if (data.kind === "project") setupProject(data);
+  if (isProject) setupProject(data);
 
   loadRequests();
   if (CONFIG.submitUrl) setupRequestForm();
@@ -522,13 +523,20 @@ function renderInvoices(invoices) {
   }
 }
 
-function renderFooter(contact) {
+function renderFooter(contact, isProject) {
   if (!contact) return;
   $("contact-line").textContent = contact.line || "NOIR AU NOIR";
-  if (contact.email) {
-    const p = document.querySelector(".footer .muted");
-    p.innerHTML = `Questions about planning or content? <a href="mailto:${esc(contact.email)}">${esc(contact.email)}</a>`;
-  }
+
+  // "planning and content" is retainer language. A wedding client is
+  // not planning anything, they are waiting for a film.
+  const question = contact.note || (isProject
+    ? "Questions about the day or the film?"
+    : "Questions about planning or content?");
+
+  const p = document.querySelector(".footer .muted");
+  p.innerHTML = contact.email
+    ? `${esc(question)} <a href="mailto:${esc(contact.email)}">${esc(contact.email)}</a>`
+    : `${esc(question)} One message away.`;
 }
 
 function esc(s) {

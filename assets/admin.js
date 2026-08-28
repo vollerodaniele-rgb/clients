@@ -202,7 +202,12 @@ function render() {
       textField("Footer line", plan.contact, "line"),
       textField("Email", plan.contact, "email")
     ));
-  }));
+    body.appendChild(textField(
+      isProject
+        ? "Question above the email (blank uses: Questions about the day or the film?)"
+        : "Question above the email (blank uses: Questions about planning or content?)",
+      plan.contact, "note"));
+  }, plan.contact.line || ""));
 }
 
 /* ============ IMPORT A WRITTEN PLAN ============ */
