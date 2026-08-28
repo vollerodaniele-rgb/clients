@@ -229,5 +229,16 @@
         "focus": "Team portraits"
       }
     ]
+  },
+  "project": {
+    "what": "",
+    "stages": [
+      "Booked",
+      "Filmed",
+      "Editing",
+      "Delivered"
+    ],
+    "stage": 0,
+    "deliverBy": ""
   }
 }
