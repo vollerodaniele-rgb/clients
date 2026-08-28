@@ -32,7 +32,10 @@ async function loadProposals() {
     const [filesRes, acceptedRes] = await Promise.all([
       fetch(`https://api.github.com/repos/${OWNER}/${REPO}/contents/proposals`,
         { headers, cache: "no-store" }),
-      fetch(`https://api.github.com/repos/${OWNER}/${REPO}/issues?labels=accepted&state=all&per_page=100`,
+      // open only, so clearing a wrong one actually clears it. Reading
+      // every state meant a mistaken acceptance could never be undone
+      // and the dashboard reported a signed client forever.
+      fetch(`https://api.github.com/repos/${OWNER}/${REPO}/issues?labels=accepted&state=open&per_page=100`,
         { headers, cache: "no-store" })
     ]);
 
@@ -50,6 +53,7 @@ async function loadProposals() {
         if (!tag) continue;
         const slug = tag.slice("proposal:".length);
         (accepted[slug] = accepted[slug] || []).push({
+          number: issue.number,
           title: issue.title.replace(/^Accepted:\s*/, ""),
           when: new Date(issue.created_at).toLocaleDateString("en-GB", { day: "numeric", month: "short" })
         });
@@ -137,7 +141,50 @@ function proposalRow({ slug, name, accepted }) {
   }, row);
 
   row.append(open, edit, copy, message, remove);
+  if (accepted.length) row.insertBefore(notRealButton(name, accepted, row), remove);
   return row;
+}
+
+/* Takes back an acceptance that was never real: a test, a mis-tap, or
+   somebody trying the page out. Without this the dashboard reports a
+   signed client that is not signed, on the one screen meant to say
+   where the business stands. */
+function notRealButton(name, accepted, row) {
+  const btn = smallButton("Not real", null);
+  const many = accepted.length > 1;
+  let armed = false;
+
+  btn.addEventListener("click", async () => {
+    if (!armed) {
+      armed = true;
+      btn.textContent = many ? `Clear all ${accepted.length}?` : "Sure?";
+      setTimeout(() => { if (armed) { armed = false; btn.textContent = "Not real"; } }, 5000);
+      return;
+    }
+    armed = false;
+
+    const msg = $("prop-msg");
+    if (!token()) { msg.textContent = "Save your access key first."; return; }
+
+    btn.disabled = true;
+    msg.textContent = "Taking it back...";
+
+    try {
+      for (const a of accepted) await setIssueState(a.number, "closed");
+      msg.textContent = many
+        ? `${name} is back to waiting, ${accepted.length} acceptances cleared.`
+        : `${name} is back to waiting.`;
+      loadProposals();
+    } catch (err) {
+      console.error("could not clear the acceptance:", err);
+      msg.textContent = "Could not clear it: " + err.message +
+        (/40[13]/.test(err.message) ? " (the key needs Issues read and write)" : "");
+      btn.disabled = false;
+      btn.textContent = "Not real";
+    }
+  });
+
+  return btn;
 }
 
 function link(href, text, external) {

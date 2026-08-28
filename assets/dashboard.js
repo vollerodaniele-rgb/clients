@@ -381,6 +381,22 @@ function blankPlan(displayName, kind) {
    `files` is a map of path to content to write, `removePaths` a list
    of paths to delete. Doing both in a single commit means a client is
    never half added or half removed. */
+/* Opening or closing an issue. Shared, because a request being put
+   back, an acceptance being taken back and a pick being confirmed are
+   all the same call. */
+async function setIssueState(number, state, repo) {
+  const res = await fetch(`https://api.github.com/repos/${OWNER}/${repo || REPO}/issues/${number}`, {
+    method: "PATCH",
+    headers: {
+      "Authorization": "Bearer " + token(),
+      "Accept": "application/vnd.github+json",
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({ state })
+  });
+  if (!res.ok) throw new Error("GitHub " + res.status);
+}
+
 /* GitHub can answer "where is main" with a position that is a moment
    out of date, usually just after something else has pushed. The
    commit then looks like it is not a fast forward and the branch
