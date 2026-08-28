@@ -3,7 +3,10 @@
    event that has been and gone would leave a blank page. */
 function onReady(fn) {
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", fn);
-  else fn();
+  // deferred, never run on the spot: this file may arrive after the
+  // page is parsed, and running now would reach declarations further
+  // down that do not exist yet
+  else setTimeout(fn, 0);
 }
 
 /* Clients dashboard
@@ -49,6 +52,9 @@ function wireTokenPanel() {
 
 async function loadClients() {
   const grid = $("client-grid");
+
+  // so a card knows whether it can offer to write to them
+  await loadContacts();
 
   let names = [];
   try {
@@ -171,8 +177,46 @@ function clientCard({ name, plan, requests }) {
     name: plan.name || name,
     url: `${location.origin}/${name}/`
   }, links));
+  // only where an address is on file, so the button never appears
+  // promising something it cannot do
+  if (contacts[name] && contacts[name].email) {
+    links.appendChild(welcomeButton(name, plan.name || name, contacts[name].email, card));
+  }
   links.appendChild(removeButton(name, card));
   return card;
+}
+
+/* Sends the welcome by hand: for a portal made before the address was
+   known, or when the tab was closed before it went live. Two taps,
+   because it puts a mail in a client's inbox. */
+function welcomeButton(slug, name, email, card) {
+  const btn = document.createElement("button");
+  btn.className = "btn-mini";
+  btn.textContent = "Send welcome";
+  let armed = false;
+
+  btn.addEventListener("click", async () => {
+    const msg = card.querySelector(".card-msg");
+    if (!armed) {
+      armed = true;
+      btn.textContent = "Send to " + email + "?";
+      setTimeout(() => { if (armed) { armed = false; btn.textContent = "Send welcome"; } }, 5000);
+      return;
+    }
+    armed = false;
+
+    if (!token()) { msg.textContent = "Save your access key first."; return; }
+    btn.disabled = true;
+    btn.textContent = "Sending...";
+    msg.textContent = "";
+
+    const sent = await sendWelcome(slug, name, email);
+    btn.textContent = "Send welcome";
+    btn.disabled = false;
+    msg.textContent = sent === true ? "Welcome sent to " + email + "." : "Did not send: " + sent;
+  });
+
+  return btn;
 }
 
 /* Removing takes the whole client away, so it asks twice and names
@@ -335,9 +379,17 @@ async function createClient() {
     msg.innerHTML = `<b>${escHtml(displayName)}</b> is ready. ` +
       `It goes live in about a minute at clients.noiraunoir.com/${escHtml(slug)}/ ` +
       `<a href="../${escHtml(slug)}/admin.html">Open its admin</a>`;
-    $("new-name").value = "";
-    $("new-slug").value = "";
+
+    const email = ($("new-email") ? $("new-email").value : "").trim();
+    for (const id of ["new-name", "new-slug", "new-email"]) if ($(id)) $(id).value = "";
     loadClients();
+
+    if (email) {
+      // remembered privately, never in the client's own file: those are
+      // public and an address in one is an address on the open internet
+      await rememberContact(slug, displayName, email);
+      await welcomeWhenLive(slug, displayName, email, msg);
+    }
   } catch (err) {
     console.error("create client failed:", err);
     msg.textContent = "Could not create it: " + err.message +
@@ -381,6 +433,104 @@ function blankPlan(displayName, kind) {
    `files` is a map of path to content to write, `removePaths` a list
    of paths to delete. Doing both in a single commit means a client is
    never half added or half removed. */
+/* ============ CONTACTS AND THE WELCOME ============ */
+/* Client addresses live in the private repo beside the money, for the
+   same reason: everything under clients/ is public, so an address
+   written there is an address published to the world. */
+
+const CONTACTS_FILE = "contacts.json";
+let contacts = {};
+let contactsSha = null;
+
+async function loadContacts() {
+  if (!token()) return;
+  try {
+    const res = await fetch(
+      `https://api.github.com/repos/${OWNER}/${MONEY_REPO}/contents/${CONTACTS_FILE}`,
+      { headers: { Authorization: "Bearer " + token(), Accept: "application/vnd.github+json" }, cache: "no-store" }
+    );
+    if (res.status === 404) { contacts = {}; contactsSha = null; return; }
+    if (!res.ok) return;
+    const file = await res.json();
+    contactsSha = file.sha;
+    contacts = JSON.parse(decodeURIComponent(escape(atob(file.content.replace(/\n/g, "")))));
+  } catch (err) {
+    console.error("contacts load failed:", err);
+  }
+}
+
+async function rememberContact(slug, name, email) {
+  await loadContacts();
+  contacts[slug] = { name, email };
+
+  const body = {
+    message: `Remember how to reach ${name}`,
+    content: btoa(unescape(encodeURIComponent(JSON.stringify(contacts, null, 2) + "\n")))
+  };
+  if (contactsSha) body.sha = contactsSha;
+
+  try {
+    const res = await fetch(
+      `https://api.github.com/repos/${OWNER}/${MONEY_REPO}/contents/${CONTACTS_FILE}`,
+      {
+        method: "PUT",
+        headers: {
+          Authorization: "Bearer " + token(),
+          Accept: "application/vnd.github+json",
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(body)
+      }
+    );
+    if (res.ok) contactsSha = (await res.json()).content.sha;
+  } catch (err) {
+    console.error("could not remember the contact:", err);
+  }
+}
+
+/* A welcome pointing at a page that is still building is worse than no
+   welcome, and Pages takes one to three minutes. So it waits for the
+   portal to actually answer before sending. */
+async function welcomeWhenLive(slug, name, email, msg) {
+  const line = document.createElement("div");
+  line.style.cssText = "margin-top:0.5rem;font-size:0.9rem";
+  line.textContent = "Waiting for the portal to go live before sending the welcome...";
+  msg.appendChild(line);
+
+  const until = Date.now() + 5 * 60 * 1000;
+  while (Date.now() < until) {
+    try {
+      const res = await fetch(`../${slug}/?t=${Date.now()}`, { cache: "no-store" });
+      if (res.ok) break;
+    } catch { /* still building */ }
+    await new Promise((r) => setTimeout(r, 6000));
+  }
+
+  line.textContent = "Portal is live. Sending the welcome...";
+  const sent = await sendWelcome(slug, name, email);
+  line.textContent = sent === true
+    ? `Portal is live and the welcome is on its way to ${email}.`
+    : `Portal is live, but the welcome did not send (${sent}). Use Send welcome on the card.`;
+}
+
+/* The relay checks this key against GitHub before it will mail anyone,
+   which is what stops the endpoint being a way to send mail from this
+   domain to strangers. */
+async function sendWelcome(slug, name, email) {
+  try {
+    const res = await fetch(`${RELAY}/welcome`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ key: token(), client: slug, name, email })
+    });
+    if (res.ok) return true;
+    const body = await res.json().catch(() => ({}));
+    return body.error || ("error " + res.status);
+  } catch (err) {
+    return String(err);
+  }
+}
+
 /* Opening or closing an issue. Shared, because a request being put
    back, an acceptance being taken back and a pick being confirmed are
    all the same call. */

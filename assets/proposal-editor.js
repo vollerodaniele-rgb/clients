@@ -25,7 +25,10 @@ const token = () => localStorage.getItem(TOKEN_KEY) || "";
    page. */
 function onReady(fn) {
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", fn);
-  else fn();
+  // deferred, never run on the spot: this file may arrive after the
+  // page is parsed, and running now would reach declarations further
+  // down that do not exist yet
+  else setTimeout(fn, 0);
 }
 
 onReady(async () => {

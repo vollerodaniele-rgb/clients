@@ -30,7 +30,8 @@ const $ = (id) => document.getElementById(id);
 if (document.readyState === "loading") {
   document.addEventListener("DOMContentLoaded", boot);
 } else {
-  boot();
+  // deferred, so the rest of this file finishes declaring itself
+  setTimeout(boot, 0);
 }
 
 async function boot() {
