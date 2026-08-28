@@ -170,6 +170,8 @@ async function createProposal() {
   const prices = [$("prop-p1").value.trim(), $("prop-p2").value.trim(), $("prop-p3").value.trim()];
   if (!prices.some(Boolean)) { msg.textContent = "Put in at least one price."; return; }
 
+  const kind = $("prop-kind") ? $("prop-kind").value : "";
+
   btn.disabled = true;
   msg.textContent = "Building the proposal...";
   const slug = newSlug();
@@ -181,8 +183,8 @@ async function createProposal() {
     await commitFiles({
       [`p/${slug}/index.html`]: await page.text(),
       [`proposals/${slug}.json`]: JSON.stringify(
-        blankProposal(client, $("prop-sub").value.trim(), prices), null, 2) + "\n"
-    }, `Add the ${client} proposal`);
+        blankProposal(client, $("prop-sub").value.trim(), prices, kind), null, 2) + "\n"
+    }, `Add the ${client} ${kind === "project" ? "one off " : ""}proposal`);
 
     msg.innerHTML = `Ready in about a minute at <b>${escHtml(PROPOSAL_SITE + "/p/" + slug + "/")}</b> &middot; ` +
       `<a href="proposal.html#${encodeURIComponent(slug)}">edit the wording</a>`;
@@ -201,22 +203,86 @@ async function createProposal() {
 
 /* The wording that repeats from one proposal to the next, with the
    prices dropped in. All of it is editable afterwards. */
-function blankProposal(client, subtitle, prices) {
-  const names = ["Essential", "Signature", "Rebrand"];
-  const tags = [
-    "A steady monthly presence",
-    "A full month of content, planned as one",
-    "A new identity, then the production to carry it"
-  ];
-  const nums = ["01 · Entry level", "02 · The working month", "03 · The full build"];
+/* A monthly deal and a one off job read differently in about fifteen
+   places, from the word under every price to the last term. Rewriting
+   all of that by hand for every project proposal is exactly the sort
+   of thing that stops getting done, so the kind is chosen once and the
+   whole document is written to match. Everything stays editable. */
+const PROPOSAL_WORDING = {
+  monthly: {
+    kicker: "Videography Proposal · Monthly",
+    per: "per month · VAT incl.",
+    names: ["Essential", "Signature", "Rebrand"],
+    nums: ["01 · Entry level", "02 · The working month", "03 · The full build"],
+    tags: [
+      "A steady monthly presence",
+      "A full month of content, planned as one",
+      "A new identity, then the production to carry it"
+    ],
+    processTitle: "The Shape of a Month",
+    steps: [
+      { n: "01", title: "Plan", text: "We agree the pieces for the month and the day to film them." },
+      { n: "02", title: "Film", text: "One session on site. Everything for the month is captured in that day." },
+      { n: "03", title: "Deliver", text: "You receive the finished pieces with the posting guide telling you what goes out and when." }
+    ],
+    firstNote: {
+      title: "What a reel means here",
+      body: "Ten reels means ten finished pieces, not ten single unbroken takes. A long continuous take is used when it earns its place."
+    },
+    portalNote: "Every collaboration comes with a personal portal, included in all packages. The plan for the month, the shoot day, the finished deliverables and the posting calendar all live in one place, updated as we work.",
+    terms: [
+      { k: "Prices", v: "Per month, VAT included, no hidden production costs" },
+      { k: "Deposit", v: "33 percent on the first month, once only, to reserve the shoot" },
+      { k: "Balance", v: "On delivery. Every month after is settled in one payment" },
+      { k: "Invoices", v: "Payable within 30 days" },
+      { k: "Shoot day", v: "One session per month, fixed together in advance" },
+      { k: "Client portal", v: "Included in every package, from the first day" },
+      { k: "Notice", v: "30 days before the next month" }
+    ]
+  },
+  project: {
+    kicker: "Videography Proposal · One off",
+    per: "one off · VAT incl.",
+    names: ["Essential", "Signature", "Complete"],
+    nums: ["01 · The core", "02 · The full day", "03 · The full build"],
+    tags: [
+      "The day filmed, cleanly",
+      "The day filmed, and the pieces to post from it",
+      "Everything, from the plan to the last cutdown"
+    ],
+    processTitle: "The Shape of the Job",
+    steps: [
+      { n: "01", title: "Plan", text: "We agree what matters on the day and how long it takes to film properly." },
+      { n: "02", title: "Film", text: "One day on site, shot around your running order rather than against it." },
+      { n: "03", title: "Deliver", text: "The finished work lands in your portal, where you can follow it from the edit to delivery." }
+    ],
+    firstNote: {
+      title: "How long it takes",
+      body: "The finished work is delivered within three weeks of the shoot. You can follow where it has got to in your portal rather than having to ask."
+    },
+    portalNote: "The job comes with a personal portal. The shoot day, what we are filming, where the edit has got to and the delivery all live in one place, updated as we work.",
+    terms: [
+      { k: "Price", v: "For the job, VAT included, no hidden production costs" },
+      { k: "Deposit", v: "50 percent to reserve the date" },
+      { k: "Balance", v: "On delivery" },
+      { k: "Invoices", v: "Payable within 30 days" },
+      { k: "Shoot day", v: "Fixed together, with the length set by what we are filming" },
+      { k: "Delivery", v: "Within three weeks of the shoot" },
+      { k: "Client portal", v: "Included, from the day it is booked" }
+    ]
+  }
+};
+
+function blankProposal(client, subtitle, prices, kind) {
+  const w = PROPOSAL_WORDING[kind === "project" ? "project" : "monthly"];
 
   const packages = prices
     .map((price, i) => price ? {
-      num: nums[i],
-      name: names[i],
-      tag: tags[i],
+      num: w.nums[i],
+      name: w.names[i],
+      tag: w.tags[i],
       price: price.startsWith("€") ? price : "€" + price,
-      per: "per month · VAT incl.",
+      per: w.per,
       featured: i === 2,
       badge: i === 2 ? "Most complete" : "",
       features: [{ what: "", sub: "" }]
@@ -227,37 +293,22 @@ function blankProposal(client, subtitle, prices) {
     studio: "NOIR AU NOIR",
     client,
     subtitle,
-    kicker: "Videography Proposal · Monthly",
+    // carried so that accepting one can later build the right shape of
+    // portal without asking again
+    kind: kind === "project" ? "project" : "",
+    kicker: w.kicker,
     footer: "Prepared for " + client + (subtitle ? " " + subtitle : ""),
-    intro: { lead: "Three ways to work together", text: "" },
+    intro: { lead: packages.length > 1 ? "Ways to work together" : "How this would work", text: "" },
     packages,
     notes: [
-      {
-        title: "What a reel means here",
-        body: "Ten reels means ten finished pieces, not ten single unbroken takes. A long continuous take is used when it earns its place."
-      },
-      {
-        title: "Your client portal",
-        body: "Every collaboration comes with a personal portal, included in all packages. The plan for the month, the shoot day, the finished deliverables and the posting calendar all live in one place, updated as we work."
-      }
+      w.firstNote,
+      { title: "Your client portal", body: w.portalNote }
     ],
     process: {
       num: "How it works",
-      title: "The Shape of a Month",
-      steps: [
-        { n: "01", title: "Plan", text: "We agree the pieces for the month and the day to film them." },
-        { n: "02", title: "Film", text: "One session on site. Everything for the month is captured in that day." },
-        { n: "03", title: "Deliver", text: "You receive the finished pieces with the posting guide telling you what goes out and when." }
-      ]
+      title: w.processTitle,
+      steps: w.steps
     },
-    terms: [
-      { k: "Prices", v: "Per month, VAT included, no hidden production costs" },
-      { k: "Deposit", v: "33 percent on the first month, once only, to reserve the shoot" },
-      { k: "Balance", v: "On delivery. Every month after is settled in one payment" },
-      { k: "Invoices", v: "Payable within 30 days" },
-      { k: "Shoot day", v: "One session per month, fixed together in advance" },
-      { k: "Client portal", v: "Included in every package, from the first day" },
-      { k: "Notice", v: "30 days before the next month" }
-    ]
+    terms: w.terms
   };
 }
