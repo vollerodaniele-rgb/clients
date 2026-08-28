@@ -447,6 +447,14 @@ function renderFilmPlan(plan) {
 function renderMonths(months) {
   const wrap = $("month-list");
   wrap.innerHTML = "";
+
+  // a heading over nothing looks broken. On day one this is simply not
+  // filled in yet, and saying so reads as in progress rather than wrong.
+  if (!months.length) {
+    wrap.innerHTML = `<p class="muted">The first month appears here once we have planned it together.</p>`;
+    return;
+  }
+
   for (const m of months) {
     const badgeClass =
       m.status === "done" ? "done" :
@@ -485,6 +493,12 @@ function bar(label, v) {
 function renderDocs(docs) {
   const wrap = $("doc-grid");
   wrap.innerHTML = "";
+
+  if (!docs.length) {
+    wrap.innerHTML = `<p class="muted">Contracts and finished work appear here as they are ready.</p>`;
+    return;
+  }
+
   for (const doc of docs) {
     const a = document.createElement("a");
     a.className = "doc-card" + (doc.url ? "" : " pending");

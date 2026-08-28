@@ -180,7 +180,7 @@ function clientCard({ name, plan, requests }) {
   // only where an address is on file, so the button never appears
   // promising something it cannot do
   if (contacts[name] && contacts[name].email) {
-    links.appendChild(welcomeButton(name, plan.name || name, contacts[name].email, card));
+    links.appendChild(welcomeButton(name, contacts[name].person || plan.name || name, contacts[name].email, card));
   }
   links.appendChild(removeButton(name, card));
   return card;
@@ -391,7 +391,9 @@ async function createClient() {
       // remembered privately, never in the client's own file: those are
       // public and an address in one is an address on the open internet
       await rememberContact(slug, displayName, email);
-      await welcomeWhenLive(slug, displayName, email, msg);
+      // greet the person, not the company: "Welcome, Cafe." reads badly
+      const person = ($("new-contact") && $("new-contact").value.trim()) || displayName;
+      await welcomeWhenLive(slug, person, email, msg);
     }
   } catch (err) {
     console.error("create client failed:", err);
@@ -506,6 +508,29 @@ function createDetail() {
           <input id="time-${i}" type="time" value="${escHtml(keep("time-" + i, ""))}">
         </label>`).join("")}
     </div>
+    <p class="how" style="margin:0.9rem 0 0.4rem">
+      Who they are. Kept in the private repo, never on the public page.
+      The VAT number is what makes a reverse charged invoice valid.
+    </p>
+    <div class="row">
+      <label class="field" style="flex:1; min-width:10rem"><span>Contact person</span>
+        <input id="new-contact" type="text" maxlength="60" value="${escHtml(keep("new-contact", ""))}" placeholder="Who you deal with">
+      </label>
+      <label class="field" style="flex:1; min-width:9rem"><span>Phone</span>
+        <input id="new-phone" type="tel" maxlength="30" value="${escHtml(keep("new-phone", ""))}">
+      </label>
+      <label class="field" style="flex:1; min-width:10rem"><span>VAT number</span>
+        <input id="new-vat" type="text" maxlength="30" value="${escHtml(keep("new-vat", ""))}" placeholder="BE 0xxx.xxx.xxx">
+      </label>
+    </div>
+    <div class="row">
+      <label class="field" style="flex:1; min-width:12rem"><span>Company name, as it goes on an invoice</span>
+        <input id="new-company" type="text" maxlength="80" value="${escHtml(keep("new-company", ""))}">
+      </label>
+      <label class="field" style="flex:1; min-width:12rem"><span>Invoice address</span>
+        <input id="new-address" type="text" maxlength="120" value="${escHtml(keep("new-address", ""))}">
+      </label>
+    </div>
   `;
 
   // once he edits a default it stops being a default
@@ -576,7 +601,16 @@ async function loadContacts() {
 
 async function rememberContact(slug, name, email) {
   await loadContacts();
-  contacts[slug] = { name, email };
+  const val = (id) => ($(id) ? $(id).value.trim() : "");
+  contacts[slug] = {
+    name,
+    email,
+    person: val("new-contact"),
+    phone: val("new-phone"),
+    company: val("new-company"),
+    address: val("new-address"),
+    vat: val("new-vat")
+  };
 
   const body = {
     message: `Remember how to reach ${name}`,
