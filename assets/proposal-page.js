@@ -127,6 +127,7 @@ function chooseArea(packageName) {
   box.hidden = true;
   box.innerHTML = `
     <label><span>Your name</span><input type="text" maxlength="60" placeholder="Who is choosing?"></label>
+    <label><span>Your email</span><input type="email" maxlength="120" placeholder="So we can confirm it"></label>
     <label><span>Anything to add (optional)</span><input type="text" maxlength="200" placeholder="A question, a date, a change"></label>
   `;
 
@@ -143,9 +144,18 @@ function chooseArea(packageName) {
   });
 
   send.addEventListener("click", async () => {
-    const [nameInput, msgInput] = box.querySelectorAll("input");
+    const [nameInput, emailInput, msgInput] = box.querySelectorAll("input");
     const who = nameInput.value.trim();
+    const mail = emailInput.value.trim();
+
     if (!who) { note.textContent = "Please add your name."; nameInput.focus(); return; }
+    // required, because the confirmation and everything after it has to
+    // have somewhere to go
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(mail)) {
+      note.textContent = "Please add an email we can confirm this to.";
+      emailInput.focus();
+      return;
+    }
 
     send.disabled = true;
     note.textContent = "Sending...";
@@ -158,6 +168,7 @@ function chooseArea(packageName) {
           site: "proposal",
           client: SLUG,
           name: who,
+          email: mail,
           idea: `Chose the ${packageName} package.` +
             (msgInput.value.trim() ? ` Note: ${msgInput.value.trim()}` : "")
         })
@@ -166,7 +177,7 @@ function chooseArea(packageName) {
 
       box.hidden = true;
       btn.hidden = true;
-      note.textContent = `Thank you. We have your choice of ${packageName} and will be in touch.`;
+      note.textContent = `Thank you. We have your choice of ${packageName}. A confirmation is on its way to ${mail}.`;
     } catch (err) {
       console.error("choose failed:", err);
       note.textContent = "That did not send. Try again, or reply to the email.";
