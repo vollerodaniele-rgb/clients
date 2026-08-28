@@ -233,11 +233,16 @@
     </div>
 
     <div class="panel" style="margin-top:1.8rem">
-      <h2>Add a client</h2>
+      <button type="button" id="add-client-toggle" class="fold-head" aria-expanded="false" aria-controls="add-client-body">
+        <span class="fold-title">Add a client</span>
+        <svg class="fold-arrow" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"></path>
+        </svg>
+      </button>
+      <div id="add-client-body" hidden>
       <p class="how" style="margin-bottom:1rem">
-        Type the name and it builds the portal, the posting plan and the admin,
-        all from the template. No repo, no DNS record, no Pages setting, and this
-        same key opens it.
+        Fill this in when they book. Everything from the brainstorm call, the shot
+        list and the months, you add later in that client's own editor.
       </p>
       <div class="row">
         <label class="field" style="flex:1; min-width:12rem"><span>Client name</span>
@@ -268,6 +273,7 @@
         It will live at <code id="new-preview">clients.noiraunoir.com/&lt;address&gt;/</code>
       </p>
       <p class="form-msg" id="create-msg" style="margin-top:0.7rem"></p>
+      </div>
     </div>
   </div>
 </body>

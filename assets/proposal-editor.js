@@ -94,10 +94,8 @@ function render() {
       checkField("Mark as the recommended one", p, "featured")
     ));
     if (!p.features) p.features = [];
-    body.appendChild(sublist(p.features, () => ({ what: "", sub: "" }), (f, wrap) => {
-      wrap.appendChild(textField("What is included", f, "what"));
-      wrap.appendChild(textField("The line under it", f, "sub", true));
-    }, "Add a line"));
+    body.appendChild(catalogue(p));
+    body.appendChild(customLines(p));
 
     if (!p.mix) p.mix = { label: "", chips: [] };
     body.appendChild(textField("Chip heading (optional)", p.mix, "label"));
@@ -136,6 +134,137 @@ function render() {
 }
 
 /* ============ FORM BUILDING ============ */
+
+/* ============ WHAT IS IN A PACKAGE ============ */
+/* Typing the same six lines into every proposal is how wording drifts
+   and how a package quietly ends up promising something different from
+   the last one. These are the things actually sold, so they are ticked
+   rather than typed, with a number where a number makes sense.
+
+   A ticked line is stored with its `key`, so the editor knows it came
+   from here. Anything without a key was typed by hand and is left
+   completely alone. */
+
+const CATALOGUE = [
+  { key: "reels", n: 10, what: (n) => n + " planned reels",
+    sub: "Chosen and written before the shoot day, filmed in one session." },
+  { key: "interview", n: 1, what: (n) => n + (n === 1 ? " interview reel" : " interview reels"),
+    sub: "One of your people on camera, answering a question clients actually ask." },
+  { key: "photos", n: 15, what: (n) => n + " ready to post photographs",
+    sub: "Edited, framed for feed and stories, delivered with the reels." },
+  { key: "shootday", n: 1, what: (n) => n === 1 ? "A full shoot day on site" : n + " shoot days on site",
+    sub: "Shot around your day rather than against it." },
+  { key: "brainstorm", what: () => "A brainstorm session",
+    sub: "We plan it together before anything is filmed." },
+  { key: "identity", what: () => "A new visual identity",
+    sub: "How the brand looks and sounds on camera, agreed before we film." },
+  { key: "secondcam", what: () => "A second camera",
+    sub: "Two angles on the moments that only happen once." },
+  { key: "priority", what: () => "Priority on the calendar",
+    sub: "First choice of shoot dates." },
+  { key: "delivery", n: 10, what: (n) => "Delivery within " + n + " days",
+    sub: "Counted from the shoot day." }
+];
+
+function catalogue(p) {
+  const wrap = document.createElement("div");
+  wrap.style.cssText = "margin:0.9rem 0 1rem";
+
+  const head = document.createElement("p");
+  head.className = "muted";
+  head.style.cssText = "font-size:0.82rem;margin-bottom:0.6rem";
+  head.textContent = "Tick what is in this package. The wording is written for you.";
+  wrap.appendChild(head);
+
+  for (const item of CATALOGUE) {
+    const on = p.features.find((f) => f.key === item.key);
+
+    const row = document.createElement("label");
+    row.style.cssText = "display:flex;align-items:center;gap:0.7rem;padding:0.35rem 0;font-size:0.95rem";
+
+    const tick = document.createElement("input");
+    tick.type = "checkbox";
+    tick.checked = !!on;
+    tick.style.cssText = "width:1.05rem;height:1.05rem;padding:0;border:0;accent-color:#ffffff;cursor:pointer";
+
+    const num = document.createElement("input");
+    num.type = "number";
+    num.min = "1";
+    num.value = on && on.n != null ? on.n : (item.n != null ? item.n : "");
+    num.style.cssText = "width:4.2rem;padding:0.35rem 0.5rem;font-size:0.9rem";
+    num.hidden = item.n == null;
+    num.disabled = !tick.checked;
+
+    const text = document.createElement("span");
+    const label = () => item.what(Number(num.value) || item.n || 1);
+    text.textContent = label();
+    text.style.color = tick.checked ? "var(--text)" : "var(--dim)";
+
+    const apply = () => {
+      num.disabled = !tick.checked;
+      text.textContent = label();
+      text.style.color = tick.checked ? "var(--text)" : "var(--dim)";
+      rebuild(p, item.key, tick.checked ? {
+        key: item.key,
+        n: item.n == null ? undefined : (Number(num.value) || item.n),
+        what: label(),
+        sub: item.sub
+      } : null);
+    };
+
+    tick.addEventListener("change", apply);
+    num.addEventListener("input", apply);
+
+    row.append(tick, num, text);
+    wrap.appendChild(row);
+  }
+
+  return wrap;
+}
+
+/* Keeps the ticked lines in catalogue order and never disturbs the
+   hand written ones, which always sit after them. */
+function rebuild(p, key, entry) {
+  const rest = p.features.filter((f) => f.key !== key);
+  if (entry) rest.push(entry);
+  const keyed = CATALOGUE
+    .map((i) => rest.find((f) => f.key === i.key))
+    .filter(Boolean);
+  p.features.length = 0;
+  p.features.push(...keyed, ...rest.filter((f) => !f.key));
+}
+
+/* Anything the list does not cover. */
+function customLines(p) {
+  const wrap = document.createElement("div");
+
+  const draw = () => {
+    wrap.innerHTML = "";
+    for (const f of p.features.filter((x) => !x.key)) {
+      const box = document.createElement("div");
+      box.className = "item";
+      const rm = document.createElement("button");
+      rm.className = "btn-mini danger remove";
+      rm.textContent = "Remove";
+      rm.addEventListener("click", () => {
+        p.features.splice(p.features.indexOf(f), 1);
+        draw();
+      });
+      box.appendChild(rm);
+      box.appendChild(textField("What is included", f, "what"));
+      box.appendChild(textField("The line under it", f, "sub", true));
+      wrap.appendChild(box);
+    }
+    const add = document.createElement("button");
+    add.className = "btn-mini";
+    add.textContent = "+ Add something not on the list";
+    add.addEventListener("click", () => { p.features.push({ what: "", sub: "" }); draw(); });
+    wrap.appendChild(add);
+  };
+
+  draw();
+  return wrap;
+}
 
 function panel(title, fill) {
   const div = document.createElement("div");

@@ -268,15 +268,12 @@ const PROPOSAL_WORDING = {
     ],
     // a proposal created with empty bullets is not sendable, so it
     // arrives carrying the real offering and he edits from there
+    // catalogue keys, so a created proposal opens in the editor with
+    // the right boxes already ticked instead of as free text
     features: [
-      [["4 planned reels", "Chosen and written before the shoot day, filmed in one session."],
-       ["10 ready to post photographs", "Edited, framed for feed and stories, delivered with the reels."]],
-      [["10 planned reels", "A full month of content, planned and filmed as one."],
-       ["1 interview reel", "One of your people on camera, answering a question clients actually ask."],
-       ["15 ready to post photographs", "Edited and delivered with the reels."]],
-      [["Everything in Signature", "The full monthly production, unchanged."],
-       ["A new visual identity", "How the brand looks and sounds on camera, agreed before we film."],
-       ["Priority on the calendar", "First choice of shoot dates each month."]]
+      [["reels", 4], ["photos", 10]],
+      [["reels", 10], ["interview", 1], ["photos", 15], ["brainstorm"]],
+      [["reels", 10], ["interview", 2], ["photos", 20], ["brainstorm"], ["identity"], ["priority"]]
     ],
     processTitle: "The Shape of a Month",
     steps: [
@@ -310,14 +307,9 @@ const PROPOSAL_WORDING = {
       "Everything, from the plan to the last cutdown"
     ],
     features: [
-      [["The day filmed", "One session on site, shot around your running order."],
-       ["1 finished film", "Edited, graded and delivered ready to use."]],
-      [["The day filmed", "One session on site, shot around your running order."],
-       ["1 finished film and 4 short reels", "The main piece, plus cutdowns made to post."],
-       ["150 photographs", "Edited and delivered alongside the film."]],
-      [["Everything in Signature", "The full day and every finished piece."],
-       ["A second camera", "Two angles on the moments that only happen once."],
-       ["Delivery in two weeks", "Ahead of the usual three."]]
+      [["shootday", 1], ["photos", 60]],
+      [["shootday", 1], ["reels", 4], ["photos", 150], ["brainstorm"]],
+      [["shootday", 1], ["reels", 6], ["photos", 250], ["brainstorm"], ["secondcam"], ["delivery", 14]]
     ],
     processTitle: "The Shape of the Job",
     steps: [
@@ -342,6 +334,38 @@ const PROPOSAL_WORDING = {
   }
 };
 
+
+/* The same list the proposal editor ticks, so a proposal created here
+   and a proposal edited there always word a thing the same way. */
+const CATALOGUE = [
+  { key: "reels", what: (n) => n + " planned reels",
+    sub: "Chosen and written before the shoot day, filmed in one session." },
+  { key: "interview", what: (n) => n + (n === 1 ? " interview reel" : " interview reels"),
+    sub: "One of your people on camera, answering a question clients actually ask." },
+  { key: "photos", what: (n) => n + " ready to post photographs",
+    sub: "Edited, framed for feed and stories, delivered with the reels." },
+  { key: "shootday", what: (n) => n === 1 ? "A full shoot day on site" : n + " shoot days on site",
+    sub: "Shot around your day rather than against it." },
+  { key: "brainstorm", what: () => "A brainstorm session",
+    sub: "We plan it together before anything is filmed." },
+  { key: "identity", what: () => "A new visual identity",
+    sub: "How the brand looks and sounds on camera, agreed before we film." },
+  { key: "secondcam", what: () => "A second camera",
+    sub: "Two angles on the moments that only happen once." },
+  { key: "priority", what: () => "Priority on the calendar",
+    sub: "First choice of shoot dates." },
+  { key: "delivery", what: (n) => "Delivery within " + n + " days",
+    sub: "Counted from the shoot day." }
+];
+
+function fromCatalogue(key, n) {
+  const item = CATALOGUE.find((i) => i.key === key);
+  if (!item) return null;
+  const entry = { key, what: item.what(n), sub: item.sub };
+  if (n != null) entry.n = n;
+  return entry;
+}
+
 function blankProposal(client, subtitle, prices, kind) {
   const w = PROPOSAL_WORDING[kind === "project" ? "project" : "monthly"];
 
@@ -354,7 +378,7 @@ function blankProposal(client, subtitle, prices, kind) {
       per: w.per,
       featured: i === 2,
       badge: i === 2 ? "Most complete" : "",
-      features: (w.features[i] || []).map(([what, sub]) => ({ what, sub }))
+      features: (w.features[i] || []).map(([key, n]) => fromCatalogue(key, n)).filter(Boolean)
     } : null)
     .filter(Boolean);
 

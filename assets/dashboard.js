@@ -327,6 +327,19 @@ onReady(() => {
   slugInput.addEventListener("input", () => { slugTouched = true; showPreview(); });
 
   $("create-client").addEventListener("click", createClient);
+
+  // the form got long once it asked for everything a booking brings,
+  // so it stays out of the way until there is a booking to enter
+  const toggle = $("add-client-toggle");
+  const bodyEl = $("add-client-body");
+  if (toggle && bodyEl) {
+    toggle.addEventListener("click", () => {
+      const open = toggle.getAttribute("aria-expanded") !== "true";
+      toggle.setAttribute("aria-expanded", open ? "true" : "false");
+      toggle.classList.toggle("open", open);
+      bodyEl.hidden = !open;
+    });
+  }
   // the sensible defaults differ by kind, so the form follows it
   createDetail();
   if ($("new-kind")) $("new-kind").addEventListener("change", createDetail);
