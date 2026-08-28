@@ -255,7 +255,14 @@
         <label class="field" style="flex:1; min-width:12rem"><span>Their email (optional)</span>
           <input id="new-email" type="email" maxlength="120" placeholder="Sends them a welcome once it is live">
         </label>
-        <button class="btn-mini solid" id="create-client" style="align-self:flex-end">Create</button>
+      </div>
+
+      <!-- built in dashboard.js, because the sensible defaults differ
+           between a monthly deal and a one off job -->
+      <div id="create-detail"></div>
+
+      <div class="row" style="margin-top:0.8rem">
+        <button class="btn-mini solid" id="create-client">Create</button>
       </div>
       <p class="how" style="margin-top:0.6rem">
         It will live at <code id="new-preview">clients.noiraunoir.com/&lt;address&gt;/</code>

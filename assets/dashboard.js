@@ -327,6 +327,9 @@ onReady(() => {
   slugInput.addEventListener("input", () => { slugTouched = true; showPreview(); });
 
   $("create-client").addEventListener("click", createClient);
+  // the sensible defaults differ by kind, so the form follows it
+  createDetail();
+  if ($("new-kind")) $("new-kind").addEventListener("change", createDetail);
 });
 
 function slugify(s) {
@@ -372,7 +375,7 @@ async function createClient() {
 
     const files = Object.fromEntries(pages);
     const kind = $("new-kind") ? $("new-kind").value : "";
-    files[`data/${slug}.json`] = JSON.stringify(blankPlan(displayName, kind), null, 2) + "\n";
+    files[`data/${slug}.json`] = JSON.stringify(plannedPortal(displayName, kind), null, 2) + "\n";
 
     await commitFiles(files, `Add ${displayName} as a client`);
 
@@ -433,6 +436,118 @@ function blankPlan(displayName, kind) {
    `files` is a map of path to content to write, `removePaths` a list
    of paths to delete. Doing both in a single commit means a client is
    never half added or half removed. */
+/* ============ SETTING A PORTAL UP BEFORE IT LAUNCHES ============ */
+/* A portal used to arrive empty. The client got a welcome, opened it,
+   found nothing, and had to be told what it would eventually contain.
+   So everything is filled in here, before it exists, and the first
+   thing they ever see is finished: what they are getting, and three
+   dates waiting to be picked.
+
+   The defaults are the real deals, so usually only numbers change. */
+
+const CREATE_DEFAULTS = {
+  "": {
+    tagline: "Monthly reels and photography. Everything about our collaboration in one place: planning, deliveries, documents and billing.",
+    tiles: [["12", "Reels per month"], ["10-15", "Photos per month"], ["10 days", "Delivery after shoot"]]
+  },
+  project: {
+    tagline: "Everything about the job in one place: the day, what we film, where the edit has got to and when it lands.",
+    tiles: [["1", "Finished film"], ["4", "Short reels"], ["150", "Photographs"]]
+  }
+};
+
+function createDetail() {
+  const wrap = $("create-detail");
+  if (!wrap) return;
+
+  const kind = $("new-kind") ? $("new-kind").value : "";
+  const d = CREATE_DEFAULTS[kind] || CREATE_DEFAULTS[""];
+  const keep = (id, fallback) => ($(id) ? $(id).value : fallback);
+
+  // what was already typed survives a change of kind, except the
+  // defaults themselves, which should follow the kind
+  const tagline = $("new-tagline") && $("new-tagline").dataset.touched ? $("new-tagline").value : d.tagline;
+  const tiles = d.tiles.map(([n, l], i) =>
+    ($("tile-n" + i) && $("tile-n" + i).dataset.touched) ? [$("tile-n" + i).value, $("tile-l" + i).value] : [n, l]);
+
+  wrap.innerHTML = `
+    <div class="row" style="margin-top:0.8rem">
+      <label class="field" style="flex:1; min-width:18rem"><span>One line about the work</span>
+        <input id="new-tagline" type="text" maxlength="200" value="${escHtml(tagline)}">
+      </label>
+    </div>
+    <p class="how" style="margin:0.9rem 0 0.4rem">What they get, shown as three tiles</p>
+    <div class="row">
+      ${tiles.map(([n, l], i) => `
+        <label class="field" style="min-width:6rem"><span>Number</span>
+          <input id="tile-n${i}" type="text" maxlength="12" value="${escHtml(n)}">
+        </label>
+        <label class="field" style="flex:1; min-width:9rem"><span>Label</span>
+          <input id="tile-l${i}" type="text" maxlength="30" value="${escHtml(l)}">
+        </label>`).join("")}
+    </div>
+    <p class="how" style="margin:0.9rem 0 0.4rem">
+      Three dates to offer. Leave them empty to set the shoot yourself later.
+    </p>
+    <div class="row">
+      <label class="field" style="flex:1; min-width:11rem"><span>Where</span>
+        <input id="new-where" type="text" maxlength="60" value="${escHtml(keep("new-where", ""))}" placeholder="Sakas, Gent">
+      </label>
+      <label class="field" style="flex:1; min-width:11rem"><span>What we film</span>
+        <input id="new-focus" type="text" maxlength="60" value="${escHtml(keep("new-focus", ""))}" placeholder="First shoot of the partnership">
+      </label>
+    </div>
+    <div class="row">
+      ${[0, 1, 2].map((i) => `
+        <label class="field" style="min-width:9rem"><span>Date ${i + 1}</span>
+          <input id="date-${i}" type="date" value="${escHtml(keep("date-" + i, ""))}">
+        </label>
+        <label class="field" style="min-width:6rem"><span>Time</span>
+          <input id="time-${i}" type="time" value="${escHtml(keep("time-" + i, ""))}">
+        </label>`).join("")}
+    </div>
+  `;
+
+  // once he edits a default it stops being a default
+  for (const el of wrap.querySelectorAll("input")) {
+    el.addEventListener("input", () => { el.dataset.touched = "1"; });
+  }
+}
+
+/* Builds the finished portal contents from that form. */
+function plannedPortal(displayName, kind) {
+  const plan = blankPlan(displayName, kind);
+  const val = (id) => ($(id) ? $(id).value.trim() : "");
+
+  plan.tagline = val("new-tagline");
+  plan.dealNotes = kind === "project"
+    ? "What we agreed for the job."
+    : "What we deliver every month. Adjust anytime, this page always shows the current agreement.";
+
+  plan.deal = [0, 1, 2]
+    .map((i) => ({ num: val("tile-n" + i), label: val("tile-l" + i) }))
+    .filter((t) => t.num || t.label);
+
+  const where = val("new-where");
+  const focus = val("new-focus");
+  plan.nextShoot.location = where;
+  plan.nextShoot.focus = focus;
+
+  const options = [0, 1, 2]
+    .map((i) => ({ date: val("date-" + i), time: val("time-" + i), location: where, focus }))
+    .filter((o) => o.date);
+
+  if (options.length) {
+    plan.shootPick = {
+      asked: true,
+      note: "Pick whichever date suits you and we lock it in.",
+      options
+    };
+  }
+
+  return plan;
+}
+
 /* ============ CONTACTS AND THE WELCOME ============ */
 /* Client addresses live in the private repo beside the money, for the
    same reason: everything under clients/ is public, so an address

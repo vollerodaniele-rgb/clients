@@ -266,6 +266,18 @@ const PROPOSAL_WORDING = {
       "A full month of content, planned as one",
       "A new identity, then the production to carry it"
     ],
+    // a proposal created with empty bullets is not sendable, so it
+    // arrives carrying the real offering and he edits from there
+    features: [
+      [["4 planned reels", "Chosen and written before the shoot day, filmed in one session."],
+       ["10 ready to post photographs", "Edited, framed for feed and stories, delivered with the reels."]],
+      [["10 planned reels", "A full month of content, planned and filmed as one."],
+       ["1 interview reel", "One of your people on camera, answering a question clients actually ask."],
+       ["15 ready to post photographs", "Edited and delivered with the reels."]],
+      [["Everything in Signature", "The full monthly production, unchanged."],
+       ["A new visual identity", "How the brand looks and sounds on camera, agreed before we film."],
+       ["Priority on the calendar", "First choice of shoot dates each month."]]
+    ],
     processTitle: "The Shape of a Month",
     steps: [
       { n: "01", title: "Plan", text: "We agree the pieces for the month and the day to film them." },
@@ -296,6 +308,16 @@ const PROPOSAL_WORDING = {
       "The day filmed, cleanly",
       "The day filmed, and the pieces to post from it",
       "Everything, from the plan to the last cutdown"
+    ],
+    features: [
+      [["The day filmed", "One session on site, shot around your running order."],
+       ["1 finished film", "Edited, graded and delivered ready to use."]],
+      [["The day filmed", "One session on site, shot around your running order."],
+       ["1 finished film and 4 short reels", "The main piece, plus cutdowns made to post."],
+       ["150 photographs", "Edited and delivered alongside the film."]],
+      [["Everything in Signature", "The full day and every finished piece."],
+       ["A second camera", "Two angles on the moments that only happen once."],
+       ["Delivery in two weeks", "Ahead of the usual three."]]
     ],
     processTitle: "The Shape of the Job",
     steps: [
@@ -332,7 +354,7 @@ function blankProposal(client, subtitle, prices, kind) {
       per: w.per,
       featured: i === 2,
       badge: i === 2 ? "Most complete" : "",
-      features: [{ what: "", sub: "" }]
+      features: (w.features[i] || []).map(([what, sub]) => ({ what, sub }))
     } : null)
     .filter(Boolean);
 
