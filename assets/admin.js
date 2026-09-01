@@ -762,12 +762,55 @@ async function confirmPick(item, btn) {
     closed = false;
   }
 
+  const invite = await inviteToShoot(item.pick);
+
   render();
   const after = $("pick-msg");
   if (after) {
-    after.textContent = closed
+    after.textContent = (closed
       ? "Confirmed. That is the next shoot now and the portal has stopped asking."
-      : "Confirmed and published, but the pick could not be ticked off. Check the key has Issues read and write.";
+      : "Confirmed and published, but the pick could not be ticked off. Check the key has Issues read and write.")
+      + " " + invite;
+  }
+}
+
+/* The client gets a calendar entry, not just a date on a page. Their
+   address lives in the private repo, so it is read here where the key
+   can reach it, and handed to the relay which mails it. */
+async function inviteToShoot(pick) {
+  try {
+    const res = await fetch(
+      `https://api.github.com/repos/${OWNER}/studio-private/contents/contacts.json`,
+      { headers: { Authorization: "Bearer " + localStorage.getItem(TOKEN_KEY), Accept: "application/vnd.github+json" }, cache: "no-store" }
+    );
+    if (!res.ok) return "";
+
+    const file = await res.json();
+    const contacts = JSON.parse(decodeURIComponent(escape(atob(file.content.replace(/\n/g, "")))));
+    const who = contacts[CLIENT];
+    if (!who || !who.email) return "No address on file, so no calendar invite was sent.";
+
+    const sent = await fetch("https://kresha-idea-box.vollerodaniele.workers.dev/shoot-confirmed", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        key: localStorage.getItem(TOKEN_KEY),
+        client: CLIENT,
+        email: who.email,
+        name: who.person || who.name || "",
+        date: pick.date,
+        time: pick.time,
+        location: pick.location || plan.nextShoot.location || "",
+        focus: pick.focus || plan.nextShoot.focus || ""
+      })
+    });
+
+    if (sent.ok) return "A calendar invite is on its way to " + who.email + ".";
+    const body = await sent.json().catch(() => ({}));
+    return "The calendar invite did not send (" + (body.error || sent.status) + ").";
+  } catch (err) {
+    console.error("could not send the invite:", err);
+    return "The calendar invite did not send.";
   }
 }
 
