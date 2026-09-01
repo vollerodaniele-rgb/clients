@@ -1,0 +1,177 @@
+{
+  "studio": "NOIR AU NOIR",
+  "client": "eetruhoetnr",
+  "subtitle": "toehnbuhoteub",
+  "kind": "project",
+  "kicker": "Videography Proposal · One off",
+  "footer": "Prepared for eetruhoetnr toehnbuhoteub",
+  "intro": {
+    "lead": "Ways to work together",
+    "text": ""
+  },
+  "packages": [
+    {
+      "num": "01 · The core",
+      "name": "Essential",
+      "tag": "The day filmed, cleanly",
+      "price": "€34324",
+      "per": "one off · VAT incl.",
+      "featured": false,
+      "badge": "",
+      "features": [
+        {
+          "key": "shootday",
+          "what": "A full shoot day on site",
+          "sub": "Shot around your day rather than against it.",
+          "n": 1
+        },
+        {
+          "key": "photos",
+          "what": "60 ready to post photographs",
+          "sub": "Edited, framed for feed and stories, delivered with the reels.",
+          "n": 60
+        }
+      ]
+    },
+    {
+      "num": "02 · The full day",
+      "name": "Signature",
+      "tag": "The day filmed, and the pieces to post from it",
+      "price": "€545345",
+      "per": "one off · VAT incl.",
+      "featured": false,
+      "badge": "",
+      "features": [
+        {
+          "key": "shootday",
+          "what": "A full shoot day on site",
+          "sub": "Shot around your day rather than against it.",
+          "n": 1
+        },
+        {
+          "key": "reels",
+          "what": "4 planned reels",
+          "sub": "Chosen and written before the shoot day, filmed in one session.",
+          "n": 4
+        },
+        {
+          "key": "photos",
+          "what": "150 ready to post photographs",
+          "sub": "Edited, framed for feed and stories, delivered with the reels.",
+          "n": 150
+        },
+        {
+          "key": "brainstorm",
+          "what": "A brainstorm session",
+          "sub": "We plan it together before anything is filmed."
+        }
+      ]
+    },
+    {
+      "num": "03 · The full build",
+      "name": "Complete",
+      "tag": "Everything, from the plan to the last cutdown",
+      "price": "€3454543",
+      "per": "one off · VAT incl.",
+      "featured": true,
+      "badge": "Most complete",
+      "features": [
+        {
+          "key": "shootday",
+          "what": "A full shoot day on site",
+          "sub": "Shot around your day rather than against it.",
+          "n": 1
+        },
+        {
+          "key": "reels",
+          "what": "6 planned reels",
+          "sub": "Chosen and written before the shoot day, filmed in one session.",
+          "n": 6
+        },
+        {
+          "key": "photos",
+          "what": "250 ready to post photographs",
+          "sub": "Edited, framed for feed and stories, delivered with the reels.",
+          "n": 250
+        },
+        {
+          "key": "brainstorm",
+          "what": "A brainstorm session",
+          "sub": "We plan it together before anything is filmed."
+        },
+        {
+          "key": "secondcam",
+          "what": "A second camera",
+          "sub": "Two angles on the moments that only happen once."
+        },
+        {
+          "key": "delivery",
+          "what": "Delivery within 14 days",
+          "sub": "Counted from the shoot day.",
+          "n": 14
+        }
+      ]
+    }
+  ],
+  "notes": [
+    {
+      "title": "How long it takes",
+      "body": "The finished work is delivered within three weeks of the shoot. You can follow where it has got to in your portal rather than having to ask."
+    },
+    {
+      "title": "Your client portal",
+      "body": "The job comes with a personal portal. The shoot day, what we are filming, where the edit has got to and the delivery all live in one place, updated as we work."
+    }
+  ],
+  "process": {
+    "num": "How it works",
+    "title": "The Shape of the Job",
+    "steps": [
+      {
+        "n": "01",
+        "title": "Plan",
+        "text": "We agree what matters on the day and how long it takes to film properly."
+      },
+      {
+        "n": "02",
+        "title": "Film",
+        "text": "One day on site, shot around your running order rather than against it."
+      },
+      {
+        "n": "03",
+        "title": "Deliver",
+        "text": "The finished work lands in your portal, where you can follow it from the edit to delivery."
+      }
+    ]
+  },
+  "terms": [
+    {
+      "k": "Price",
+      "v": "For the job, VAT included, no hidden production costs"
+    },
+    {
+      "k": "Deposit",
+      "v": "50 percent to reserve the date"
+    },
+    {
+      "k": "Balance",
+      "v": "On delivery"
+    },
+    {
+      "k": "Invoices",
+      "v": "Payable within 30 days"
+    },
+    {
+      "k": "Shoot day",
+      "v": "Fixed together, with the length set by what we are filming"
+    },
+    {
+      "k": "Delivery",
+      "v": "Within three weeks of the shoot"
+    },
+    {
+      "k": "Client portal",
+      "v": "Included, from the day it is booked"
+    }
+  ]
+}
