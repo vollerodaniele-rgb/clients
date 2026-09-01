@@ -114,14 +114,18 @@ function foldArrow() {
 
 function wireTokenPanel() {
   const msg = $("token-msg");
-  if (token()) msg.textContent = "A key is saved in this browser.";
+  if (token()) {
+    msg.textContent = "A key is saved in this browser.";
+    checkKey(msg);
+  }
 
-  $("token-save").addEventListener("click", () => {
+  $("token-save").addEventListener("click", async () => {
     const v = $("token-input").value.trim();
     if (!v) { msg.textContent = "Paste the token first."; return; }
     localStorage.setItem(TOKEN_KEY, v);
     $("token-input").value = "";
-    msg.textContent = "Key saved. Every client admin on this site can use it now.";
+    msg.textContent = "Key saved. Checking it...";
+    await checkKey(msg);
     loadClients();
   });
 
@@ -129,6 +133,45 @@ function wireTokenPanel() {
     localStorage.removeItem(TOKEN_KEY);
     msg.textContent = "Key removed from this browser.";
   });
+}
+
+/* Says whether the key can actually write, and when it dies. Reading
+   works without a key at all, because these repos are public, so a dead
+   key looks completely fine until the first thing you try to save. That
+   is a bad moment to find out. */
+async function checkKey(msg) {
+  try {
+    const res = await fetch(`https://api.github.com/repos/${OWNER}/${REPO}`, {
+      headers: { Authorization: "Bearer " + token(), Accept: "application/vnd.github+json" },
+      cache: "no-store"
+    });
+
+    if (!res.ok) {
+      msg.textContent = "This key is not working (" + res.status +
+        "). It has expired, been revoked, or lost access to this repo. Nothing can be saved until it is replaced.";
+      return false;
+    }
+
+    const info = await res.json();
+    if (!info.permissions || !info.permissions.push) {
+      msg.textContent = "This key can read but not write, so nothing can be saved. It needs Contents and Issues, read and write.";
+      return false;
+    }
+
+    // GitHub returns the expiry on every authenticated call, which is
+    // the only warning there is before it stops working
+    const expiry = res.headers.get("github-authentication-token-expiration");
+    const days = expiry ? Math.floor((Date.parse(expiry.replace(" UTC", "Z").replace(" ", "T")) - Date.now()) / 86400000) : null;
+
+    msg.textContent = days === null ? "Key works."
+      : days <= 0 ? "This key has expired. Nothing can be saved until it is replaced."
+      : days <= 14 ? "Key works, but it expires in " + days + " day" + (days === 1 ? "" : "s") + ". Edit its expiry on github.com, do not regenerate it."
+      : "Key works. Good for another " + days + " days.";
+    return true;
+  } catch (err) {
+    console.error("key check failed:", err);
+    return true;
+  }
 }
 
 async function loadClients() {
@@ -817,7 +860,18 @@ async function commitOnce(files, message, removePaths, repo) {
 
   const call = async (path, init) => {
     const res = await fetch(api + path, { headers, ...init });
-    if (!res.ok) throw new Error("GitHub " + res.status + " on " + path);
+    if (!res.ok) {
+      // GitHub answers 404 rather than 403 when a key may not do
+      // something, deliberately, so you cannot probe for what exists.
+      // Here it nearly always means the key, not a missing file, and
+      // reading still works without one so nothing else looks wrong.
+      if (res.status === 404) {
+        throw new Error("GitHub 404 on " + path +
+          ". That usually means the access key has expired or lost write access, " +
+          "not that anything is missing. Check the key on github.com and paste a fresh one at the top.");
+      }
+      throw new Error("GitHub " + res.status + " on " + path);
+    }
     return res.json();
   };
 
