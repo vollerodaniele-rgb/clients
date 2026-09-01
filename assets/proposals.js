@@ -29,13 +29,15 @@ async function loadProposals() {
     const headers = { Accept: "application/vnd.github+json" };
     if (token()) headers.Authorization = "Bearer " + token();
 
-    const [filesRes, acceptedRes] = await Promise.all([
+    const [filesRes, acceptedRes, seenRes] = await Promise.all([
       fetch(`https://api.github.com/repos/${OWNER}/${REPO}/contents/proposals`,
         { headers, cache: "no-store" }),
       // open only, so clearing a wrong one actually clears it. Reading
       // every state meant a mistaken acceptance could never be undone
       // and the dashboard reported a signed client forever.
       fetch(`https://api.github.com/repos/${OWNER}/${REPO}/issues?labels=accepted&state=open&per_page=100`,
+        { headers, cache: "no-store" }),
+      fetch(`https://api.github.com/repos/${OWNER}/${REPO}/issues?labels=seen&state=all&per_page=100`,
         { headers, cache: "no-store" })
     ]);
 
@@ -60,6 +62,21 @@ async function loadProposals() {
       }
     }
 
+    // how often each proposal has actually been opened
+    const seen = {};
+    if (seenRes.ok) {
+      for (const issue of await seenRes.json()) {
+        const tag = issue.labels.map((l) => l.name).find((n) => n.startsWith("proposal:"));
+        if (!tag) continue;
+        const times = (issue.body || "").match(/Opened (\d+) time/);
+        const last = (issue.body || "").match(/Last on (\S+)/);
+        seen[tag.slice("proposal:".length)] = {
+          times: times ? Number(times[1]) : 0,
+          last: last ? last[1] : ""
+        };
+      }
+    }
+
     if (!slugs.length) {
       wrap.innerHTML = '<p class="muted" style="font-size:0.9rem">No proposals yet.</p>';
       return;
@@ -71,7 +88,7 @@ async function loadProposals() {
         const d = await (await fetch(`../proposals/${slug}.json`, { cache: "no-store" })).json();
         name = d.client || slug;
       } catch { /* an unreadable proposal still deserves a row */ }
-      return { slug, name, accepted: accepted[slug] || [] };
+      return { slug, name, accepted: accepted[slug] || [], seen: seen[slug] || null };
     }));
 
     wrap.innerHTML = "";
@@ -83,19 +100,24 @@ async function loadProposals() {
   }
 }
 
-function proposalRow({ slug, name, accepted }) {
+function proposalRow({ slug, name, accepted, seen }) {
   const row = document.createElement("div");
   row.className = "pay-row";
 
+  // waiting says nothing. Opened four times and still quiet is a call
+  // to make; never opened at all is a different problem entirely,
+  // usually that it never arrived.
   const answer = accepted.length
     ? accepted.map((a) => a.title + " · " + a.when).join(" / ")
-    : "waiting";
+    : !seen ? "not opened yet"
+    : "opened " + seen.times + " time" + (seen.times === 1 ? "" : "s") +
+      (seen.last ? ", last " + ago(seen.last) : "");
 
   row.innerHTML = `
     <span class="who">${escHtml(name)}</span>
     <span class="what">${escHtml(answer)}</span>
   `;
-  if (accepted.length) row.querySelector(".what").style.color = "var(--text)";
+  if (accepted.length || seen) row.querySelector(".what").style.color = "var(--text)";
 
   const open = link(`${PROPOSAL_SITE}/p/${slug}/`, "Open", true);
   const edit = link("proposal.html#" + encodeURIComponent(slug), "Edit", false);
@@ -185,6 +207,20 @@ function notRealButton(name, accepted, row) {
   });
 
   return btn;
+}
+
+/* "last 2 hours ago" tells you whether to pick up the phone. A
+   timestamp does not. */
+function ago(iso) {
+  const then = Date.parse(iso);
+  if (isNaN(then)) return "";
+  const mins = Math.floor((Date.now() - then) / 60000);
+  if (mins < 2) return "just now";
+  if (mins < 60) return mins + " minutes ago";
+  const hours = Math.floor(mins / 60);
+  if (hours < 24) return hours + " hour" + (hours === 1 ? "" : "s") + " ago";
+  const days = Math.floor(hours / 24);
+  return days + " day" + (days === 1 ? "" : "s") + " ago";
 }
 
 function link(href, text, external) {

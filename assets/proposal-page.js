@@ -28,6 +28,8 @@ document.addEventListener("DOMContentLoaded", async () => {
     return;
   }
   render(data);
+  // only once it has actually rendered for somebody
+  noteOpened();
 });
 
 function render(d) {
@@ -108,6 +110,31 @@ function renderPackages(packages) {
 
 /* Choosing is two steps on purpose: the button opens a small form
    rather than firing something irreversible on a single tap. */
+/* Tells you the proposal was opened, so silence stops being ambiguous.
+   Two filters, or the number would mean nothing:
+
+   Your own visits do not count. The dashboard is on this same origin,
+   so if an admin key is saved in this browser it is you looking.
+
+   And it waits five seconds on a visible page. Link previewers in
+   WhatsApp, Slack and mail clients fetch a page the moment the link is
+   pasted, and counting those would say a prospect read it when nobody
+   had opened anything. */
+function noteOpened() {
+  try {
+    if (localStorage.getItem("clients-admin-token")) return;
+  } catch { /* storage blocked, carry on */ }
+
+  setTimeout(() => {
+    if (document.visibilityState !== "visible") return;
+    fetch(`${RELAY}/seen`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ client: SLUG })
+    }).catch(() => { /* never let this bother the reader */ });
+  }, 5000);
+}
+
 function chooseArea(packageName) {
   const area = document.createElement("div");
   area.className = "pkg-choose";
