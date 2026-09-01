@@ -22,16 +22,11 @@
     }
   ],
   "nextShoot": {
-    "date": "2026-09-08",
-    "time": "15:00",
+    "date": "",
+    "time": "",
     "location": "Café Nord, Gent",
-    "focus": "Autumn menu, the new roast, and the room at golden hour",
-    "checklist": [
-      "Menu highlights chosen",
-      "Staff availability confirmed",
-      "Window tables kept free from 18:00",
-      "New roast in stock"
-    ]
+    "focus": "",
+    "checklist": []
   },
   "filmPlan": {
     "month": "September 2026",
