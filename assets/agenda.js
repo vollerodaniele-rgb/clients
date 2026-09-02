@@ -12,6 +12,14 @@
 
 const AGENDA_RELAY = "https://kresha-idea-box.vollerodaniele.workers.dev";
 
+/* The line under a panel that says what went wrong. Silence after a
+   button press reads as success, which is how a delete that refused
+   looked like a delete that worked. */
+function say(id, what) {
+  const line = $(id);
+  if (line) line.textContent = what;
+}
+
 onReady(() => {
   loadAgenda();
   drawAsks();
@@ -112,15 +120,29 @@ function partnerRow(p) {
     }
     armed = false;
     remove.disabled = true;
+    /* Redrawing regardless of the answer made a refusal look like a
+       deletion: the row came back and nothing said why. */
     try {
-      await fetch(`${AGENDA_RELAY}/ref/remove`, {
+      const res = await fetch(`${AGENDA_RELAY}/ref/remove`, {
         method: "POST",
         headers: { "X-Studio-Key": token(), "Content-Type": "application/json" },
         body: JSON.stringify({ id: p.id })
       });
+      if (!res.ok) {
+        let why = String(res.status);
+        try { why = (await res.json()).error || why; } catch { /* keep the number */ }
+        say("ref-msg", "Could not remove " + (p.name || p.id) + ": " + why);
+        remove.disabled = false;
+        remove.textContent = "Remove";
+        return;
+      }
+      say("ref-msg", "");
       drawPartners();
-    } catch {
+    } catch (err) {
+      say("ref-msg", "Could not reach the relay to remove that partner.");
+      console.error("partner remove failed:", err);
       remove.disabled = false;
+      remove.textContent = "Remove";
     }
   });
   head.appendChild(remove);
