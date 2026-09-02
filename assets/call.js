@@ -20,15 +20,44 @@ document.addEventListener("DOMContentLoaded", () => {
   load();
 });
 
+/* Two modes, one page. With an id in the hash it is somebody's personal
+   link and greets them by name. Without one it is the open booking
+   page. The hash rather than a query because this link gets pasted
+   into mail and chat clients that rewrite what they touch. */
+const INVITE = location.hash.replace(/^#/, "").trim();
+
 async function load() {
   try {
-    const res = await fetch(`${RELAY}/call/slots`, { cache: "no-store" });
-    if (!res.ok) throw new Error(String(res.status));
+    const url = INVITE
+      ? `${RELAY}/call/invite?id=${encodeURIComponent(INVITE)}`
+      : `${RELAY}/call/slots`;
+
+    const res = await fetch(url, { cache: "no-store" });
+    if (!res.ok) {
+      $("title").textContent = "This link has expired";
+      $("intro").textContent = "Ask for a new one and we will find a time.";
+      return;
+    }
+
     const data = await res.json();
 
-    if (!data.slots.length) {
+    if (data.name) {
+      $("title").textContent = data.name + ", pick a time";
+    }
+
+    // their link, already used
+    if (data.booked) {
+      $("title").textContent = "You are booked in";
       $("intro").textContent =
-        "There are no times on offer at the moment. Send a message instead and we will find one.";
+        longDate(data.booked.date) + " at " + data.booked.time +
+        ". Check your email for the confirmation. Reply to it if you need to move.";
+      return;
+    }
+
+    if (!data.slots.length) {
+      $("intro").textContent = INVITE
+        ? "Those times have all gone. Reply to the message this came in and we will find another."
+        : "There are no times on offer at the moment. Send a message instead and we will find one.";
       return;
     }
 
@@ -106,6 +135,7 @@ async function book() {
         name,
         email,
         note: $("about").value.trim(),
+        invite: INVITE,
         website: $("website").value
       })
     });

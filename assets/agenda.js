@@ -14,8 +14,189 @@ const AGENDA_RELAY = "https://kresha-idea-box.vollerodaniele.workers.dev";
 
 onReady(() => {
   loadAgenda();
+  drawInvites();
   drawSlotEditor();
 });
+
+/* ============ A LINK FOR ONE PERSON ============ */
+/* Type a name, give them a few times, send them the link. The times
+   are theirs, but the booking is not: an hour taken on anybody's link
+   disappears from everybody's, so offering the same Tuesday to three
+   people cannot double book you. */
+
+async function drawInvites() {
+  const wrap = $("agenda-invites");
+  if (!wrap) return;
+
+  if (!token()) {
+    wrap.innerHTML = '<p class="muted" style="font-size:0.9rem">Save your access key to make call links.</p>';
+    return;
+  }
+
+  let invites = [];
+  try {
+    const res = await fetch(`${AGENDA_RELAY}/call/list`, {
+      headers: { "X-Studio-Key": token() }, cache: "no-store"
+    });
+    if (res.ok) invites = (await res.json()).invites || [];
+  } catch { /* the maker below still works */ }
+
+  wrap.innerHTML = `
+    <p class="how" style="margin-bottom:0.6rem">
+      A call link for one person. Put in their name and the times you can do, and send
+      them what it gives you.
+    </p>
+    <div class="row">
+      <label class="field" style="flex:1;min-width:11rem"><span>Their name</span>
+        <input id="inv-name" type="text" maxlength="60" placeholder="Marie">
+      </label>
+      <label class="field" style="min-width:7rem"><span>How long</span>
+        <input id="inv-minutes" type="number" min="10" max="180" value="20">
+      </label>
+    </div>
+    <div class="row">
+      <label class="field" style="flex:1;min-width:14rem"><span>A line they see (optional)</span>
+        <input id="inv-note" type="text" maxlength="300" placeholder="Twenty minutes, no pitch.">
+      </label>
+    </div>
+    <div class="row">
+      ${[0, 1, 2].map((i) => `
+        <label class="field" style="min-width:9rem"><span>Date ${i + 1}</span>
+          <input id="inv-d${i}" type="date">
+        </label>
+        <label class="field" style="min-width:6rem"><span>Time</span>
+          <input id="inv-t${i}" type="time">
+        </label>`).join("")}
+    </div>
+    <div class="row" style="margin-top:0.4rem">
+      <button class="btn-mini solid" id="inv-make">Make the link</button>
+    </div>
+    <p class="form-msg" id="inv-msg" style="margin-top:0.6rem"></p>
+    <div id="inv-list" style="margin-top:1rem"></div>
+  `;
+
+  $("inv-make").addEventListener("click", makeInvite);
+  drawInviteList(invites);
+}
+
+function drawInviteList(invites) {
+  const list = $("inv-list");
+  if (!invites.length) {
+    list.innerHTML = '<p class="muted" style="font-size:0.9rem">No call links yet.</p>';
+    return;
+  }
+
+  list.innerHTML = "";
+  for (const inv of invites) list.appendChild(inviteRow(inv));
+}
+
+function inviteRow(inv) {
+  const row = document.createElement("div");
+  row.className = "item";
+  const link = location.origin + "/call/#" + inv.id;
+
+  const head = document.createElement("div");
+  head.style.cssText = "display:flex;align-items:flex-start;gap:1rem;flex-wrap:wrap";
+
+  const text = document.createElement("div");
+  text.style.flex = "1";
+  text.innerHTML = `
+    <p style="font-size:0.95rem"><b>${escHtml(inv.name || "Someone")}</b></p>
+    <p class="muted" style="font-size:0.78rem;margin-top:0.2rem">
+      ${(inv.slots || []).length} time${(inv.slots || []).length === 1 ? "" : "s"} offered
+      &middot; ${inv.minutes} minutes
+    </p>
+    <p style="font-size:0.8rem;margin-top:0.3rem;color:${inv.booked ? "var(--text)" : "var(--dim)"}">
+      ${inv.booked
+        ? "&#10003; Booked " + escHtml(inv.booked.date) + " at " + escHtml(inv.booked.time)
+        : "Waiting for them to pick"}
+    </p>
+  `;
+  head.appendChild(text);
+
+  const copy = document.createElement("button");
+  copy.className = "btn-mini";
+  copy.textContent = "Copy link";
+  copy.addEventListener("click", async () => {
+    const done = await copyText(link);
+    copy.textContent = done ? "Copied" : "Select it";
+    setTimeout(() => { copy.textContent = "Copy link"; }, 1800);
+  });
+  head.appendChild(copy);
+
+  const open = document.createElement("a");
+  open.className = "btn-mini";
+  open.href = link;
+  open.target = "_blank";
+  open.rel = "noopener";
+  open.textContent = "View";
+  head.appendChild(open);
+
+  const remove = document.createElement("button");
+  remove.className = "btn-mini danger";
+  remove.textContent = "Remove";
+  let armed = false;
+  remove.addEventListener("click", async () => {
+    if (!armed) {
+      armed = true;
+      remove.textContent = "Sure?";
+      setTimeout(() => { if (armed) { armed = false; remove.textContent = "Remove"; } }, 4000);
+      return;
+    }
+    armed = false;
+    remove.disabled = true;
+    try {
+      await fetch(`${AGENDA_RELAY}/call/uninvite`, {
+        method: "POST",
+        headers: { "X-Studio-Key": token(), "Content-Type": "application/json" },
+        body: JSON.stringify({ id: inv.id })
+      });
+      drawInvites();
+    } catch {
+      remove.disabled = false;
+    }
+  });
+  head.appendChild(remove);
+
+  row.appendChild(head);
+  return row;
+}
+
+async function makeInvite() {
+  const msg = $("inv-msg");
+  const btn = $("inv-make");
+
+  const slots = [0, 1, 2]
+    .map((i) => ({ date: $("inv-d" + i).value, time: $("inv-t" + i).value }))
+    .filter((s) => s.date && s.time);
+
+  if (!slots.length) { msg.textContent = "Give it at least one date and time."; return; }
+
+  btn.disabled = true;
+  msg.textContent = "Making it...";
+
+  try {
+    const res = await fetch(`${AGENDA_RELAY}/call/invite`, {
+      method: "POST",
+      headers: { "X-Studio-Key": token(), "Content-Type": "application/json" },
+      body: JSON.stringify({
+        name: $("inv-name").value.trim(),
+        note: $("inv-note").value.trim(),
+        minutes: Number($("inv-minutes").value) || 20,
+        slots
+      })
+    });
+    const body = await res.json();
+    if (!res.ok) throw new Error(body.error || String(res.status));
+
+    msg.textContent = "Made. Copy the link below and send it.";
+    drawInvites();
+  } catch (err) {
+    msg.textContent = "Could not make it: " + err.message;
+  } finally {
+    btn.disabled = false;
+  }
+}
 
 async function loadAgenda() {
   const wrap = $("agenda-list");
