@@ -570,21 +570,64 @@ async function fillDelivery(month, files, counter) {
 
     counter.textContent = list.length + (list.length === 1 ? " file" : " files");
     files.innerHTML = "";
+
+    const href = (name) => `${CONFIG.submitUrl}/file?client=${encodeURIComponent(CLIENT)}` +
+      `&month=${encodeURIComponent(month)}&name=${encodeURIComponent(name)}`;
+
     for (const f of list) {
       const a = document.createElement("a");
       a.className = "delivery-file";
-      a.href = `${CONFIG.submitUrl}/file?client=${encodeURIComponent(CLIENT)}` +
-        `&month=${encodeURIComponent(month)}&name=${encodeURIComponent(f.name)}`;
+      a.href = href(f.name);
       a.innerHTML = `
         <span class="delivery-name">${esc(f.name)}</span>
         <span class="delivery-size">${esc(readableSize(f.size))}</span>
       `;
       files.appendChild(a);
     }
+
+    if (list.length > 1) files.appendChild(downloadAll(list, href));
   } catch (err) {
     console.error("delivery load failed:", err);
     files.innerHTML = `<p class="muted">Could not load these right now.</p>`;
   }
+}
+
+/* Starts every file, one after another, rather than handing over a zip.
+   A zip would have to be built somewhere, and building one out of
+   gigabytes of video is exactly the kind of work that does not belong
+   in front of a waiting client. Browsers ask once whether to allow
+   several downloads, then get on with it. */
+function downloadAll(list, href) {
+  const wrap = document.createElement("div");
+  wrap.className = "delivery-all";
+
+  const btn = document.createElement("button");
+  btn.type = "button";
+  btn.className = "btn-send";
+  btn.textContent = "Download all " + list.length;
+
+  const note = document.createElement("span");
+  note.className = "delivery-size";
+
+  btn.addEventListener("click", async () => {
+    btn.disabled = true;
+    for (let i = 0; i < list.length; i++) {
+      note.textContent = "Starting " + (i + 1) + " of " + list.length;
+      const a = document.createElement("a");
+      a.href = href(list[i].name);
+      a.download = list[i].name;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      // spaced out, or the browser treats the burst as a popup
+      await new Promise((r) => setTimeout(r, 700));
+    }
+    note.textContent = "All " + list.length + " started. Check your downloads.";
+    btn.disabled = false;
+  });
+
+  wrap.append(btn, note);
+  return wrap;
 }
 
 function readableSize(bytes) {
