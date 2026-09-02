@@ -122,6 +122,13 @@ async function book() {
     return;
   }
 
+  const phone = $("phone").value.trim();
+  if (!/^[+(\d][\d\s()./-]{5,}$/.test(phone)) {
+    msg.textContent = "Please add a number I can call you on.";
+    $("phone").focus();
+    return;
+  }
+
   btn.disabled = true;
   msg.textContent = "Booking...";
 
@@ -134,6 +141,7 @@ async function book() {
         time: picked.time,
         name,
         email,
+        phone,
         note: $("about").value.trim(),
         invite: INVITE,
         ref: sentBy(),
@@ -150,7 +158,7 @@ async function book() {
     }
     if (!res.ok) throw new Error(String(res.status));
 
-    done(name, email);
+    done(name, email, phone);
   } catch (err) {
     console.error("booking failed:", err);
     msg.textContent = "Could not book that. Try again in a minute.";
@@ -158,13 +166,13 @@ async function book() {
   }
 }
 
-function done(name, email) {
+function done(name, email, phoneUsed) {
   document.querySelector("main").innerHTML = `
     <p class="transfer-kicker">NOIR AU NOIR</p>
     <h1 class="transfer-title">We are on.</h1>
     <p class="transfer-note">
       ${esc(longDate(picked.date))} at ${esc(picked.time)}. A confirmation is on its way to
-      ${esc(email)}, with a calendar invitation so it does not get forgotten.
+      ${esc(email)}, with a calendar invitation. I will call you on ${esc(phoneUsed)}.
     </p>
     <p class="transfer-expiry">Something come up? Reply to that email and we will move it.</p>
   `;

@@ -403,6 +403,7 @@ async function bookedCalls() {
       who: b.name,
       what: b.minutes + " minute call",
       where: b.email,
+      phone: b.phone || "",
       note: b.note || "",
       id: b.id
     }));
@@ -427,6 +428,10 @@ function agendaRow(e) {
     </p>
     <p style="font-size:0.92rem;margin-top:0.2rem">${escHtml(e.who)}${e.what ? " &middot; " + escHtml(e.what) : ""}</p>
     ${e.where ? `<p class="muted" style="font-size:0.8rem;margin-top:0.2rem">${escHtml(e.where)}</p>` : ""}
+    ${e.phone
+      // tappable, because on a phone this is the whole point of the row
+      ? `<p style="font-size:0.9rem;margin-top:0.2rem"><a href="tel:${escHtml(e.phone.replace(/[^\d+]/g, ""))}" style="color:var(--text)">${escHtml(e.phone)}</a></p>`
+      : ""}
     ${e.note ? `<p class="muted" style="font-size:0.8rem;margin-top:0.3rem">&ldquo;${escHtml(e.note)}&rdquo;</p>` : ""}
   `;
   head.appendChild(left);
