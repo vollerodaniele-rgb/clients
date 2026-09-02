@@ -180,6 +180,8 @@ function render() {
     ));
   }, count(plan.documents, "files")));
 
+  app.appendChild(deliveriesPanel());
+
   app.appendChild(listPanel("Invoices", plan.invoices, () => ({
     number: "", period: "", issued: "", status: "upcoming", url: ""
   }), (inv, body) => {
@@ -392,6 +394,163 @@ function normalizeDate(raw) {
 /* ============ IDEAS & REQUESTS ============ */
 /* These are GitHub issues, not part of plan.json, so this panel acts
    on GitHub straight away. Nothing here waits for Save & Publish. */
+
+/* ============ DELIVERING THE WORK ============ */
+/* The month's finished files, dragged in here and stored where the
+   client can fetch them again next year. The data file only records
+   which months exist and what you said about them; the files
+   themselves live in the bucket and are listed from it, so uploading
+   one never means editing anything. */
+
+const RELAY_URL = "https://kresha-idea-box.vollerodaniele.workers.dev";
+
+function deliveriesPanel() {
+  if (!Array.isArray(plan.deliveries)) plan.deliveries = [];
+
+  return panel("Deliveries", (body) => {
+    const note = document.createElement("p");
+    note.className = "muted";
+    note.style.cssText = "font-size:0.9rem;margin-bottom:1rem";
+    note.textContent = "Add a month, then drag the finished files in. They land in the " +
+      "client's portal straight away, no publishing needed, and the link never expires. " +
+      "One file at a time, up to 95MB each.";
+    body.appendChild(note);
+
+    body.appendChild(sublist(plan.deliveries, () => ({
+      month: "", label: "", note: ""
+    }), (d, wrap) => {
+      wrap.appendChild(row(
+        monthField("Which month", d),
+        textField("Shown as", d, "label")
+      ));
+      wrap.appendChild(textField("What to say about it (optional)", d, "note", true));
+      wrap.appendChild(fileArea(d));
+    }, "Add a month"));
+  }, count(plan.deliveries, "months"));
+}
+
+/* A month picker, because it gives a clean 2026-09 with no parsing and
+   no chance of two months colliding. */
+function monthField(label, d) {
+  const lab = document.createElement("label");
+  lab.className = "field";
+  const span = document.createElement("span");
+  span.textContent = label;
+  const input = document.createElement("input");
+  input.type = "month";
+  input.value = d.month || "";
+
+  input.addEventListener("input", () => {
+    d.month = input.value;
+    // name it for them, unless they have written their own
+    if (!d.label || /^[A-Z][a-z]+ \d{4}$/.test(d.label)) {
+      const [y, m] = input.value.split("-");
+      if (y && m) {
+        d.label = new Date(Number(y), Number(m) - 1, 1)
+          .toLocaleDateString("en-GB", { month: "long", year: "numeric" });
+        const shown = lab.parentElement.querySelector('input:not([type="month"])');
+        if (shown) shown.value = d.label;
+      }
+    }
+  });
+
+  lab.append(span, input);
+  return lab;
+}
+
+function fileArea(d) {
+  const wrap = document.createElement("div");
+  wrap.style.marginTop = "0.6rem";
+
+  const list = document.createElement("div");
+  list.style.cssText = "font-size:0.9rem;margin-bottom:0.6rem";
+  wrap.appendChild(list);
+
+  const pick = document.createElement("input");
+  pick.type = "file";
+  pick.multiple = true;
+  pick.style.cssText = "font-size:0.85rem";
+
+  const msg = document.createElement("p");
+  msg.className = "form-msg";
+  msg.style.cssText = "font-size:0.85rem;margin-top:0.4rem";
+
+  const draw = async () => {
+    if (!d.month) { list.textContent = "Pick a month first."; return; }
+    list.textContent = "Reading what is there...";
+    try {
+      const res = await fetch(
+        `${RELAY_URL}/delivery?client=${encodeURIComponent(CLIENT)}&month=${encodeURIComponent(d.month)}`,
+        { cache: "no-store" }
+      );
+      const { files } = await res.json();
+      list.innerHTML = files.length
+        ? files.map((f) => `<div>${escHtml(f.name)} <span class="muted">${readableSize(f.size)}</span></div>`).join("")
+        : '<span class="muted">Nothing in this month yet.</span>';
+    } catch (err) {
+      list.textContent = "Could not read what is there.";
+    }
+  };
+
+  pick.addEventListener("change", async () => {
+    const files = [...pick.files];
+    pick.value = "";
+    if (!d.month) { msg.textContent = "Pick a month before adding files."; return; }
+    if (!localStorage.getItem(TOKEN_KEY)) { msg.textContent = "Save your access key first."; return; }
+
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
+      const label = `${file.name} (${i + 1} of ${files.length})`;
+      try {
+        await uploadDelivery(d.month, file, (pct) => {
+          msg.textContent = `Sending ${label} ${pct}%`;
+        });
+        msg.textContent = `Sent ${label}`;
+      } catch (err) {
+        msg.textContent = `${file.name} did not send: ${err.message}`;
+        break;
+      }
+    }
+    draw();
+  });
+
+  wrap.append(pick, msg);
+  draw();
+  return wrap;
+}
+
+/* XHR rather than fetch, only because it reports upload progress and a
+   video file is long enough that silence feels broken. */
+function uploadDelivery(month, file, onProgress) {
+  return new Promise((resolve, reject) => {
+    const url = `${RELAY_URL}/deliver?client=${encodeURIComponent(CLIENT)}` +
+      `&month=${encodeURIComponent(month)}&name=${encodeURIComponent(file.name)}`;
+
+    const xhr = new XMLHttpRequest();
+    xhr.open("POST", url);
+    xhr.setRequestHeader("X-Studio-Key", localStorage.getItem(TOKEN_KEY));
+    xhr.setRequestHeader("X-File-Type", file.type || "application/octet-stream");
+
+    xhr.upload.addEventListener("progress", (e) => {
+      if (e.lengthComputable) onProgress(Math.round((e.loaded / e.total) * 100));
+    });
+
+    xhr.addEventListener("load", () => {
+      if (xhr.status === 201) return resolve();
+      let why = "error " + xhr.status;
+      try { why = JSON.parse(xhr.responseText).error || why; } catch { /* keep the code */ }
+      reject(new Error(why));
+    });
+
+    xhr.addEventListener("error", () => reject(new Error("the connection dropped")));
+    xhr.send(file);
+  });
+}
+
+function readableSize(bytes) {
+  const mb = bytes / (1024 * 1024);
+  return mb >= 1 ? mb.toFixed(1) + " MB" : Math.max(1, Math.round(bytes / 1024)) + " KB";
+}
 
 /* ============ WHAT KIND OF JOB ============ */
 /* One switch decides which half of the portal applies. A retainer

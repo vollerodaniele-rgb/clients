@@ -59,7 +59,7 @@ async function loadPlan() {
   setupShootPick(data.shootPick);
   renderFilmPlan(data.filmPlan);
   renderMonths(data.months || []);
-  renderDocs(data.documents || []);
+  renderDocs(data.documents || [], data.deliveries || []);
   renderInvoices(data.invoices || []);
   const isProject = data.kind === "project";
   renderFooter(data.contact, isProject);
@@ -490,12 +490,118 @@ function bar(label, v) {
   `;
 }
 
-function renderDocs(docs) {
+/* The finished work, month by month. Files are listed from storage
+   rather than from the data file, so a month is right the moment
+   something is added to it and there is nothing to keep in step.
+
+   Each month opens on a tap and fetches only then, so a client with a
+   year of deliveries does not pay for twelve lists to see one. */
+function renderDeliveries(deliveries) {
+  const wrap = $("doc-grid");
+  if (!deliveries.length) return;
+
+  const box = document.createElement("div");
+  box.className = "delivery-list";
+
+  for (const d of deliveries.filter((x) => x && x.month)) {
+    const item = document.createElement("div");
+    item.className = "delivery";
+
+    const head = document.createElement("button");
+    head.type = "button";
+    head.className = "delivery-head";
+    head.innerHTML = `
+      <span class="delivery-month">${esc(d.label || d.month)}</span>
+      <span class="delivery-count"></span>
+      <svg class="delivery-arrow" viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="1.6"
+              stroke-linecap="round" stroke-linejoin="round"></path>
+      </svg>
+    `;
+
+    const body = document.createElement("div");
+    body.className = "delivery-body";
+    body.hidden = true;
+
+    if (d.note) {
+      const note = document.createElement("p");
+      note.className = "delivery-note";
+      note.textContent = d.note;
+      body.appendChild(note);
+    }
+
+    const files = document.createElement("div");
+    files.className = "delivery-files";
+    files.innerHTML = `<p class="muted">Loading...</p>`;
+    body.appendChild(files);
+
+    let loaded = false;
+    head.addEventListener("click", async () => {
+      const open = head.getAttribute("aria-expanded") !== "true";
+      head.setAttribute("aria-expanded", open ? "true" : "false");
+      head.classList.toggle("open", open);
+      body.hidden = !open;
+      if (open && !loaded) {
+        loaded = true;
+        await fillDelivery(d.month, files, head.querySelector(".delivery-count"));
+      }
+    });
+
+    item.append(head, body);
+    box.appendChild(item);
+  }
+
+  wrap.appendChild(box);
+}
+
+async function fillDelivery(month, files, counter) {
+  try {
+    const res = await fetch(
+      `${CONFIG.submitUrl}/delivery?client=${encodeURIComponent(CLIENT)}&month=${encodeURIComponent(month)}`,
+      { cache: "no-store" }
+    );
+    if (!res.ok) throw new Error(String(res.status));
+    const list = (await res.json()).files || [];
+
+    if (!list.length) {
+      files.innerHTML = `<p class="muted">Nothing here yet.</p>`;
+      return;
+    }
+
+    counter.textContent = list.length + (list.length === 1 ? " file" : " files");
+    files.innerHTML = "";
+    for (const f of list) {
+      const a = document.createElement("a");
+      a.className = "delivery-file";
+      a.href = `${CONFIG.submitUrl}/file?client=${encodeURIComponent(CLIENT)}` +
+        `&month=${encodeURIComponent(month)}&name=${encodeURIComponent(f.name)}`;
+      a.innerHTML = `
+        <span class="delivery-name">${esc(f.name)}</span>
+        <span class="delivery-size">${esc(readableSize(f.size))}</span>
+      `;
+      files.appendChild(a);
+    }
+  } catch (err) {
+    console.error("delivery load failed:", err);
+    files.innerHTML = `<p class="muted">Could not load these right now.</p>`;
+  }
+}
+
+function readableSize(bytes) {
+  const mb = bytes / (1024 * 1024);
+  return mb >= 1 ? mb.toFixed(1) + " MB" : Math.max(1, Math.round(bytes / 1024)) + " KB";
+}
+
+function renderDocs(docs, deliveries) {
   const wrap = $("doc-grid");
   wrap.innerHTML = "";
 
+  renderDeliveries(deliveries || []);
+
   if (!docs.length) {
-    wrap.innerHTML = `<p class="muted">Contracts and finished work appear here as they are ready.</p>`;
+    if (!(deliveries || []).length) {
+      wrap.innerHTML = `<p class="muted">Contracts and finished work appear here as they are ready.</p>`;
+    }
     return;
   }
 
