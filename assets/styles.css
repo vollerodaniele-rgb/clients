@@ -301,6 +301,17 @@ body {
   color: var(--text);
 }
 
+/* A boxed row. The client admin defines its own version inside that
+   page; this is the shared one, so a row on the dashboard is not
+   unstyled just because it was written later. */
+.item {
+  border: 1px solid var(--line-soft);
+  border-radius: 8px;
+  padding: 0.9rem 1rem;
+  margin-bottom: 0.9rem;
+  position: relative;
+}
+
 /* ============ A TRANSFER PAGE ============ */
 /* Someone who may never have heard of the studio opens this, so it
    says who it is from and then gets out of the way. */

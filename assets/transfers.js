@@ -81,8 +81,17 @@ function transferRow(t) {
   const made = t.created ? new Date(t.created).toLocaleDateString("en-GB",
     { day: "numeric", month: "short", year: "numeric" }) : "";
 
-  row.innerHTML = `
-    <p style="font-size:0.95rem;padding-right:6rem"><b>${escHtml(title)}</b></p>
+  /* Laid out with flex rather than an absolutely placed button. The
+     .item rule that would have anchored one lives in the client admin
+     page and not on the dashboard, so the button had nothing to sit
+     against and floated off the panel entirely. */
+  const head = document.createElement("div");
+  head.style.cssText = "display:flex;align-items:flex-start;gap:1rem;flex-wrap:wrap";
+
+  const text = document.createElement("div");
+  text.style.flex = "1";
+  text.innerHTML = `
+    <p style="font-size:0.95rem"><b>${escHtml(title)}</b></p>
     <p class="muted" style="font-size:0.78rem;margin-top:0.3rem">
       ${t.files} file${t.files === 1 ? "" : "s"} &middot; ${escHtml(readableTotal(t.size))}
       ${made ? " &middot; made " + escHtml(made) : ""}
@@ -94,7 +103,8 @@ function transferRow(t) {
   const open = document.createElement("button");
   open.className = "btn-mini transfer-open";
   open.textContent = "Open";
-  open.style.cssText = "position:absolute;top:0.7rem;right:0.8rem";
+
+  head.append(text, open);
 
   const body = document.createElement("div");
   body.hidden = true;
@@ -107,7 +117,7 @@ function transferRow(t) {
     if (!built) { built = true; buildTransferBody(t, body); }
   });
 
-  row.append(open, body);
+  row.append(head, body);
   return row;
 }
 
