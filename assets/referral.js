@@ -15,6 +15,12 @@ const REF = location.hash.replace(/^#/, "").trim();
    origin, short lived, and only ever an id we issued. */
 const REF_MEMORY = "noir-ref";
 
+/* Shown when there is no partner behind the link, or when we cannot
+   reach the relay to find out who it is. Written once because it is
+   the headline, and a headline that disagrees with itself in three
+   places is worse than no headline. */
+const NO_PARTNER = "Monthly video for restaurants in Belgium.";
+
 const $ = (id) => document.getElementById(id);
 
 document.addEventListener("DOMContentLoaded", load);
@@ -22,7 +28,7 @@ document.addEventListener("DOMContentLoaded", load);
 async function load() {
   if (!REF) {
     // no partner, so it is just the studio's own page
-    $("sent").textContent = "Monthly video for restaurants in Gent.";
+    $("sent").textContent = NO_PARTNER;
     return;
   }
 
@@ -33,7 +39,7 @@ async function load() {
   try {
     const res = await fetch(`${RELAY}/ref?id=${encodeURIComponent(REF)}`, { cache: "no-store" });
     if (!res.ok) {
-      $("sent").textContent = "Monthly video for restaurants in Gent.";
+      $("sent").textContent = NO_PARTNER;
       return;
     }
 
@@ -42,7 +48,7 @@ async function load() {
     $("sent").innerHTML = partner.name
       ? `${esc(partner.name)} sent you this.<br><span class="ref-second">${esc(
           partner.note || "They shoot your food. We film the rest.")}</span>`
-      : "Monthly video for restaurants in Gent.";
+      : NO_PARTNER;
 
     if (partner.discount) {
       $("offer").textContent = `Because ${partner.name || "they"} sent you, ${partner.discount}.`;
@@ -56,7 +62,7 @@ async function load() {
     }).catch(() => { /* a missed count is not worth a broken page */ });
   } catch (err) {
     console.error("partner load failed:", err);
-    $("sent").textContent = "Monthly video for restaurants in Gent.";
+    $("sent").textContent = NO_PARTNER;
   }
 }
 
