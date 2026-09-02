@@ -20,7 +20,7 @@
       css.rel = "stylesheet";
       css.href = "../assets/styles.css?t=" + stamp;
       here.parentNode.insertBefore(css, here);
-      ["dashboard.js", "proposals.js", "boxes.js"].forEach(function (file) {
+      ["dashboard.js", "proposals.js", "boxes.js", "transfers.js"].forEach(function (file) {
         var js = document.createElement("script");
         js.src = "../assets/" + file + "?t=" + stamp;
         js.async = false;
@@ -230,6 +230,19 @@
         </label>
         <p class="form-msg" id="box-msg" style="margin-top:0.7rem"></p>
       </div>
+    </div>
+
+    <div class="panel" style="margin-top:1.8rem">
+      <h2>Send files</h2>
+      <p class="how" style="margin-bottom:1rem">
+        Make a link, put files behind it, send it to anyone. It does not expire in a
+        week, and you can kill it whenever you like.
+      </p>
+      <div class="row">
+        <button class="btn-mini solid" id="transfer-new">New link</button>
+      </div>
+      <p class="form-msg" id="transfer-msg" style="margin-top:0.7rem"></p>
+      <div id="transfer-list" style="margin-top:1rem"></div>
     </div>
 
     <div class="panel" style="margin-top:1.8rem">
