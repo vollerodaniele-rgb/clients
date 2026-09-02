@@ -28,12 +28,42 @@
     "items": []
   },
   "months": [],
-  "documents": [],
+  "documents": [
+    {
+      "type": "Delivery",
+      "title": "",
+      "note": "",
+      "url": ""
+    }
+  ],
   "invoices": [],
   "posts": [],
   "contact": {
     "line": "MUSSOLINI x NOIR AU NOIR",
     "email": "info@noiraunoir.com",
     "note": ""
-  }
+  },
+  "project": {
+    "what": "",
+    "stages": [
+      "Booked",
+      "Filmed",
+      "Editing",
+      "Delivered"
+    ],
+    "stage": 0,
+    "deliverBy": ""
+  },
+  "shootPick": {
+    "asked": false,
+    "note": "",
+    "options": []
+  },
+  "deliveries": [
+    {
+      "month": "2026-11",
+      "label": "November 2026",
+      "note": ""
+    }
+  ]
 }
