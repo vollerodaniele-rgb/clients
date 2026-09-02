@@ -1,7 +1,7 @@
 {
   "name": "CAFÉ NORD",
   "notice": "An example portal, so you can see what yours would look like. The business, the numbers and the names are invented.",
-  "tagline": "Monthly reels and photography for Café Nord. Everything about the collaboration in one place: planning, deliveries, documents and billing.",
+  "tagline": "Monthly reels for Café Nord. Everything about the collaboration in one place: planning, deliveries, documents and billing.",
   "dealNotes": "What we deliver every month, agreed in June. Adjust anytime, this page always shows the current agreement.",
   "deal": [
     {
@@ -9,8 +9,8 @@
       "label": "Reels per month"
     },
     {
-      "num": "10-15",
-      "label": "Photos per month"
+      "num": "1",
+      "label": "Interview reel"
     },
     {
       "num": "1",
@@ -52,8 +52,8 @@
         "note": "Short portraits of the three on the floor."
       },
       {
-        "what": "Photo set",
-        "note": "Dishes, room and team, framed for feed and stories."
+        "what": "Closing time",
+        "note": "Chairs up, lights down, the last coffee of the day. Quiet, no music."
       }
     ]
   },
@@ -65,10 +65,6 @@
         "done": 12,
         "total": 12
       },
-      "photos": {
-        "done": 14,
-        "total": 15
-      },
       "notes": "First month. Focus on the room and the regulars."
     },
     {
@@ -78,10 +74,6 @@
         "done": 12,
         "total": 12
       },
-      "photos": {
-        "done": 15,
-        "total": 15
-      },
       "notes": "Summer terrace, iced drinks, the late evening light."
     },
     {
@@ -90,10 +82,6 @@
       "reels": {
         "done": 4,
         "total": 12
-      },
-      "photos": {
-        "done": 6,
-        "total": 15
       },
       "notes": "Autumn menu launch and the new roast."
     }
@@ -114,13 +102,13 @@
     {
       "type": "Delivery",
       "title": "August content package",
-      "note": "12 reels and 15 photographs",
+      "note": "12 reels",
       "url": ""
     },
     {
       "type": "Delivery",
       "title": "July content package",
-      "note": "12 reels and 14 photographs",
+      "note": "12 reels",
       "url": ""
     }
   ],
@@ -151,7 +139,7 @@
     {
       "date": "2026-09-02",
       "time": "12:30",
-      "platform": "Instagram Photo",
+      "platform": "Instagram Reel",
       "title": "Window seat, short break",
       "status": "posted",
       "caption": "Midday at Nord. One coffee, one hour, nobody rushing you.\n\n#gent #cafegent #cafenord"
