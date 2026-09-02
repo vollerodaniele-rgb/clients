@@ -585,7 +585,9 @@ async function fillDelivery(month, files, counter) {
       files.appendChild(a);
     }
 
-    if (list.length > 1) files.appendChild(downloadAll(list, href));
+    // always, including for a single file: a row that happens to be a
+    // link does not read as something you can take away
+    files.appendChild(downloadAll(list, href));
   } catch (err) {
     console.error("delivery load failed:", err);
     files.innerHTML = `<p class="muted">Could not load these right now.</p>`;
@@ -601,10 +603,12 @@ function downloadAll(list, href) {
   const wrap = document.createElement("div");
   wrap.className = "delivery-all";
 
+  const many = list.length > 1;
+
   const btn = document.createElement("button");
   btn.type = "button";
   btn.className = "btn-send";
-  btn.textContent = "Download all " + list.length;
+  btn.textContent = many ? "Download all " + list.length : "Download";
 
   const note = document.createElement("span");
   note.className = "delivery-size";
@@ -612,7 +616,7 @@ function downloadAll(list, href) {
   btn.addEventListener("click", async () => {
     btn.disabled = true;
     for (let i = 0; i < list.length; i++) {
-      note.textContent = "Starting " + (i + 1) + " of " + list.length;
+      if (many) note.textContent = "Starting " + (i + 1) + " of " + list.length;
       const a = document.createElement("a");
       a.href = href(list[i].name);
       a.download = list[i].name;
@@ -620,9 +624,11 @@ function downloadAll(list, href) {
       a.click();
       a.remove();
       // spaced out, or the browser treats the burst as a popup
-      await new Promise((r) => setTimeout(r, 700));
+      if (many) await new Promise((r) => setTimeout(r, 700));
     }
-    note.textContent = "All " + list.length + " started. Check your downloads.";
+    note.textContent = many
+      ? "All " + list.length + " started. Check your downloads."
+      : "Started. Check your downloads.";
     btn.disabled = false;
   });
 

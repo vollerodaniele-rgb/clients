@@ -77,7 +77,9 @@ function render(files) {
     wrap.appendChild(a);
   }
 
-  if (files.length > 1) wrap.appendChild(downloadAll(files, href));
+  // always, including for a single file, so there is a plain thing to
+  // press rather than a row you have to guess is a link
+  wrap.appendChild(downloadAll(files, href));
 }
 
 /* Starts each file rather than building a zip, for the same reason as
@@ -87,10 +89,12 @@ function downloadAll(files, href) {
   const wrap = document.createElement("div");
   wrap.className = "delivery-all";
 
+  const many = files.length > 1;
+
   const btn = document.createElement("button");
   btn.type = "button";
   btn.className = "btn-send";
-  btn.textContent = "Download all " + files.length;
+  btn.textContent = many ? "Download all " + files.length : "Download";
 
   const note = document.createElement("span");
   note.className = "delivery-size";
@@ -98,16 +102,18 @@ function downloadAll(files, href) {
   btn.addEventListener("click", async () => {
     btn.disabled = true;
     for (let i = 0; i < files.length; i++) {
-      note.textContent = "Starting " + (i + 1) + " of " + files.length;
+      if (many) note.textContent = "Starting " + (i + 1) + " of " + files.length;
       const a = document.createElement("a");
       a.href = href(files[i].name);
       a.download = files[i].name;
       document.body.appendChild(a);
       a.click();
       a.remove();
-      await new Promise((r) => setTimeout(r, 700));
+      if (many) await new Promise((r) => setTimeout(r, 700));
     }
-    note.textContent = "All " + files.length + " started. Check your downloads.";
+    note.textContent = many
+      ? "All " + files.length + " started. Check your downloads."
+      : "Started. Check your downloads.";
     btn.disabled = false;
   });
 
