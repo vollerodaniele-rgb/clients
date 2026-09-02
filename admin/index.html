@@ -245,6 +245,25 @@
     </div>
 
     <div class="panel" style="margin-top:1.8rem">
+      <h2>Partners</h2>
+      <p class="how" style="margin-bottom:1rem">
+        A photographer gets their own page with their name on it, to send to their clients.
+        You see how many opened it and who booked a call, which is what any fee is based on.
+      </p>
+      <div class="row">
+        <label class="field" style="flex:1;min-width:10rem"><span>Their name</span>
+          <input id="ref-name" type="text" maxlength="60" placeholder="Marie">
+        </label>
+        <label class="field" style="flex:1;min-width:11rem"><span>What their client gets (optional)</span>
+          <input id="ref-discount" type="text" maxlength="40" placeholder="the first month is &euro;250 off">
+        </label>
+        <button class="btn-mini solid" id="ref-make" style="align-self:flex-end">Make their page</button>
+      </div>
+      <p class="form-msg" id="ref-msg" style="margin-top:0.7rem"></p>
+      <div id="ref-list" style="margin-top:1rem"></div>
+    </div>
+
+    <div class="panel" style="margin-top:1.8rem">
       <h2>Send files</h2>
       <p class="how" style="margin-bottom:1rem">
         Make a link, put files behind it, send it to anyone. It does not expire in a

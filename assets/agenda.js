@@ -16,7 +16,147 @@ onReady(() => {
   loadAgenda();
   drawInvites();
   drawSlotEditor();
+  drawPartners();
+  const make = $("ref-make");
+  if (make) make.addEventListener("click", makePartner);
 });
+
+/* ============ REFERRAL PARTNERS ============ */
+/* A page per photographer. What matters here is not the page, it is
+   knowing who actually sent somebody, because that is what a fee is
+   paid on. So each row shows opens and, more importantly, bookings. */
+
+async function drawPartners() {
+  const wrap = $("ref-list");
+  if (!wrap) return;
+
+  if (!token()) {
+    wrap.innerHTML = '<p class="muted" style="font-size:0.9rem">Save your access key to see your partners.</p>';
+    return;
+  }
+
+  try {
+    const res = await fetch(`${AGENDA_RELAY}/refs`, {
+      headers: { "X-Studio-Key": token() }, cache: "no-store"
+    });
+    if (!res.ok) throw new Error(String(res.status));
+    const { partners } = await res.json();
+
+    if (!partners.length) {
+      wrap.innerHTML = '<p class="muted" style="font-size:0.9rem">No partners yet.</p>';
+      return;
+    }
+
+    wrap.innerHTML = "";
+    for (const p of partners) wrap.appendChild(partnerRow(p));
+  } catch (err) {
+    wrap.innerHTML = '<p class="muted" style="font-size:0.9rem">Could not read your partners (' +
+      escHtml(err.message) + ").</p>";
+  }
+}
+
+function partnerRow(p) {
+  const row = document.createElement("div");
+  row.className = "item";
+  const link = location.origin + "/r/#" + p.id;
+
+  const head = document.createElement("div");
+  head.style.cssText = "display:flex;align-items:flex-start;gap:1rem;flex-wrap:wrap";
+
+  const text = document.createElement("div");
+  text.style.flex = "1";
+  text.innerHTML = `
+    <p style="font-size:0.95rem"><b>${escHtml(p.name)}</b></p>
+    <p class="muted" style="font-size:0.78rem;margin-top:0.2rem">
+      ${p.opens} open${p.opens === 1 ? "" : "s"}${p.lastOpen ? ", last " + escHtml(sinceThen(p.lastOpen)) : ""}
+      ${p.discount ? " &middot; " + escHtml(p.discount) : ""}
+    </p>
+    <p style="font-size:0.8rem;margin-top:0.3rem;color:${p.calls ? "var(--text)" : "var(--dim)"}">
+      ${p.calls
+        ? "&#10003; " + p.calls + " call" + (p.calls === 1 ? "" : "s") + " booked: " +
+          escHtml(p.who.map((w) => w.name).join(", "))
+        : "Nobody has booked from it yet"}
+    </p>
+  `;
+  head.appendChild(text);
+
+  const copy = document.createElement("button");
+  copy.className = "btn-mini";
+  copy.textContent = "Copy link";
+  copy.addEventListener("click", async () => {
+    const done = await copyText(link);
+    copy.textContent = done ? "Copied" : "Select it";
+    setTimeout(() => { copy.textContent = "Copy link"; }, 1800);
+  });
+  head.appendChild(copy);
+
+  const view = document.createElement("a");
+  view.className = "btn-mini";
+  view.href = link;
+  view.target = "_blank";
+  view.rel = "noopener";
+  view.textContent = "View";
+  head.appendChild(view);
+
+  const remove = document.createElement("button");
+  remove.className = "btn-mini danger";
+  remove.textContent = "Remove";
+  let armed = false;
+  remove.addEventListener("click", async () => {
+    if (!armed) {
+      armed = true;
+      remove.textContent = "Sure?";
+      setTimeout(() => { if (armed) { armed = false; remove.textContent = "Remove"; } }, 4000);
+      return;
+    }
+    armed = false;
+    remove.disabled = true;
+    try {
+      await fetch(`${AGENDA_RELAY}/ref/remove`, {
+        method: "POST",
+        headers: { "X-Studio-Key": token(), "Content-Type": "application/json" },
+        body: JSON.stringify({ id: p.id })
+      });
+      drawPartners();
+    } catch {
+      remove.disabled = false;
+    }
+  });
+  head.appendChild(remove);
+
+  row.appendChild(head);
+  return row;
+}
+
+async function makePartner() {
+  const msg = $("ref-msg");
+  const name = $("ref-name").value.trim();
+  if (!name) { msg.textContent = "Put in their name."; return; }
+  if (!token()) { msg.textContent = "Save your access key first."; return; }
+
+  const btn = $("ref-make");
+  btn.disabled = true;
+  msg.textContent = "Making it...";
+
+  try {
+    const res = await fetch(`${AGENDA_RELAY}/ref/new`, {
+      method: "POST",
+      headers: { "X-Studio-Key": token(), "Content-Type": "application/json" },
+      body: JSON.stringify({ name, discount: $("ref-discount").value.trim() })
+    });
+    const body = await res.json();
+    if (!res.ok) throw new Error(body.error || String(res.status));
+
+    msg.textContent = name + " has a page. Copy the link below and send it to them.";
+    $("ref-name").value = "";
+    $("ref-discount").value = "";
+    drawPartners();
+  } catch (err) {
+    msg.textContent = "Could not make it: " + err.message;
+  } finally {
+    btn.disabled = false;
+  }
+}
 
 /* ============ A LINK FOR ONE PERSON ============ */
 /* Type a name, give them a few times, send them the link. The times

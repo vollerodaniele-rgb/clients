@@ -136,6 +136,7 @@ async function book() {
         email,
         note: $("about").value.trim(),
         invite: INVITE,
+        ref: sentBy(),
         website: $("website").value
       })
     });
@@ -168,6 +169,21 @@ function done(name, email) {
     <p class="transfer-expiry">Something come up? Reply to that email and we will move it.</p>
   `;
   document.title = "Booked";
+}
+
+/* If they came here from a partner's page, that page left its id
+   behind. Only honoured for a couple of hours, so somebody who looked
+   at a partner page last week and books today is not credited to them.
+   The fee is real money, so a stale attribution is worse than none. */
+function sentBy() {
+  try {
+    const saved = JSON.parse(localStorage.getItem("noir-ref") || "null");
+    if (!saved || !saved.id) return "";
+    if (Date.now() - Number(saved.at) > 2 * 60 * 60 * 1000) return "";
+    return saved.id;
+  } catch {
+    return "";
+  }
 }
 
 function longDate(iso) {
