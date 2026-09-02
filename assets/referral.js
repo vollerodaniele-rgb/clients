@@ -20,8 +20,6 @@ const $ = (id) => document.getElementById(id);
 document.addEventListener("DOMContentLoaded", load);
 
 async function load() {
-  playReel();
-
   if (!REF) {
     // no partner, so it is just the studio's own page
     $("sent").textContent = "Monthly video for restaurants in Gent.";
@@ -60,27 +58,6 @@ async function load() {
     console.error("partner load failed:", err);
     $("sent").textContent = "Monthly video for restaurants in Gent.";
   }
-}
-
-/* The reel if there is one, a quiet gradient if there is not. A video
-   studio's page should never be a wall of text, but a missing file
-   should not leave a broken box either. */
-function playReel() {
-  const video = $("reel");
-  const fallback = $("fallback");
-
-  video.addEventListener("loadeddata", () => {
-    video.hidden = false;
-    fallback.hidden = true;
-    video.play().catch(() => { /* a browser that refuses is fine */ });
-  });
-
-  video.addEventListener("error", () => {
-    video.hidden = true;
-    fallback.hidden = false;
-  });
-
-  video.src = "../assets/reel.mp4";
 }
 
 function esc(s) {
