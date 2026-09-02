@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Book a call</title>
+  <meta name="robots" content="noindex, nofollow">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/styles.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎬</text></svg>">
+</head>
+<body>
+
+  <main class="transfer-wrap">
+    <p class="transfer-kicker">NOIR AU NOIR</p>
+    <h1 class="transfer-title" id="title">Book a call</h1>
+    <p class="transfer-note" id="intro">Loading the times...</p>
+
+    <div id="slots" class="pick-grid" style="margin-top:2.5rem"></div>
+
+    <div id="details" hidden style="margin-top:2rem">
+      <p class="pick-lede" id="chosen"></p>
+      <label class="field"><span>Your name</span>
+        <input id="who" type="text" maxlength="60" placeholder="Who am I speaking to?">
+      </label>
+      <label class="field" style="margin-top:0.8rem"><span>Your email</span>
+        <input id="mail" type="email" maxlength="120" placeholder="So I can confirm it">
+      </label>
+      <label class="field" style="margin-top:0.8rem"><span>Anything I should know (optional)</span>
+        <input id="about" type="text" maxlength="200" placeholder="Your place, what you are after">
+      </label>
+      <input type="text" id="website" class="hp-field" tabindex="-1" autocomplete="off" aria-hidden="true">
+      <div style="margin-top:1.2rem">
+        <button class="btn-send" id="book">Book it</button>
+      </div>
+      <p class="form-msg" id="msg" role="status" style="margin-top:0.8rem"></p>
+    </div>
+  </main>
+
+  <footer class="footer">
+    <p>NOIR AU NOIR</p>
+    <p class="muted">Production company &middot; filming in Gent</p>
+  </footer>
+
+  <script src="../assets/call.js"></script>
+</body>
+</html>

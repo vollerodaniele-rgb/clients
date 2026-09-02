@@ -20,7 +20,7 @@
       css.rel = "stylesheet";
       css.href = "../assets/styles.css?t=" + stamp;
       here.parentNode.insertBefore(css, here);
-      ["dashboard.js", "proposals.js", "boxes.js", "transfers.js"].forEach(function (file) {
+      ["dashboard.js", "proposals.js", "boxes.js", "transfers.js", "agenda.js"].forEach(function (file) {
         var js = document.createElement("script");
         js.src = "../assets/" + file + "?t=" + stamp;
         js.async = false;
@@ -230,6 +230,17 @@
         </label>
         <p class="form-msg" id="box-msg" style="margin-top:0.7rem"></p>
       </div>
+    </div>
+
+    <div class="panel" style="margin-top:1.8rem">
+      <h2>Agenda</h2>
+      <p class="how" style="margin-bottom:1rem">
+        Every shoot and every booked call, in order. Shoots come from each client's
+        portal, calls from the times you are offering.
+      </p>
+      <div id="agenda-list"><p class="muted" style="font-size:0.9rem">Loading...</p></div>
+
+      <div id="agenda-slots" style="margin-top:1.6rem"></div>
     </div>
 
     <div class="panel" style="margin-top:1.8rem">
