@@ -70,10 +70,19 @@ function render(files) {
     const a = document.createElement("a");
     a.className = "delivery-file";
     a.href = href(f.name);
+    // the tick comes from the server, so it is still there tomorrow and
+    // on their other device, rather than only in the browser that took it
     a.innerHTML = `
-      <span class="delivery-name">${esc(f.name)}</span>
+      <span class="delivery-name">
+        <span class="delivery-tick" ${f.downloaded ? "" : "hidden"} title="Already downloaded">&#10003;</span>
+        ${esc(f.name)}
+      </span>
       <span class="delivery-size">${esc(readableSize(f.size))}</span>
     `;
+    a.addEventListener("click", () => {
+      const tick = a.querySelector(".delivery-tick");
+      if (tick) tick.hidden = false;
+    });
     wrap.appendChild(a);
   }
 
@@ -109,6 +118,10 @@ function downloadAll(files, href) {
       document.body.appendChild(a);
       a.click();
       a.remove();
+      // tick it here too, since this route never touches the rows
+      const row = wrap.parentElement.querySelectorAll(".delivery-file")[i];
+      const tick = row && row.querySelector(".delivery-tick");
+      if (tick) tick.hidden = false;
       if (many) await new Promise((r) => setTimeout(r, 700));
     }
     note.textContent = many

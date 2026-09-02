@@ -88,6 +88,17 @@ function transferRow(t) {
   const head = document.createElement("div");
   head.style.cssText = "display:flex;align-items:flex-start;gap:1rem;flex-wrap:wrap";
 
+  /* Whether it has actually been picked up is the thing you want to
+     know at a glance, so it gets its own line rather than being buried
+     with the file count. */
+  const got = t.downloaded || 0;
+  const picked = !t.files ? ""
+    : got === 0 ? "Not downloaded yet"
+    : got >= t.files
+      ? "&#10003; All downloaded" + (t.lastDownload ? " &middot; " + escHtml(sinceThen(t.lastDownload)) : "")
+      : "&#10003; " + got + " of " + t.files + " downloaded" +
+        (t.lastDownload ? " &middot; " + escHtml(sinceThen(t.lastDownload)) : "");
+
   const text = document.createElement("div");
   text.style.flex = "1";
   text.innerHTML = `
@@ -98,6 +109,7 @@ function transferRow(t) {
       ${t.expires ? " &middot; until " + escHtml(t.expires) : ""}
       ${t.expired ? " &middot; EXPIRED" : ""}
     </p>
+    ${picked ? `<p style="font-size:0.8rem;margin-top:0.3rem;color:${got ? "var(--text)" : "var(--dim)"}">${picked}</p>` : ""}
   `;
 
   const open = document.createElement("button");
@@ -293,6 +305,20 @@ function sendTransferFile(id, file, onProgress) {
     xhr.addEventListener("error", () => reject(new Error("the connection dropped")));
     xhr.send(file);
   });
+}
+
+/* "picked up 20 minutes ago" answers the question. A timestamp makes
+   you work it out. */
+function sinceThen(iso) {
+  const then = Date.parse(iso);
+  if (isNaN(then)) return "";
+  const mins = Math.floor((Date.now() - then) / 60000);
+  if (mins < 2) return "just now";
+  if (mins < 60) return mins + " minutes ago";
+  const hours = Math.floor(mins / 60);
+  if (hours < 24) return hours + " hour" + (hours === 1 ? "" : "s") + " ago";
+  const days = Math.floor(hours / 24);
+  return days + " day" + (days === 1 ? "" : "s") + " ago";
 }
 
 function readableTotal(bytes) {

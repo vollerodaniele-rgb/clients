@@ -437,6 +437,14 @@ body {
 
 .delivery-name { overflow-wrap: anywhere; }
 
+/* Already taken. Marked by presence rather than colour, since there is
+   no colour to spend here. */
+.delivery-tick {
+  display: inline-block;
+  margin-right: 0.45rem;
+  color: var(--dim);
+}
+
 .delivery-all {
   display: flex;
   align-items: center;
