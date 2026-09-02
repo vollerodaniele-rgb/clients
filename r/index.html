@@ -120,12 +120,36 @@
 
     <section class="section ref-ask">
       <p class="ref-eyebrow">If you are curious</p>
-      <h2 class="ref-h">Twenty minutes, no pitch.</h2>
+      <h2 class="ref-h">Leave your number.</h2>
       <p class="section-lede" style="margin-left:auto;margin-right:auto">
-        Pick a time and I will tell you what I would film first, and roughly what it would
-        do. No meeting, no deck. If it is not useful you have lost nothing.
+        We will call you back within one working day. Twenty minutes, nothing to prepare,
+        and we will tell you what we would film first. If it is not useful you have lost
+        nothing.
       </p>
-      <p><a class="btn-send" id="book" href="../call/">Pick a time</a></p>
+
+      <form class="ref-form" id="ask" novalidate>
+        <label class="field">
+          <span>Your name</span>
+          <input type="text" id="ask-name" autocomplete="name" required>
+        </label>
+        <label class="field">
+          <span>Phone</span>
+          <input type="tel" id="ask-phone" autocomplete="tel" required>
+        </label>
+        <label class="field">
+          <span>Email</span>
+          <input type="email" id="ask-email" autocomplete="email" required>
+        </label>
+
+        <!-- bots fill this, people never see it -->
+        <label class="hp-field" aria-hidden="true">
+          Website<input type="text" id="ask-website" tabindex="-1" autocomplete="off">
+        </label>
+
+        <button class="btn-send" type="submit" id="ask-send">Call me back</button>
+        <p class="form-msg" id="ask-msg"></p>
+      </form>
+
       <p class="ref-small" id="offer"></p>
     </section>
   </main>

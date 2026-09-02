@@ -23,7 +23,7 @@ const NO_PARTNER = "Monthly video for restaurants in Belgium.";
 
 const $ = (id) => document.getElementById(id);
 
-document.addEventListener("DOMContentLoaded", load);
+document.addEventListener("DOMContentLoaded", () => { load(); wireAsk(); });
 
 async function load() {
   if (!REF) {
@@ -63,6 +63,62 @@ async function load() {
   } catch (err) {
     console.error("partner load failed:", err);
     $("sent").textContent = NO_PARTNER;
+  }
+}
+
+/* The ask. A restaurant owner reading this on a phone between two
+   services will not go and pick an hour out of a calendar, so this
+   takes three fields and rings them back instead.
+
+   Which partner sent them travels with it, because that is what
+   decides who gets paid. */
+function wireAsk() {
+  const form = $("ask");
+  if (!form) return;
+
+  const send = $("ask-send");
+  const msg = $("ask-msg");
+
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+
+    const name = $("ask-name").value.trim();
+    const phone = $("ask-phone").value.trim();
+    const email = $("ask-email").value.trim();
+
+    // said here rather than by the browser, so all three read alike
+    if (!name) return say("Your name, so we know who we are ringing.");
+    if (!phone) return say("A number, or there is nobody to call.");
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) return say("That email does not look right.");
+
+    send.disabled = true;
+    msg.textContent = "Sending...";
+
+    try {
+      const res = await fetch(`${RELAY}/call/back`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name, phone, email,
+          website: $("ask-website").value,
+          ref: REF || ""
+        })
+      });
+
+      if (!res.ok) throw new Error("relay said " + res.status);
+
+      form.innerHTML =
+        `<p class="ref-done">We have your number.</p>
+         <p class="ref-small">We will ring within one working day. There is a note in your inbox in the meantime.</p>`;
+    } catch (err) {
+      console.error("call back failed:", err);
+      send.disabled = false;
+      say("That did not send. Try again, or write to info@noiraunoir.com.");
+    }
+  });
+
+  function say(what) {
+    msg.textContent = what;
   }
 }
 

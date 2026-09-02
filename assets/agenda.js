@@ -14,6 +14,7 @@ const AGENDA_RELAY = "https://kresha-idea-box.vollerodaniele.workers.dev";
 
 onReady(() => {
   loadAgenda();
+  drawAsks();
   drawInvites();
   drawSlotEditor();
   drawPartners();
@@ -163,6 +164,113 @@ async function makePartner() {
    are theirs, but the booking is not: an hour taken on anybody's link
    disappears from everybody's, so offering the same Tuesday to three
    people cannot double book you. */
+
+/* People who left a number instead of taking an hour. They have no
+   date, so they cannot sit in the agenda above; they sit under it,
+   newest first, until they have been rung. */
+async function drawAsks() {
+  const wrap = $("agenda-asks");
+  if (!wrap) return;
+
+  if (!token()) {
+    wrap.innerHTML = '<p class="muted" style="font-size:0.9rem">Save your access key to see who asked for a call.</p>';
+    return;
+  }
+
+  let asks = [];
+  try {
+    const res = await fetch(`${AGENDA_RELAY}/call/list`, {
+      headers: { "X-Studio-Key": token() }, cache: "no-store"
+    });
+    if (res.ok) asks = (await res.json()).asks || [];
+  } catch { /* an unreachable relay should not empty the panel silently */ }
+
+  const waiting = asks.filter((x) => !x.done).length;
+
+  wrap.innerHTML = `
+    <h3 style="font-family:var(--font-display);font-size:1.15rem;font-weight:600">
+      Asked for a call${waiting ? " (" + waiting + " to ring)" : ""}
+    </h3>
+    <p class="how" style="margin:0.4rem 0 0.8rem">
+      Left their number on a partner page. Ring them, then tick it.
+    </p>
+    <div id="ask-list"></div>`;
+
+  const list = $("ask-list");
+  if (!asks.length) {
+    list.innerHTML = '<p class="muted" style="font-size:0.9rem">Nobody has asked yet.</p>';
+    return;
+  }
+  for (const ask of asks) list.appendChild(askRow(ask));
+}
+
+function askRow(ask) {
+  const row = document.createElement("div");
+  row.className = "item";
+  if (ask.done) row.style.opacity = "0.55";
+
+  const head = document.createElement("div");
+  head.style.cssText = "display:flex;align-items:flex-start;gap:1rem;flex-wrap:wrap";
+
+  const text = document.createElement("div");
+  text.style.flex = "1";
+  // the number is the point of the row, so it is the loudest thing in it
+  text.innerHTML = `
+    <p style="font-size:0.95rem"><b>${escHtml(ask.name || "Someone")}</b></p>
+    <p style="font-size:1.05rem;margin-top:0.2rem"><b>${escHtml(ask.phone || "")}</b></p>
+    <p class="muted" style="font-size:0.78rem;margin-top:0.2rem">
+      ${escHtml(ask.email || "")}${ask.ref ? " &middot; sent by " + escHtml(ask.ref) : ""}
+      &middot; ${escHtml(whenAsked(ask.at))}
+    </p>`;
+  head.appendChild(text);
+
+  const tick = document.createElement("button");
+  tick.className = ask.done ? "btn-mini" : "btn-mini solid";
+  tick.textContent = ask.done ? "Not yet" : "Called";
+  tick.addEventListener("click", async () => {
+    tick.disabled = true;
+    await askAction("called", { id: ask.id, done: !ask.done });
+    drawAsks();
+  });
+  head.appendChild(tick);
+
+  const drop = document.createElement("button");
+  drop.className = "btn-mini";
+  drop.textContent = "Remove";
+  drop.addEventListener("click", async () => {
+    if (!confirm("Remove " + (ask.name || "this request") + "? Their number goes with it.")) return;
+    drop.disabled = true;
+    await askAction("forget", { id: ask.id });
+    drawAsks();
+  });
+  head.appendChild(drop);
+
+  row.appendChild(head);
+  return row;
+}
+
+async function askAction(what, body) {
+  try {
+    await fetch(`${AGENDA_RELAY}/call/${what}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "X-Studio-Key": token() },
+      body: JSON.stringify(body)
+    });
+  } catch (err) {
+    console.error("could not update the request:", err);
+  }
+}
+
+/* Rung this morning reads differently from rung last week. */
+function whenAsked(iso) {
+  const then = Date.parse(iso || "");
+  if (!then) return "just now";
+  const hours = Math.floor((Date.now() - then) / 3600000);
+  if (hours < 1) return "just now";
+  if (hours < 24) return hours + (hours === 1 ? " hour ago" : " hours ago");
+  const days = Math.floor(hours / 24);
+  return days === 1 ? "yesterday" : days + " days ago";
+}
 
 async function drawInvites() {
   const wrap = $("agenda-invites");
