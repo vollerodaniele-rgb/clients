@@ -110,6 +110,10 @@ function transferRow(t) {
       ${t.expired ? " &middot; EXPIRED" : ""}
     </p>
     ${picked ? `<p style="font-size:0.8rem;margin-top:0.3rem;color:${got ? "var(--text)" : "var(--dim)"}">${picked}</p>` : ""}
+    ${(t.sent || []).length
+      ? `<p class="muted" style="font-size:0.78rem;margin-top:0.2rem">Emailed to ${
+          escHtml(t.sent.map((s) => s.to).join(", "))}</p>`
+      : ""}
   `;
 
   const open = document.createElement("button");
@@ -250,6 +254,53 @@ function buildTransferBody(t, body) {
     loadTransfers();
   });
 
+  /* Sending it is the point of making it, so the field to send it sits
+     with the files rather than being something you do elsewhere. */
+  const sendRow = document.createElement("div");
+  sendRow.className = "row";
+  sendRow.style.marginTop = "0.8rem";
+  sendRow.innerHTML = `
+    <label class="field" style="flex:1;min-width:12rem"><span>Email it to</span>
+      <input id="ts-${t.id}" type="email" maxlength="120" placeholder="marie@example.com">
+    </label>
+  `;
+
+  const sendBtn = document.createElement("button");
+  sendBtn.className = "btn-mini solid";
+  sendBtn.style.alignSelf = "flex-end";
+  sendBtn.textContent = "Send it";
+  sendRow.appendChild(sendBtn);
+
+  sendBtn.addEventListener("click", async () => {
+    const to = $("ts-" + t.id).value.trim();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(to)) {
+      msg.textContent = "Put in an address to send it to.";
+      return;
+    }
+
+    sendBtn.disabled = true;
+    msg.textContent = "Sending to " + to + "...";
+    try {
+      const res = await fetch(`${TRANSFER_RELAY}/transfer/send?id=${encodeURIComponent(t.id)}`, {
+        method: "POST",
+        headers: { "X-Studio-Key": token(), "Content-Type": "application/json" },
+        body: JSON.stringify({ to })
+      });
+      if (res.ok) {
+        msg.textContent = "Sent to " + to + ".";
+        $("ts-" + t.id).value = "";
+        loadTransfers();
+      } else {
+        const body = await res.json().catch(() => ({}));
+        msg.textContent = "Did not send: " + (body.error || res.status);
+      }
+    } catch (err) {
+      msg.textContent = "Did not send: " + err.message;
+    } finally {
+      sendBtn.disabled = false;
+    }
+  });
+
   const kill = document.createElement("button");
   kill.className = "btn-mini danger";
   kill.style.marginTop = "0.8rem";
@@ -277,7 +328,7 @@ function buildTransferBody(t, body) {
     }
   });
 
-  body.append(linkRow, details, note, save, files, pick, kill, msg);
+  body.append(linkRow, details, note, save, files, pick, sendRow, kill, msg);
   drawFiles();
 }
 
