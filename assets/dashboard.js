@@ -28,89 +28,14 @@ const token = () => localStorage.getItem(TOKEN_KEY) || "";
 
 onReady(() => {
   wireTokenPanel();
-  // the key is set once and forgotten, and proposals and idea boxes are
-  // things you go looking for. Money and clients are what the room is
-  // for, so they stay open.
-  foldPanel("Access key");
-  foldPanel("Proposals");
-  foldPanel("Idea boxes");
+  /* The key, proposals and idea boxes used to be folded, because this
+     was one long column and they were the parts you went looking for
+     rather than the parts you came for. Each has its own sheet now, so
+     folding meant clicking a tab and then clicking again to see the
+     thing the tab is named after. The folding went with them. */
   loadClients();
 });
 
-/* Turns one of the static panels into a fold. Nothing is moved out of
-   the page, only wrapped, so everything the other scripts look up by id
-   is still exactly where they expect it. */
-const FOLD_KEY = "clients-dashboard-open";
-
-function foldPanel(name) {
-  const heading = [...document.querySelectorAll(".panel h2")]
-    .find((h) => h.textContent.trim() === name);
-  if (!heading) return;
-
-  const box = heading.parentElement;
-  const body = document.createElement("div");
-  body.className = "fold-body";
-  while (heading.nextSibling) body.appendChild(heading.nextSibling);
-
-  const head = document.createElement("button");
-  head.type = "button";
-  head.className = "fold-head";
-
-  const title = document.createElement("span");
-  title.className = "fold-title";
-  title.textContent = name;
-
-  head.append(title, foldArrow());
-  heading.remove();
-  box.append(head, body);
-
-  const open = openPanels().includes(name);
-  setFold(head, body, open);
-
-  head.addEventListener("click", () => {
-    const now = head.getAttribute("aria-expanded") !== "true";
-    setFold(head, body, now);
-    const list = openPanels().filter((n) => n !== name);
-    if (now) list.push(name);
-    try {
-      localStorage.setItem(FOLD_KEY, JSON.stringify(list));
-    } catch (err) {
-      console.error("could not remember the open panels:", err);
-    }
-  });
-}
-
-function setFold(head, body, open) {
-  head.setAttribute("aria-expanded", open ? "true" : "false");
-  head.classList.toggle("open", open);
-  body.hidden = !open;
-}
-
-function openPanels() {
-  try {
-    const saved = JSON.parse(localStorage.getItem(FOLD_KEY));
-    return Array.isArray(saved) ? saved : [];
-  } catch {
-    return [];
-  }
-}
-
-function foldArrow() {
-  const ns = "http://www.w3.org/2000/svg";
-  const svg = document.createElementNS(ns, "svg");
-  svg.setAttribute("class", "fold-arrow");
-  svg.setAttribute("viewBox", "0 0 24 24");
-  svg.setAttribute("aria-hidden", "true");
-  const path = document.createElementNS(ns, "path");
-  path.setAttribute("d", "M9 5l7 7-7 7");
-  path.setAttribute("fill", "none");
-  path.setAttribute("stroke", "currentColor");
-  path.setAttribute("stroke-width", "1.6");
-  path.setAttribute("stroke-linecap", "round");
-  path.setAttribute("stroke-linejoin", "round");
-  svg.appendChild(path);
-  return svg;
-}
 
 function wireTokenPanel() {
   const msg = $("token-msg");
