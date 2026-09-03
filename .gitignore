@@ -1,2 +1,5 @@
 .wrangler/
 node_modules/
+
+# local dev server config, not part of the site
+.claude/
