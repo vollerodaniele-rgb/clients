@@ -313,8 +313,8 @@ async function drawInvites() {
 
   wrap.innerHTML = `
     <p class="how" style="margin-bottom:0.6rem">
-      A call link for one person. Put in their name and the times you can do, and send
-      them what it gives you.
+      A call link for one person. Put in their name and the times you can do. Add their
+      email and it goes straight to them, or leave it out and copy the link yourself.
     </p>
     <div class="row">
       <label class="field" style="flex:1;min-width:11rem"><span>Their name</span>
@@ -327,6 +327,9 @@ async function drawInvites() {
     <div class="row">
       <label class="field" style="flex:1;min-width:14rem"><span>A line they see (optional)</span>
         <input id="inv-note" type="text" maxlength="300" placeholder="Twenty minutes, no pitch.">
+      </label>
+      <label class="field" style="flex:1;min-width:12rem"><span>Their email (optional)</span>
+        <input id="inv-email" type="email" maxlength="120" placeholder="Sends it to them straight away">
       </label>
     </div>
     <div class="row">
@@ -347,6 +350,28 @@ async function drawInvites() {
 
   $("inv-make").addEventListener("click", makeInvite);
   drawInviteList(invites);
+}
+
+/* Returns true, or the reason it did not go. The caller decides what
+   to do with that, because on the maker a failed send still leaves a
+   perfectly good link to copy. */
+async function sendInvite(id, to) {
+  try {
+    const res = await fetch(`${AGENDA_RELAY}/call/send`, {
+      method: "POST",
+      headers: { "X-Studio-Key": token(), "Content-Type": "application/json" },
+      body: JSON.stringify({ id, to })
+    });
+    if (res.ok) return true;
+    try {
+      return (await res.json()).error || String(res.status);
+    } catch {
+      return String(res.status);
+    }
+  } catch (err) {
+    console.error("invite send failed:", err);
+    return "the relay could not be reached";
+  }
 }
 
 function drawInviteList(invites) {
@@ -379,7 +404,9 @@ function inviteRow(inv) {
     <p style="font-size:0.8rem;margin-top:0.3rem;color:${inv.booked ? "var(--text)" : "var(--dim)"}">
       ${inv.booked
         ? "&#10003; Booked " + escHtml(inv.booked.date) + " at " + escHtml(inv.booked.time)
-        : "Waiting for them to pick"}
+        : (inv.sent || []).length
+          ? "Sent to " + escHtml(inv.sent.map((s) => s.to).join(", ")) + ", waiting for them to pick"
+          : "Waiting for them to pick"}
     </p>
   `;
   head.appendChild(text);
@@ -393,6 +420,31 @@ function inviteRow(inv) {
     setTimeout(() => { copy.textContent = "Copy link"; }, 1800);
   });
   head.appendChild(copy);
+
+  /* Sending it later, or again to a second address. A used link has
+     nothing left to offer, so it is not offered either. */
+  if (!inv.booked) {
+    const mail = document.createElement("button");
+    mail.className = "btn-mini";
+    mail.textContent = (inv.sent || []).length ? "Send again" : "Email it";
+    mail.addEventListener("click", async () => {
+      const last = (inv.sent || []).slice(-1)[0];
+      const to = prompt("Send this to which address?", last ? last.to : "");
+      if (!to) return;
+      mail.disabled = true;
+      mail.textContent = "Sending...";
+      const done = await sendInvite(inv.id, to.trim());
+      mail.disabled = false;
+      if (done === true) {
+        mail.textContent = "Sent";
+        setTimeout(drawInvites, 900);
+      } else {
+        mail.textContent = "Email it";
+        say("inv-msg", "Could not send to " + to.trim() + ": " + done);
+      }
+    });
+    head.appendChild(mail);
+  }
 
   const open = document.createElement("a");
   open.className = "btn-mini";
@@ -459,7 +511,18 @@ async function makeInvite() {
     const body = await res.json();
     if (!res.ok) throw new Error(body.error || String(res.status));
 
-    msg.textContent = "Made. Copy the link below and send it.";
+    const email = $("inv-email").value.trim();
+    if (email) {
+      msg.textContent = "Made. Sending it...";
+      const sent = await sendInvite(body.id, email);
+      msg.textContent = sent === true
+        ? "Sent to " + email + "."
+        : "Made, but it did not send: " + sent + ". Copy the link below instead.";
+    } else {
+      msg.textContent = "Made. Copy the link below and send it.";
+    }
+
+    $("inv-email").value = "";
     drawInvites();
   } catch (err) {
     msg.textContent = "Could not make it: " + err.message;
