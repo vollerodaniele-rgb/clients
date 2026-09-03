@@ -64,7 +64,8 @@ async function load() {
     $("intro").textContent = data.note ||
       `Pick a time that suits you. ${data.minutes} minutes, no pitch.`;
 
-    draw(data.slots);
+    if (data.mode === "hours") drawCalendar(data.slots);
+    else draw(data.slots);
   } catch (err) {
     console.error("slots failed:", err);
     $("intro").textContent = "Could not load the times right now. Try again in a minute.";
@@ -88,6 +89,120 @@ function draw(slots) {
     btn.addEventListener("click", () => choose(slot, btn));
     wrap.appendChild(btn);
   }
+}
+
+/* ============ A WINDOW OF HOURS ============ */
+/* When he offers opening hours rather than three times, the relay
+   still sends one flat list of free {date, time}. This groups it into
+   a month you can page through, and the hours for whichever day you
+   tap. Nothing about booking changes: a day and an hour still end up
+   as the same picked slot. */
+
+let byDay = new Map();
+let showing = "";      // first of the month on screen, as YYYY-MM-01
+
+function drawCalendar(slots) {
+  byDay = new Map();
+  for (const s of slots) {
+    if (!byDay.has(s.date)) byDay.set(s.date, []);
+    byDay.get(s.date).push(s.time);
+  }
+
+  const first = [...byDay.keys()].sort()[0];
+  if (!first) return;
+
+  showing = first.slice(0, 8) + "01";
+  $("cal-wrap").hidden = false;
+  $("cal-back").addEventListener("click", () => shiftMonth(-1));
+  $("cal-next").addEventListener("click", () => shiftMonth(1));
+  paintMonth();
+}
+
+function shiftMonth(by) {
+  const d = new Date(showing + "T12:00:00Z");
+  d.setUTCMonth(d.getUTCMonth() + by);
+  showing = d.toISOString().slice(0, 8) + "01";
+  paintMonth();
+  $("hours").hidden = true;
+}
+
+function paintMonth() {
+  const grid = $("cal");
+  const start = new Date(showing + "T12:00:00Z");
+
+  $("cal-month").textContent = start.toLocaleDateString("en-GB", { month: "long", year: "numeric" });
+
+  // a month with nothing free in it should not be reachable in the
+  // first place, but paging can land on one
+  const days = [...byDay.keys()].sort();
+  $("cal-back").disabled = showing <= days[0].slice(0, 8) + "01";
+  $("cal-next").disabled = showing >= days[days.length - 1].slice(0, 8) + "01";
+
+  grid.innerHTML = "";
+  for (const name of ["Mo", "Tu", "We", "Th", "Fr", "Sa", "Su"]) {
+    const head = document.createElement("div");
+    head.className = "cal-head";
+    head.textContent = name;
+    grid.appendChild(head);
+  }
+
+  // Monday first, which is how a week reads here
+  const lead = (start.getUTCDay() + 6) % 7;
+  for (let i = 0; i < lead; i++) {
+    const pad = document.createElement("div");
+    pad.className = "cal-cell empty";
+    grid.appendChild(pad);
+  }
+
+  const inMonth = new Date(Date.UTC(start.getUTCFullYear(), start.getUTCMonth() + 1, 0)).getUTCDate();
+  for (let day = 1; day <= inMonth; day++) {
+    const iso = showing.slice(0, 8) + String(day).padStart(2, "0");
+    const free = byDay.get(iso);
+
+    const cell = document.createElement(free ? "button" : "div");
+    cell.className = "cal-cell" + (free ? " free" : "");
+    if (free) {
+      cell.type = "button";
+      cell.setAttribute("aria-label", longDate(iso) + ", " + free.length + " times");
+      cell.addEventListener("click", () => showHours(iso, cell));
+    }
+    cell.innerHTML = `<span class="cal-num">${day}</span>` +
+      (free ? `<span class="cal-free">${free.length}</span>` : "");
+    grid.appendChild(cell);
+  }
+}
+
+function showHours(date, cell) {
+  for (const c of document.querySelectorAll(".cal-cell.free")) c.classList.toggle("on", c === cell);
+
+  const wrap = $("hours");
+  wrap.hidden = false;
+  wrap.innerHTML = `<p class="hour-day">${esc(longDate(date))}</p>`;
+
+  const list = document.createElement("div");
+  list.className = "hour-row";
+
+  for (const time of byDay.get(date)) {
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "hour";
+    btn.textContent = time;
+    btn.addEventListener("click", () => {
+      for (const h of list.querySelectorAll(".hour")) h.classList.toggle("chosen", h === btn);
+      chooseHour({ date, time });
+    });
+    list.appendChild(btn);
+  }
+
+  wrap.appendChild(list);
+}
+
+function chooseHour(slot) {
+  picked = slot;
+  $("chosen").textContent = longDate(slot.date) + " at " + slot.time + ".";
+  $("details").hidden = false;
+  $("msg").textContent = "";
+  $("who").focus();
 }
 
 function choose(slot, btn) {

@@ -1205,6 +1205,130 @@ body {
   min-height: 3rem;
 }
 
+/* ============ PICKING A DAY AND AN HOUR ============ */
+/* The booking page when he offers a window of hours rather than three
+   times. It reuses the posting calendar's grid, so a month looks the
+   same wherever it appears. */
+.cal-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.cal-month {
+  font-family: var(--font-display);
+  font-size: 1.3rem;
+  font-weight: 600;
+}
+
+.btn-month:disabled { opacity: 0.3; cursor: default; }
+.btn-month:disabled:hover { color: var(--dim); border-color: var(--line); }
+
+/* A day with hours left is a button. Everything else in the month is
+   there to be counted, not pressed. */
+.cal-cell.free {
+  border-color: var(--line);
+  background: none;
+  color: var(--text);
+  font-family: var(--font-body);
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.cal-cell.free .cal-num { color: var(--text); font-weight: 600; }
+.cal-cell.free:hover { border-color: var(--text); }
+.cal-cell.free:focus-visible { outline: 2px solid var(--text); outline-offset: 2px; }
+
+/* white on black for the day being looked at, the same as a chosen
+   shoot date, because a border alone disappears against this page */
+.cal-cell.free.on {
+  background: var(--text);
+  border-color: var(--text);
+}
+
+.cal-cell.free.on .cal-num,
+.cal-cell.free.on .cal-free { color: var(--bg); }
+
+.cal-free {
+  font-size: 0.62rem;
+  letter-spacing: 0.08em;
+  color: var(--dim);
+}
+
+/* Which days he takes calls. Same on and off look as everything
+   else that is either chosen or not. */
+.day-row { display: flex; flex-wrap: wrap; gap: 0.35rem; }
+
+.day {
+  font-family: var(--font-body);
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  background: none;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  color: var(--dim);
+  padding: 0.4rem 0.8rem;
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s;
+}
+
+.day:hover { color: var(--text); border-color: var(--text); }
+.day:focus-visible { outline: 2px solid var(--text); outline-offset: 2px; }
+.day.on { color: var(--bg); background: var(--text); border-color: var(--text); }
+
+@media (prefers-reduced-motion: reduce) { .day { transition: none; } }
+
+.hour-grid { margin-top: 1.8rem; }
+
+.hour-day {
+  font-family: var(--font-display);
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin-bottom: 0.9rem;
+}
+
+.hour-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.hour {
+  font-family: var(--font-body);
+  font-size: 0.9rem;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  background: none;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  color: var(--text);
+  padding: 0.55rem 1.1rem;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s, color 0.15s;
+}
+
+.hour:hover { border-color: var(--text); }
+.hour:focus-visible { outline: 2px solid var(--text); outline-offset: 2px; }
+
+.hour.chosen {
+  background: var(--text);
+  border-color: var(--text);
+  color: var(--bg);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cal-cell.free, .hour { transition: none; }
+}
+
+@media (max-width: 600px) {
+  .hour { padding: 0.5rem 0.9rem; }
+  .cal-free { display: none; }
+}
+
 .cal-cell.empty { border: none; }
 .cal-cell.today { border-color: var(--text); }
 

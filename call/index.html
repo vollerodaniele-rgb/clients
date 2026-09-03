@@ -18,7 +18,20 @@
     <h1 class="transfer-title" id="title">Book a call</h1>
     <p class="transfer-note" id="intro">Loading the times...</p>
 
+    <!-- a few named times land in #slots. A window of opening hours
+         draws a month in #cal instead, and the chosen day's hours in
+         #hours. Only one of the two is ever filled. -->
     <div id="slots" class="pick-grid" style="margin-top:2.5rem"></div>
+
+    <div id="cal-wrap" hidden style="margin-top:2.5rem">
+      <div class="cal-top">
+        <button type="button" class="btn-month" id="cal-back" aria-label="Previous month">&#8592;</button>
+        <span class="cal-month" id="cal-month"></span>
+        <button type="button" class="btn-month" id="cal-next" aria-label="Next month">&#8594;</button>
+      </div>
+      <div class="cal" id="cal"></div>
+      <div id="hours" class="hour-grid" hidden></div>
+    </div>
 
     <div id="details" hidden style="margin-top:2rem">
       <p class="pick-lede" id="chosen"></p>

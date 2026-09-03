@@ -24,6 +24,7 @@ onReady(() => {
   loadAgenda();
   drawAsks();
   drawInvites();
+  drawHours();
   drawSlotEditor();
   drawPartners();
   const make = $("ref-make");
@@ -332,7 +333,15 @@ async function drawInvites() {
         <input id="inv-email" type="email" maxlength="120" placeholder="Sends it to them straight away">
       </label>
     </div>
-    <div class="row">
+    <div class="row" style="margin-top:0.4rem">
+      <label class="field" style="min-width:16rem"><span>What they get to choose from</span>
+        <select id="inv-mode">
+          <option value="slots">Three times I name below</option>
+          <option value="hours">My hours, they pick a day</option>
+        </select>
+      </label>
+    </div>
+    <div class="row" id="inv-times">
       ${[0, 1, 2].map((i) => `
         <label class="field" style="min-width:9rem"><span>Date ${i + 1}</span>
           <input id="inv-d${i}" type="date">
@@ -349,6 +358,13 @@ async function drawInvites() {
   `;
 
   $("inv-make").addEventListener("click", makeInvite);
+
+  // naming times is pointless when the link hands over the window
+  const mode = $("inv-mode");
+  const asHours = () => { $("inv-times").hidden = mode.value === "hours"; };
+  mode.addEventListener("change", asHours);
+  asHours();
+
   drawInviteList(invites);
 }
 
@@ -398,7 +414,9 @@ function inviteRow(inv) {
   text.innerHTML = `
     <p style="font-size:0.95rem"><b>${escHtml(inv.name || "Someone")}</b></p>
     <p class="muted" style="font-size:0.78rem;margin-top:0.2rem">
-      ${(inv.slots || []).length} time${(inv.slots || []).length === 1 ? "" : "s"} offered
+      ${inv.mode === "hours"
+        ? "your hours"
+        : (inv.slots || []).length + " time" + ((inv.slots || []).length === 1 ? "" : "s") + " offered"}
       &middot; ${inv.minutes} minutes
     </p>
     <p style="font-size:0.8rem;margin-top:0.3rem;color:${inv.booked ? "var(--text)" : "var(--dim)"}">
@@ -492,7 +510,10 @@ async function makeInvite() {
     .map((i) => ({ date: $("inv-d" + i).value, time: $("inv-t" + i).value }))
     .filter((s) => s.date && s.time);
 
-  if (!slots.length) { msg.textContent = "Give it at least one date and time."; return; }
+  if ($("inv-mode").value !== "hours" && !slots.length) {
+    msg.textContent = "Give it at least one date and time.";
+    return;
+  }
 
   btn.disabled = true;
   msg.textContent = "Making it...";
@@ -504,6 +525,7 @@ async function makeInvite() {
       body: JSON.stringify({
         name: $("inv-name").value.trim(),
         note: $("inv-note").value.trim(),
+        mode: $("inv-mode").value,
         minutes: Number($("inv-minutes").value) || 20,
         slots
       })
@@ -694,6 +716,136 @@ function whenLine(date, time) {
 
 /* ============ THE TIMES ON OFFER ============ */
 
+/* ============ THE HOURS HE IS FREE ============ */
+/* The other way of offering a call. Instead of naming three times, he
+   names a window and the days it applies to, and whoever has the link
+   picks a day and an hour out of it.
+
+   While this is on it wins over the hand picked times below, because
+   switching it on is the deliberate act and two live offers would be
+   two calendars to keep in step. */
+
+const DAY_NAMES = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+
+async function drawHours() {
+  const wrap = $("agenda-hours");
+  if (!wrap) return;
+
+  if (!token()) {
+    wrap.innerHTML = '<p class="muted" style="font-size:0.9rem">Save your access key to set your hours.</p>';
+    return;
+  }
+
+  let hours = null;
+  try {
+    const res = await fetch(`${AGENDA_RELAY}/call/list`, {
+      headers: { "X-Studio-Key": token() }, cache: "no-store"
+    });
+    if (res.ok) hours = (await res.json()).hours;
+  } catch { /* the editor below still works, it just starts empty */ }
+
+  const h = hours || { on: false, days: [1, 2, 3, 4, 5], from: "10:00", to: "18:00", minutes: 30, notice: 12, ahead: 21, note: "" };
+
+  wrap.innerHTML = `
+    <h3 style="font-family:var(--font-display);font-size:1.15rem;font-weight:600">
+      Your hours${h.on ? " (on)" : ""}
+    </h3>
+    <p class="how" style="margin:0.4rem 0 0.8rem">
+      Say when you are willing to be rung and they pick a day and an hour themselves.
+      While this is on it replaces the fixed times below.
+    </p>
+
+    <div class="row">
+      <label class="field" style="min-width:7rem"><span>From</span>
+        <input id="hrs-from" type="time" value="${escHtml(h.from)}">
+      </label>
+      <label class="field" style="min-width:7rem"><span>Until</span>
+        <input id="hrs-to" type="time" value="${escHtml(h.to)}">
+      </label>
+      <label class="field" style="min-width:7rem"><span>Each call</span>
+        <input id="hrs-minutes" type="number" min="10" max="180" step="5" value="${escHtml(String(h.minutes))}">
+      </label>
+      <label class="field" style="min-width:8rem"><span>Notice (hours)</span>
+        <input id="hrs-notice" type="number" min="0" max="336" value="${escHtml(String(h.notice))}">
+      </label>
+      <label class="field" style="min-width:8rem"><span>Bookable ahead (days)</span>
+        <input id="hrs-ahead" type="number" min="1" max="120" value="${escHtml(String(h.ahead))}">
+      </label>
+    </div>
+
+    <div class="row" style="margin-top:0.6rem">
+      <div class="field" style="flex:1;min-width:16rem">
+        <span>Days</span>
+        <div class="day-row" id="hrs-days"></div>
+      </div>
+    </div>
+
+    <div class="row" style="margin-top:0.6rem">
+      <label class="field" style="flex:1;min-width:14rem"><span>A line they see (optional)</span>
+        <input id="hrs-note" type="text" maxlength="300" value="${escHtml(h.note || "")}">
+      </label>
+    </div>
+
+    <div class="row" style="margin-top:0.8rem">
+      <button class="btn-mini ${h.on ? "" : "solid"}" id="hrs-save">${h.on ? "Save the hours" : "Turn them on"}</button>
+      ${h.on ? '<button class="btn-mini" id="hrs-off">Switch off</button>' : ""}
+      <a class="btn-mini" href="../call/" target="_blank" rel="noopener">See the booking page</a>
+    </div>
+    <p class="form-msg" id="hrs-msg" style="margin-top:0.6rem"></p>
+  `;
+
+  // Monday first, which is how a week reads here
+  const picked = new Set(h.days);
+  const row = $("hrs-days");
+  for (const day of [1, 2, 3, 4, 5, 6, 0]) {
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "day" + (picked.has(day) ? " on" : "");
+    btn.textContent = DAY_NAMES[day];
+    btn.addEventListener("click", () => {
+      if (picked.has(day)) picked.delete(day); else picked.add(day);
+      btn.classList.toggle("on", picked.has(day));
+    });
+    row.appendChild(btn);
+  }
+
+  const send = async (on) => {
+    const body = {
+      on,
+      days: [...picked],
+      from: $("hrs-from").value,
+      to: $("hrs-to").value,
+      minutes: Number($("hrs-minutes").value) || 30,
+      notice: Number($("hrs-notice").value) || 0,
+      ahead: Number($("hrs-ahead").value) || 21,
+      note: $("hrs-note").value.trim()
+    };
+
+    if (on && !body.days.length) { say("hrs-msg", "Pick at least one day."); return; }
+
+    say("hrs-msg", "Saving...");
+    try {
+      const res = await fetch(`${AGENDA_RELAY}/call/hours`, {
+        method: "POST",
+        headers: { "X-Studio-Key": token(), "Content-Type": "application/json" },
+        body: JSON.stringify(body)
+      });
+      const answer = await res.json();
+      if (!res.ok) throw new Error(answer.error || String(res.status));
+
+      say("hrs-msg", on
+        ? "On. " + answer.open + " time" + (answer.open === 1 ? "" : "s") + " to choose from."
+        : "Off. The fixed times below are what is on offer now.");
+      setTimeout(() => { drawHours(); drawSlotEditor(); }, 700);
+    } catch (err) {
+      say("hrs-msg", "Could not save that: " + err.message);
+    }
+  };
+
+  $("hrs-save").addEventListener("click", () => send(true));
+  if ($("hrs-off")) $("hrs-off").addEventListener("click", () => send(false));
+}
+
 async function drawSlotEditor() {
   const wrap = $("agenda-slots");
   if (!wrap) return;
@@ -712,11 +864,16 @@ async function drawSlotEditor() {
   } catch { /* an empty editor is still usable */ }
 
   const slots = (data.slots || []).slice();
+  const overridden = !!(data.hours && data.hours.on);
 
   wrap.innerHTML = `
-    <p class="how" style="margin-bottom:0.6rem">
-      Times you are offering for a call. Anyone with the booking link picks one, it
-      disappears, and they get a confirmation with a calendar invitation.
+    <h3 style="font-family:var(--font-display);font-size:1.15rem;font-weight:600">
+      Or a few fixed times${overridden ? " (not in use)" : ""}
+    </h3>
+    <p class="how" style="margin:0.4rem 0 0.6rem">
+      ${overridden
+        ? "Your hours are on, so these are not what anyone is being offered. Switch the hours off above to use these instead."
+        : "Times you are offering for a call. Anyone with the booking link picks one, it disappears, and they get a confirmation with a calendar invitation."}
     </p>
     <div class="row">
       <label class="field" style="min-width:8rem"><span>How long</span>
