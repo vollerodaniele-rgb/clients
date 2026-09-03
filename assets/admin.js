@@ -128,19 +128,30 @@ function render() {
 
   // months and a posting plan only mean something for a repeating deal
   if (!isProject) {
-    app.appendChild(listPanel("Months", plan.months, () => ({
-      label: "", status: "planned",
-      reels: { done: 0, total: 12 }, photos: { done: 0, total: 20 }, notes: ""
-    }), (m, body) => {
+    /* A new month copies the totals of the last one rather than a
+       fixed 12 and 20. Usually right, and it means a portal that
+       counts no photographs does not silently start counting them
+       again the next time a month is added. */
+    app.appendChild(listPanel("Months", plan.months, () => {
+      const last = (plan.months || []).slice(-1)[0];
+      const fresh = { label: "", status: "planned", reels: { done: 0, total: 12 }, notes: "" };
+      if (last) {
+        if (last.reels) fresh.reels = { done: 0, total: last.reels.total || 0 };
+        if (last.photos) fresh.photos = { done: 0, total: last.photos.total || 0 };
+      } else {
+        fresh.photos = { done: 0, total: 20 };
+      }
+      return fresh;
+    }, (m, body) => {
       body.appendChild(row(
         textField("Month label", m, "label"),
         selectField("Status", m, "status", ["planned", "active", "done"])
       ));
       body.appendChild(row(
-        numField("Reels done", m.reels, "done"),
-        numField("Reels total", m.reels, "total"),
-        numField("Photos done", m.photos, "done"),
-        numField("Photos total", m.photos, "total")
+        countField("Reels done", m, "reels", "done"),
+        countField("Reels total", m, "reels", "total"),
+        countField("Photos done", m, "photos", "done"),
+        countField("Photos total", m, "photos", "total")
       ));
       body.appendChild(textField("Notes", m, "notes", true));
     }, count(plan.months, "months")));
@@ -1406,12 +1417,31 @@ function textField(label, obj, key, multiline) {
   return lab;
 }
 
-function numField(label, obj, key) {
-  const lab = textField(label, obj, key);
-  const input = lab.querySelector("input");
+/* A counter for something a month may not be counting at all.
+
+   Reading .done off a block that is not there took the whole editor
+   down with a TypeError, which is what happened the moment the
+   example portal stopped carrying photos. So the block is read
+   defensively and created only when a number is actually typed. */
+function countField(label, owner, block, key) {
+  const lab = document.createElement("label");
+  lab.className = "field";
+
+  const span = document.createElement("span");
+  span.textContent = label;
+
+  const input = document.createElement("input");
   input.type = "number";
   input.min = "0";
-  input.addEventListener("input", () => { obj[key] = Number(input.value) || 0; });
+  const have = owner[block];
+  input.value = have && have[key] != null ? have[key] : "";
+
+  input.addEventListener("input", () => {
+    if (!owner[block]) owner[block] = { done: 0, total: 0 };
+    owner[block][key] = Number(input.value) || 0;
+  });
+
+  lab.append(span, input);
   return lab;
 }
 
