@@ -22,6 +22,7 @@ function say(id, what) {
 
 onReady(() => {
   loadAgenda();
+  drawMainLink();
   drawAsks();
   drawInvites();
   drawHours();
@@ -716,6 +717,74 @@ function whenLine(date, time) {
 
 /* ============ THE TIMES ON OFFER ============ */
 
+/* ============ THE MAIN LINK ============ */
+/* One address he can hand to fifty people at once.
+
+   The personal links below are used up: one booking and they are
+   spent, which is right for "Marie, here are three times". This one is
+   not. Fifty people can hold it and fifty can book, each taking a
+   different hour out of the same calendar until the calendar runs out.
+
+   So it never needs making, only copying, and the only thing worth
+   showing about it is whether anybody opened it. */
+
+async function drawMainLink() {
+  const wrap = $("agenda-main");
+  if (!wrap) return;
+
+  const link = location.origin + "/call/";
+
+  if (!token()) {
+    wrap.innerHTML = '<p class="muted" style="font-size:0.9rem">Save your access key to see your main call link.</p>';
+    return;
+  }
+
+  let data = {};
+  try {
+    const res = await fetch(`${AGENDA_RELAY}/call/list`, {
+      headers: { "X-Studio-Key": token() }, cache: "no-store"
+    });
+    if (res.ok) data = await res.json();
+  } catch { /* the link still works, it just will not report */ }
+
+  const main = data.main || { opens: 0, lastOpen: "" };
+  // a booking with no personal link behind it came through this one
+  const through = (data.booked || []).filter((b) => !b.invite).length;
+  const open = (data.hours && data.hours.on)
+    ? "your hours"
+    : (data.slots || []).length + " fixed time" + ((data.slots || []).length === 1 ? "" : "s");
+
+  wrap.innerHTML = `
+    <h3 style="font-family:var(--font-display);font-size:1.15rem;font-weight:600">Your main call link</h3>
+    <p class="how" style="margin:0.4rem 0 0.9rem">
+      Send this one to as many people as you like. It is never used up: everybody who
+      has it picks from the same calendar, and each hour disappears as it is taken.
+      It is offering ${escHtml(open)}.
+    </p>
+
+    <div class="row">
+      <label class="field" style="flex:1;min-width:16rem"><span>The link</span>
+        <input id="main-link" type="text" readonly value="${escHtml(link)}">
+      </label>
+      <button class="btn-mini solid" id="main-copy" style="align-self:flex-end">Copy link</button>
+      <a class="btn-mini" href="../call/" target="_blank" rel="noopener" style="align-self:flex-end">Open it</a>
+    </div>
+
+    <p class="muted" style="font-size:0.82rem;margin-top:0.7rem">
+      ${main.opens} open${main.opens === 1 ? "" : "s"}${main.lastOpen ? ", last " + escHtml(sinceThen(main.lastOpen)) : ""}
+      &middot; ${through} booked through it
+    </p>
+  `;
+
+  const copy = $("main-copy");
+  copy.addEventListener("click", async () => {
+    const done = await copyText(link);
+    copy.textContent = done ? "Copied" : "Select it";
+    if (!done) $("main-link").select();
+    setTimeout(() => { copy.textContent = "Copy link"; }, 1800);
+  });
+}
+
 /* ============ THE HOURS HE IS FREE ============ */
 /* The other way of offering a call. Instead of naming three times, he
    names a window and the days it applies to, and whoever has the link
@@ -836,7 +905,7 @@ async function drawHours() {
       say("hrs-msg", on
         ? "On. " + answer.open + " time" + (answer.open === 1 ? "" : "s") + " to choose from."
         : "Off. The fixed times below are what is on offer now.");
-      setTimeout(() => { drawHours(); drawSlotEditor(); }, 700);
+      setTimeout(() => { drawHours(); drawSlotEditor(); drawMainLink(); }, 700);
     } catch (err) {
       say("hrs-msg", "Could not save that: " + err.message);
     }
