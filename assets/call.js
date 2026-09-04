@@ -102,6 +102,21 @@ let byDay = new Map();
 let showing = "";      // first of the month on screen, as YYYY-MM-01
 
 function drawCalendar(slots) {
+  /* This page is sent to strangers and its markup and its script are
+     cached separately, so for ten minutes after a change a visitor can
+     hold the old page and the new script. That happened: the calendar
+     reached for an element the old page does not have, threw, and the
+     whole thing reported "could not load the times".
+
+     A booking page that says nothing works is worse than one that
+     looks plainer, so an older page falls back to the list it already
+     knows how to draw. Capped, because a month of open hours is
+     hundreds of them and nobody scrolls that. */
+  if (!$("cal-wrap") || !$("cal") || !$("hours")) {
+    draw(slots.slice(0, 12));
+    return;
+  }
+
   byDay = new Map();
   for (const s of slots) {
     if (!byDay.has(s.date)) byDay.set(s.date, []);
