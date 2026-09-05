@@ -17,16 +17,11 @@
     }
   ],
   "nextShoot": {
-    "date": "2026-08-31",
-    "time": "10:00",
+    "date": "",
+    "time": "",
     "location": "Sakas, Gent",
-    "focus": "First shoot of the partnership",
-    "checklist": [
-      "Menu highlights chosen",
-      "Staff availability confirmed",
-      "Tables by the window reserved",
-      "Specials list sent to us"
-    ]
+    "focus": "",
+    "checklist": []
   },
   "filmPlan": {
     "month": "September 2026",
@@ -215,7 +210,7 @@
     "deliverBy": ""
   },
   "shootPick": {
-    "asked": false,
+    "asked": true,
     "note": "",
     "options": []
   },
