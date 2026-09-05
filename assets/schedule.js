@@ -122,7 +122,12 @@ function drawCalendar() {
       frame.className = "cal-frame";
       frame.src = frameUrl(withFrame);
       frame.alt = "";
-      frame.loading = "lazy";
+      /* Not lazy. These sat at 0x0 and never asked for anything, even
+         scrolled into view, because they are absolutely positioned
+         inside a grid cell and the browser never decided they were
+         near enough to matter. A month is at most a dozen thumbnails
+         of forty kilobytes, so there was nothing to save and a whole
+         calendar of pictures to lose. */
       // a frame that will not load must not leave a broken box
       frame.addEventListener("error", () => frame.remove());
       cell.appendChild(frame);
@@ -175,7 +180,7 @@ function drawPosts() {
     card.setAttribute("data-date", p.date);
 
     card.innerHTML = `
-      ${p.thumb ? `<img class="post-frame" src="${esc(frameUrl(p))}" alt="" loading="lazy">` : ""}
+      ${p.thumb ? `<img class="post-frame" src="${esc(frameUrl(p))}" alt="">` : ""}
       <div class="post-when">
         <span class="post-day">${d.getDate()}</span>
         <span class="post-dow">${d.toLocaleDateString("en-GB", { weekday: "short" })}</span>
