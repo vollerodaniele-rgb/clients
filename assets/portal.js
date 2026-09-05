@@ -480,12 +480,14 @@ function renderMonths(months) {
 
 function bar(label, v) {
   if (!v || !v.total) return "";
-  const pct = Math.min(100, Math.round((v.done / v.total) * 100));
+  // a total typed before a done would otherwise divide by nothing
+  const done = Number(v.done) || 0;
+  const pct = Math.min(100, Math.round((done / v.total) * 100));
   return `
     <div class="progress-row">
       <span class="plabel">${esc(label)}</span>
       <span class="bar"><i style="width:${pct}%"></i></span>
-      <span class="pcount">${v.done} / ${v.total}</span>
+      <span class="pcount">${done} / ${v.total}</span>
     </div>
   `;
 }

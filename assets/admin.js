@@ -148,10 +148,10 @@ function render() {
         selectField("Status", m, "status", ["planned", "active", "done"])
       ));
       body.appendChild(row(
-        countField("Reels done", m, "reels", "done"),
-        countField("Reels total", m, "reels", "total"),
-        countField("Photos done", m, "photos", "done"),
-        countField("Photos total", m, "photos", "total")
+        countField("Reels done", m, "reels", "done", PAIR),
+        countField("Reels total", m, "reels", "total", PAIR),
+        countField("Photos done", m, "photos", "done", PAIR),
+        countField("Photos total", m, "photos", "total", PAIR)
       ));
       body.appendChild(textField("Notes", m, "notes", true));
     }, count(plan.months, "months"), monthRowLabel));
@@ -1488,6 +1488,9 @@ function sublist(arr, blank, fillItem, addLabel, rowLabel) {
   return wrap;
 }
 
+// a progress pair is meaningless with only one half of it
+const PAIR = { done: 0, total: 0 };
+
 function foldChevron() {
   const ns = "http://www.w3.org/2000/svg";
   const svg = document.createElementNS(ns, "svg");
@@ -1671,7 +1674,7 @@ function thumbField(post) {
    down with a TypeError, which is what happened the moment the
    example portal stopped carrying photos. So the block is read
    defensively and created only when a number is actually typed. */
-function countField(label, owner, block, key) {
+function countField(label, owner, block, key, blank) {
   const lab = document.createElement("label");
   lab.className = "field";
 
@@ -1685,7 +1688,11 @@ function countField(label, owner, block, key) {
   input.value = have && have[key] != null ? have[key] : "";
 
   input.addEventListener("input", () => {
-    if (!owner[block]) owner[block] = { done: 0, total: 0 };
+    /* A progress pair wants its other half to exist, or the bar
+       divides by undefined. A set of view counts wants nothing it was
+       not given: it was writing done and total into every post's
+       numbers, which meant nothing and sat in the file forever. */
+    if (!owner[block]) owner[block] = blank ? { ...blank } : {};
     owner[block][key] = Number(input.value) || 0;
   });
 
