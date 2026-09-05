@@ -1507,7 +1507,7 @@ function thumbField(post) {
     const file = input.files && input.files[0];
     if (!file) return;
 
-    if (!token()) { said.textContent = "Save your access key first."; return; }
+    if (!localStorage.getItem(TOKEN_KEY)) { said.textContent = "Save your access key first."; return; }
 
     said.textContent = "Shrinking...";
     let blob;
@@ -1528,7 +1528,7 @@ function thumbField(post) {
         `${THUMB_RELAY}/thumb?client=${encodeURIComponent(CLIENT)}&post=${encodeURIComponent(id)}`,
         {
           method: "POST",
-          headers: { "X-Studio-Key": token(), "X-File-Type": "image/jpeg" },
+          headers: { "X-Studio-Key": localStorage.getItem(TOKEN_KEY), "X-File-Type": "image/jpeg" },
           body: blob
         }
       );
@@ -1553,7 +1553,7 @@ function thumbField(post) {
     try {
       await fetch(
         `${THUMB_RELAY}/thumb/drop?client=${encodeURIComponent(CLIENT)}&post=${encodeURIComponent(post.thumb)}`,
-        { method: "POST", headers: { "X-Studio-Key": token() } }
+        { method: "POST", headers: { "X-Studio-Key": localStorage.getItem(TOKEN_KEY) } }
       );
     } catch { /* the record going is what matters */ }
     delete post.thumb;
