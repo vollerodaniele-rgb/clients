@@ -212,7 +212,26 @@
   "shootPick": {
     "asked": true,
     "note": "",
-    "options": []
+    "options": [
+      {
+        "date": "2026-09-14",
+        "time": "10:00",
+        "location": "Sakas, Gent",
+        "focus": ""
+      },
+      {
+        "date": "2026-09-17",
+        "time": "10:00",
+        "location": "Sakas, Gent",
+        "focus": ""
+      },
+      {
+        "date": "2026-09-18",
+        "time": "10:00",
+        "location": "Sakas, Gent",
+        "focus": ""
+      }
+    ]
   },
   "deliveries": []
 }
