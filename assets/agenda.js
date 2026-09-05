@@ -563,17 +563,24 @@ async function loadAgenda() {
       .filter((e) => e.date)
       .sort((a, b) => (a.date + (a.time || "")).localeCompare(b.date + (b.time || "")));
 
-    // yesterday is not an agenda
-    const today = new Date().toISOString().slice(0, 10);
-    const ahead = entries.filter((e) => e.date >= today);
+    /* An agenda is what is still coming. It used to drop things the
+       day after, which left this morning's finished call sitting there
+       until midnight, and it threw the past away entirely so there was
+       no way to look back at who you had spoken to.
+
+       Now the line is the hour, not the day, and everything behind it
+       is kept and folded away rather than lost. */
+    const ahead = entries.filter((e) => !hasHappened(e));
+    const gone = entries.filter(hasHappened).reverse();
 
     if (!ahead.length) {
       wrap.innerHTML = '<p class="muted" style="font-size:0.9rem">Nothing booked. No shoots planned and no calls.</p>';
-      return;
+    } else {
+      wrap.innerHTML = "";
+      for (const e of ahead) wrap.appendChild(agendaRow(e));
     }
 
-    wrap.innerHTML = "";
-    for (const e of ahead) wrap.appendChild(agendaRow(e));
+    drawPast(gone);
   } catch (err) {
     console.error("agenda failed:", err);
     wrap.innerHTML = '<p class="muted" style="font-size:0.9rem">Could not build the agenda (' +
@@ -616,6 +623,7 @@ async function bookedCalls() {
       kind: "call",
       date: b.date,
       time: b.time || "",
+      minutes: b.minutes || 30,
       who: b.name,
       what: b.minutes + " minute call",
       where: b.email,
@@ -628,9 +636,68 @@ async function bookedCalls() {
   }
 }
 
-function agendaRow(e) {
+/* Past by the hour rather than by the day. A call at eleven is over at
+   half past, and leaving it in the agenda until midnight is how the
+   list stops being something you trust.
+
+   Something with no time on it counts as over at the end of its day,
+   because a shoot with no hour could still be happening. */
+function hasHappened(e) {
+  const end = e.time
+    ? new Date(e.date + "T" + e.time + ":00")
+    : new Date(e.date + "T23:59:59");
+  if (isNaN(end.getTime())) return false;
+  // a call is over when it is over, not when it starts
+  if (e.time) end.setMinutes(end.getMinutes() + (e.minutes || 30));
+  return end.getTime() < Date.now();
+}
+
+/* Everything that has been and gone, newest first, folded away. It is
+   never deleted: the calls live in storage for good and this is the
+   only place you can read them back. */
+function drawPast(gone) {
+  const wrap = $("agenda-past");
+  if (!wrap) return;
+
+  if (!gone.length) {
+    wrap.innerHTML = "";
+    return;
+  }
+
+  wrap.innerHTML = `
+    <button type="button" class="fold-head" id="past-toggle" aria-expanded="false" aria-controls="past-body">
+      <span class="fold-title" style="font-size:1.05rem">Been and gone</span>
+      <span class="muted" style="font-size:0.78rem">${gone.length}</span>
+      <svg class="fold-arrow" viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"></path>
+      </svg>
+    </button>
+    <div id="past-body" hidden style="padding-top:0.9rem">
+      <p class="how" style="margin-bottom:0.8rem">
+        Kept, not deleted. Calls are here for good; shoots only go back as far as
+        each portal still remembers, since a portal holds one shoot at a time.
+      </p>
+      <div id="past-list"></div>
+    </div>
+  `;
+
+  const list = $("past-list");
+  for (const e of gone) list.appendChild(agendaRow(e, true));
+
+  const toggle = $("past-toggle");
+  const body = $("past-body");
+  toggle.addEventListener("click", () => {
+    const open = toggle.getAttribute("aria-expanded") !== "true";
+    toggle.setAttribute("aria-expanded", open ? "true" : "false");
+    toggle.classList.toggle("open", open);
+    body.hidden = !open;
+  });
+}
+
+function agendaRow(e, past) {
   const row = document.createElement("div");
   row.className = "item";
+  if (past) row.style.opacity = "0.6";
 
   const head = document.createElement("div");
   head.style.cssText = "display:flex;align-items:flex-start;gap:1rem;flex-wrap:wrap";
@@ -658,7 +725,7 @@ function agendaRow(e) {
     open.href = `../${e.slug}/admin.html`;
     open.textContent = "Open";
     head.appendChild(open);
-  } else {
+  } else if (!past) {
     head.appendChild(cancelCallButton(e, row));
   }
 
