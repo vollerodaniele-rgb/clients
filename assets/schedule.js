@@ -18,6 +18,23 @@ const MONTHS = ["January","February","March","April","May","June",
                 "July","August","September","October","November","December"];
 
 let posts = [];
+
+/* A still from each piece, and how it did. Both are optional: a month
+   that is still to come has neither, and the page reads as a plan.
+   Once they are there the same calendar reads as the report. */
+const FRAME_RELAY = "https://kresha-idea-box.vollerodaniele.workers.dev";
+const frameUrl = (post) =>
+  `${FRAME_RELAY}/thumb?client=${encodeURIComponent(currentClient())}&post=${encodeURIComponent(post.thumb)}`;
+
+const countOf = (p, which) => Number(p.how && p.how[which]) || 0;
+const hasNumbers = (p) => countOf(p, "views") || countOf(p, "likes") || countOf(p, "shares");
+
+// 12400 reads worse than 12.4k on a card this size
+function short(n) {
+  if (n >= 1000000) return (n / 1000000).toFixed(1).replace(/.0$/, "") + "m";
+  if (n >= 1000) return (n / 1000).toFixed(1).replace(/.0$/, "") + "k";
+  return String(n);
+}
 let view = new Date();
 
 document.addEventListener("DOMContentLoaded", async () => {
@@ -97,6 +114,21 @@ function drawCalendar() {
     num.textContent = day;
     cell.appendChild(num);
 
+    /* The frame sits behind the day. A month of pictures says more
+       about what was made than a month of dots ever did. */
+    const withFrame = onDay.find((p) => p.thumb);
+    if (withFrame) {
+      const frame = document.createElement("img");
+      frame.className = "cal-frame";
+      frame.src = frameUrl(withFrame);
+      frame.alt = "";
+      frame.loading = "lazy";
+      // a frame that will not load must not leave a broken box
+      frame.addEventListener("error", () => frame.remove());
+      cell.appendChild(frame);
+      cell.classList.add("has-frame");
+    }
+
     if (onDay.length) {
       const dots = document.createElement("span");
       dots.className = "cal-dots";
@@ -134,6 +166,8 @@ function drawPosts() {
   $("posts-lede").textContent =
     `${monthPosts.length} post${monthPosts.length === 1 ? "" : "s"} this month, ${done} already out. Tap a caption to copy it.`;
 
+  drawMonthTotals(monthPosts);
+
   for (const p of monthPosts) {
     const d = new Date(p.date + "T00:00:00");
     const card = document.createElement("article");
@@ -141,6 +175,7 @@ function drawPosts() {
     card.setAttribute("data-date", p.date);
 
     card.innerHTML = `
+      ${p.thumb ? `<img class="post-frame" src="${esc(frameUrl(p))}" alt="" loading="lazy">` : ""}
       <div class="post-when">
         <span class="post-day">${d.getDate()}</span>
         <span class="post-dow">${d.toLocaleDateString("en-GB", { weekday: "short" })}</span>
@@ -152,6 +187,12 @@ function drawPosts() {
           <span class="badge ${p.status === "posted" ? "done" : ""}">${p.status === "posted" ? "Posted" : "Planned"}</span>
         </div>
         <h3 class="post-title">${esc(p.title || "Untitled")}</h3>
+        ${hasNumbers(p) ? `
+          <div class="post-numbers">
+            <span><b>${short(countOf(p, "views"))}</b> views</span>
+            <span><b>${short(countOf(p, "likes"))}</b> likes</span>
+            <span><b>${short(countOf(p, "shares"))}</b> shares</span>
+          </div>` : ""}
         ${p.caption ? `<div class="caption" role="button" tabindex="0" title="Tap to copy">${esc(p.caption)}<span class="copy-hint">copy</span></div>` : ""}
       </div>
     `;
@@ -183,6 +224,30 @@ function drawPosts() {
 
     wrap.appendChild(card);
   }
+}
+
+/* What the month did, added up. Only shown once there is something to
+   add up, so a month still being filmed does not display three zeros
+   and look like a failure. */
+function drawMonthTotals(monthPosts) {
+  const wrap = $("month-totals");
+  if (!wrap) return;
+
+  const counted = monthPosts.filter(hasNumbers);
+  if (!counted.length) {
+    wrap.hidden = true;
+    return;
+  }
+
+  const sum = (which) => counted.reduce((t, p) => t + countOf(p, which), 0);
+
+  wrap.hidden = false;
+  wrap.innerHTML = `
+    <div class="mt"><b>${short(sum("views"))}</b><span>Views</span></div>
+    <div class="mt"><b>${short(sum("likes"))}</b><span>Likes</span></div>
+    <div class="mt"><b>${short(sum("shares"))}</b><span>Shares</span></div>
+    <p class="mt-note">Across ${counted.length} of ${monthPosts.length} post${monthPosts.length === 1 ? "" : "s"}, counted about a month after each went out.</p>
+  `;
 }
 
 function renderFooter(contact) {

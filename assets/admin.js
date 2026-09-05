@@ -171,6 +171,16 @@ function render() {
       ));
       body.appendChild(textField("What goes out", post, "title"));
       body.appendChild(textField("Caption", post, "caption", true));
+
+      /* How it did, filled in a month later, and one frame from the
+         piece. Together these turn the posting plan into the record of
+         what the month actually achieved, on the same calendar. */
+      body.appendChild(row(
+        countField("Views", post, "how", "views"),
+        countField("Likes", post, "how", "likes"),
+        countField("Shares", post, "how", "shares")
+      ));
+      body.appendChild(thumbField(post));
     }, plan.posts.length
       ? plan.posts.filter((p) => p.status === "posted").length + " of " + plan.posts.length + " posted"
       : "empty"));
@@ -1415,6 +1425,147 @@ function textField(label, obj, key, multiline) {
   input.addEventListener("input", () => { obj[key] = input.value; });
   lab.append(span, input);
   return lab;
+}
+
+/* ============ ONE FRAME FROM A POST ============ */
+/* A still, so the calendar reads as pictures rather than dots.
+
+   Shrunk here rather than uploaded whole: a frame off a timeline is
+   several megabytes and this is a thumbnail. It also gets an id of its
+   own the first time one is attached, because a post has no id and
+   naming the file after its position in the list would move the wrong
+   picture the moment the order changed. */
+
+const THUMB_RELAY = "https://kresha-idea-box.vollerodaniele.workers.dev";
+
+function newPostId() {
+  const bytes = crypto.getRandomValues(new Uint8Array(6));
+  return btoa(String.fromCharCode(...bytes)).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+}
+
+async function shrinkFrame(file) {
+  const bitmap = await createImageBitmap(file);
+  const wide = 640;
+  const scale = Math.min(1, wide / Math.max(bitmap.width, bitmap.height));
+  const canvas = document.createElement("canvas");
+  canvas.width = Math.round(bitmap.width * scale);
+  canvas.height = Math.round(bitmap.height * scale);
+  canvas.getContext("2d").drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+  bitmap.close();
+
+  for (const quality of [0.82, 0.7, 0.6]) {
+    const blob = await new Promise((done) => canvas.toBlob(done, "image/jpeg", quality));
+    if (blob && blob.size <= 900 * 1024) return blob;
+  }
+  throw new Error("that frame will not shrink small enough");
+}
+
+const thumbUrl = (post) =>
+  `${THUMB_RELAY}/thumb?client=${encodeURIComponent(CLIENT)}&post=${encodeURIComponent(post.thumb)}`;
+
+function thumbField(post) {
+  const wrap = document.createElement("div");
+  wrap.className = "pic-field";
+
+  const label = document.createElement("span");
+  label.className = "pic-label";
+  label.textContent = "One frame from it";
+  wrap.appendChild(label);
+
+  const rowEl = document.createElement("div");
+  rowEl.className = "pic-row";
+
+  const preview = document.createElement("img");
+  preview.className = "pic-preview";
+  preview.alt = "";
+  preview.hidden = !post.thumb;
+  if (post.thumb) preview.src = thumbUrl(post) + "&t=" + Date.now();
+  rowEl.appendChild(preview);
+
+  const pick = document.createElement("label");
+  pick.className = "btn-file";
+  pick.textContent = post.thumb ? "Replace" : "Choose a frame";
+  const input = document.createElement("input");
+  input.type = "file";
+  input.accept = "image/*";
+  pick.appendChild(input);
+  rowEl.appendChild(pick);
+
+  const said = document.createElement("span");
+  said.className = "pic-name";
+  said.textContent = post.thumb ? "" : "No frame yet";
+  rowEl.appendChild(said);
+
+  const drop = document.createElement("button");
+  drop.type = "button";
+  drop.className = "btn-clear";
+  drop.textContent = "Remove";
+  drop.hidden = !post.thumb;
+  rowEl.appendChild(drop);
+
+  input.addEventListener("change", async () => {
+    const file = input.files && input.files[0];
+    if (!file) return;
+
+    if (!token()) { said.textContent = "Save your access key first."; return; }
+
+    said.textContent = "Shrinking...";
+    let blob;
+    try {
+      blob = await shrinkFrame(file);
+    } catch (err) {
+      said.textContent = err.message;
+      return;
+    }
+
+    // the id is the post's for good, so replacing a frame overwrites
+    // rather than leaving the old one behind
+    const id = post.thumb || newPostId();
+    said.textContent = "Sending...";
+
+    try {
+      const res = await fetch(
+        `${THUMB_RELAY}/thumb?client=${encodeURIComponent(CLIENT)}&post=${encodeURIComponent(id)}`,
+        {
+          method: "POST",
+          headers: { "X-Studio-Key": token(), "X-File-Type": "image/jpeg" },
+          body: blob
+        }
+      );
+      const answer = await res.json();
+      if (!res.ok) throw new Error(answer.error || String(res.status));
+
+      post.thumb = id;
+      preview.src = URL.createObjectURL(blob);
+      preview.hidden = false;
+      drop.hidden = false;
+      pick.textContent = "Replace";
+      said.textContent = "Frame saved. Publish to show it on the calendar.";
+    } catch (err) {
+      said.textContent = "Could not send that frame: " + err.message;
+    }
+    input.value = "";
+  });
+
+  drop.addEventListener("click", async () => {
+    if (!post.thumb) return;
+    said.textContent = "Removing...";
+    try {
+      await fetch(
+        `${THUMB_RELAY}/thumb/drop?client=${encodeURIComponent(CLIENT)}&post=${encodeURIComponent(post.thumb)}`,
+        { method: "POST", headers: { "X-Studio-Key": token() } }
+      );
+    } catch { /* the record going is what matters */ }
+    delete post.thumb;
+    preview.hidden = true;
+    preview.removeAttribute("src");
+    drop.hidden = true;
+    pick.textContent = "Choose a frame";
+    said.textContent = "Frame removed. Publish to update the calendar.";
+  });
+
+  wrap.appendChild(rowEl);
+  return wrap;
 }
 
 /* A counter for something a month may not be counting at all.

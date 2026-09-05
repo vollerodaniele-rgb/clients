@@ -1340,6 +1340,33 @@ body {
 
 .cal-cell.has-posts:hover { border-color: var(--text); }
 
+/* A still from the piece, filling the day behind the number. Held
+   back so the date and the dots stay readable over any frame: this is
+   a calendar with pictures in it, not a gallery. */
+.cal-cell { position: relative; overflow: hidden; }
+
+.cal-frame {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0.6;
+  z-index: 0;
+}
+
+.cal-cell.has-frame .cal-num,
+.cal-cell.has-frame .cal-dots { position: relative; z-index: 1; }
+
+.cal-cell.has-frame .cal-num {
+  color: var(--text);
+  font-weight: 600;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9);
+}
+
+.cal-cell.has-frame { border-color: var(--line); }
+.cal-cell.has-posts.has-frame:hover .cal-frame { opacity: 0.7; }
+
 .cal-num { font-size: 0.78rem; color: var(--dim); }
 .cal-cell.has-posts .cal-num { color: var(--text); font-weight: 600; }
 
@@ -1378,7 +1405,80 @@ body {
   align-items: flex-start;
 }
 
-.post-card.posted { opacity: 0.6; }
+/* A posted piece used to fade out, which was right when the card only
+   said what was planned. Now it carries the frame and the numbers, so
+   the finished ones are the point of the page rather than the
+   leftovers. */
+.post-card.posted { opacity: 1; }
+.post-card.posted .post-day, .post-card.posted .post-dow { color: var(--dim); }
+
+.post-frame {
+  width: 4.5rem;
+  height: 6rem;
+  object-fit: cover;
+  border-radius: 8px;
+  border: 1px solid var(--line);
+  flex: none;
+  display: block;
+}
+
+/* How it did, a month later. Weight rather than colour, the same as
+   every other number on this site. */
+.post-numbers {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem 1.2rem;
+  margin: 0.6rem 0 0.2rem;
+  font-size: 0.82rem;
+  color: var(--dim);
+}
+
+.post-numbers b {
+  color: var(--text);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+/* The month added up. Its own names, because the dashboard's totals
+   are styled inside the dashboard's own page and borrowing them out
+   here left the number and its label with nothing between them. */
+#month-totals {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.4rem 2.6rem;
+  padding: 1.4rem 0;
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+}
+
+.mt { display: flex; flex-direction: column; }
+
+.mt b {
+  font-family: var(--font-display);
+  font-size: 2.2rem;
+  font-weight: 700;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.mt span {
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--dim);
+  margin-top: 0.35rem;
+}
+
+.mt-note {
+  flex-basis: 100%;
+  font-size: 0.82rem;
+  color: var(--dim);
+}
+
+@media (max-width: 600px) {
+  .post-frame { width: 3.4rem; height: 4.5rem; }
+}
 
 .post-when {
   display: flex;
