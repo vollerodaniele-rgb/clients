@@ -57,6 +57,30 @@
     .btn-mini:hover { color: var(--text); border-color: var(--text); }
     .btn-mini.danger:hover { color: #fff; border-color: #fff; }
     .item .remove { position: absolute; top: 0.7rem; right: 0.8rem; }
+
+    /* A folded entry. The posting schedule is a dozen posts and a post
+       is ten fields, a set of numbers and a frame, so the panel was
+       several screens before you reached the last one. */
+    .item .row-head {
+      width: 100%; display: flex; align-items: center; gap: 0.8rem;
+      background: none; border: 0; color: var(--text);
+      font-family: var(--font-body); text-align: left;
+      padding: 0.1rem 6rem 0.1rem 0;  /* clear of the Remove button */
+      cursor: pointer;
+    }
+    .item .row-head .fold-title { flex: 1; font-family: var(--font-body); font-weight: 500; }
+    .item .row-head:hover .fold-title { color: var(--text); }
+    .item .row-head .fold-arrow {
+      width: 1rem; height: 1rem; flex: none; color: var(--dim);
+      transition: transform 0.18s ease;
+    }
+    .item .row-head.open .fold-arrow { transform: rotate(90deg); color: var(--text); }
+    .item .row-head:focus-visible { outline: 2px solid var(--text); outline-offset: 3px; }
+    .item .row-body { padding-top: 0.9rem; }
+
+    @media (prefers-reduced-motion: reduce) {
+      .item .row-head .fold-arrow { transition: none; }
+    }
     .savebar {
       position: sticky; bottom: 0; background: var(--bg);
       border-top: 1px solid var(--line); padding: 1rem 0;

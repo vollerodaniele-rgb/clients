@@ -154,7 +154,7 @@ function render() {
         countField("Photos total", m, "photos", "total")
       ));
       body.appendChild(textField("Notes", m, "notes", true));
-    }, count(plan.months, "months")));
+    }, count(plan.months, "months"), monthRowLabel));
   }
 
   if (!plan.posts) plan.posts = [];
@@ -183,7 +183,7 @@ function render() {
       body.appendChild(thumbField(post));
     }, plan.posts.length
       ? plan.posts.filter((p) => p.status === "posted").length + " of " + plan.posts.length + " posted"
-      : "empty"));
+      : "empty", postRowLabel));
 
     app.appendChild(importPanel());
   }
@@ -1270,10 +1270,28 @@ function panel(title, fill, summary) {
 
 /* summary is the finished line shown on the closed heading, so a panel
    that wants to say more than a count just says it */
-function listPanel(title, arr, blank, fillItem, summary) {
+function listPanel(title, arr, blank, fillItem, summary, rowLabel) {
   return panel(title, (body) => {
-    body.appendChild(sublist(arr, blank, fillItem, "Add"));
+    body.appendChild(sublist(arr, blank, fillItem, "Add", rowLabel));
   }, summary);
+}
+
+/* One line describing a post while it is folded: when it goes out,
+   what it is, and whether it has been. Enough to find the one you
+   want without opening any of them. */
+function postRowLabel(post, i) {
+  const when = post.date
+    ? new Date(post.date + "T00:00:00").toLocaleDateString("en-GB", { day: "numeric", month: "short" })
+    : "No date";
+  const what = post.title || post.platform || "Untitled";
+  const state = post.status === "posted" ? " · posted" : "";
+  const counted = post.how && (post.how.views || post.how.likes || post.how.shares) ? " · counted" : "";
+  return when + " · " + what + state + counted;
+}
+
+function monthRowLabel(m, i) {
+  const reels = m.reels ? m.reels.done + "/" + m.reels.total + " reels" : "";
+  return (m.label || "Month " + (i + 1)) + (reels ? " · " + reels : "") + (m.status ? " · " + m.status : "");
 }
 
 /* ============ FOLDING THE PANELS AWAY ============ */
@@ -1383,29 +1401,108 @@ function chevron() {
   return svg;
 }
 
-function sublist(arr, blank, fillItem, addLabel) {
+/* A list of things to edit.
+
+   `rowLabel` makes each entry fold: give it a function that describes
+   an entry in one line and the list becomes rows you can run your eye
+   down, opening the one you want. Without it every entry stays open,
+   which is right for a list of two field things.
+
+   It matters most on the posting schedule. A month is a dozen posts
+   and a post is now ten fields, a set of numbers and a frame, so fully
+   open that panel was several screens of scrolling to reach the last
+   one.
+
+   Which row is open is not remembered. Entries move, and restoring by
+   position would open whichever post had since taken that place. */
+function sublist(arr, blank, fillItem, addLabel, rowLabel) {
   const wrap = document.createElement("div");
+  let openAt = -1;
+
   const draw = () => {
     wrap.innerHTML = "";
+
     arr.forEach((item, i) => {
       const box = document.createElement("div");
       box.className = "item";
+
       const rm = document.createElement("button");
       rm.className = "btn-mini danger remove";
       rm.textContent = "Remove";
-      rm.addEventListener("click", () => { arr.splice(i, 1); draw(); });
-      box.appendChild(rm);
-      fillItem(item, box);
+      rm.addEventListener("click", () => {
+        arr.splice(i, 1);
+        if (openAt === i) openAt = -1;
+        else if (openAt > i) openAt--;
+        draw();
+      });
+
+      if (!rowLabel) {
+        box.appendChild(rm);
+        fillItem(item, box);
+        wrap.appendChild(box);
+        return;
+      }
+
+      const head = document.createElement("button");
+      head.type = "button";
+      head.className = "fold-head row-head";
+      head.setAttribute("aria-expanded", openAt === i ? "true" : "false");
+      if (openAt === i) head.classList.add("open");
+
+      const title = document.createElement("span");
+      title.className = "fold-title";
+      title.style.fontSize = "0.95rem";
+      title.textContent = rowLabel(item, i);
+
+      head.append(title, foldChevron());
+
+      const body = document.createElement("div");
+      body.className = "row-body";
+      body.hidden = openAt !== i;
+      fillItem(item, body);
+
+      head.addEventListener("click", () => {
+        // one at a time, so the panel cannot grow back into the wall
+        // of fields this exists to get rid of
+        openAt = openAt === i ? -1 : i;
+        draw();
+      });
+
+      box.append(rm, head, body);
       wrap.appendChild(box);
     });
+
     const add = document.createElement("button");
     add.className = "btn-mini";
     add.textContent = "+ " + addLabel;
-    add.addEventListener("click", () => { arr.push(blank()); draw(); });
+    add.addEventListener("click", () => {
+      arr.push(blank());
+      // whatever was just added is the thing you want to type into
+      openAt = arr.length - 1;
+      draw();
+    });
     wrap.appendChild(add);
   };
+
   draw();
   return wrap;
+}
+
+function foldChevron() {
+  const ns = "http://www.w3.org/2000/svg";
+  const svg = document.createElementNS(ns, "svg");
+  svg.setAttribute("class", "fold-arrow");
+  svg.setAttribute("viewBox", "0 0 24 24");
+  svg.setAttribute("aria-hidden", "true");
+  const path = document.createElementNS(ns, "path");
+  path.setAttribute("d", "M9 5l7 7-7 7");
+  path.setAttribute("fill", "none");
+  path.setAttribute("stroke", "currentColor");
+  path.setAttribute("stroke-width", "1.6");
+  path.setAttribute("stroke-linecap", "round");
+  path.setAttribute("stroke-linejoin", "round");
+  svg.appendChild(path);
+  return svg;
 }
 
 function row(...fields) {
