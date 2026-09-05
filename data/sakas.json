@@ -122,5 +122,39 @@
     "line": "SAKAS x NOIR AU NOIR",
     "email": "info@noiraunoir.com"
   },
-  "posts": []
+  "posts": [
+    {
+      "date": "2026-07-19",
+      "time": "",
+      "platform": "Instagram Reel",
+      "title": "",
+      "caption": "I’ve lived in different countries, learned from different cultures, worked with incredible chefs, and traveled across the world searching for techniques, ingredients, and ideas. Every place taught me something new. Every mistake made me a little better.",
+      "status": "posted",
+      "how": {
+        "done": 0,
+        "total": 0,
+        "views": 112000,
+        "likes": 505,
+        "shares": 63
+      },
+      "thumb": "7O5cNYv_"
+    }
+  ],
+  "project": {
+    "what": "",
+    "stages": [
+      "Booked",
+      "Filmed",
+      "Editing",
+      "Delivered"
+    ],
+    "stage": 0,
+    "deliverBy": ""
+  },
+  "shootPick": {
+    "asked": false,
+    "note": "",
+    "options": []
+  },
+  "deliveries": []
 }
