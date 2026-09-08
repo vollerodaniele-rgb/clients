@@ -23,6 +23,12 @@ let plan = null;
 
 const $ = (id) => document.getElementById(id);
 
+/* Read the same way dashboard.js reads it. This page used to spell it
+   out inline in a dozen places and hold two local variables called
+   token as well, which is how new code here came to call token() as a
+   function and throw on a page that had no such thing. */
+const token = () => localStorage.getItem(TOKEN_KEY) || "";
+
 /* The page loads this file with a timestamp to dodge the ten minute
    cache, which means it can arrive after the document is already
    parsed. Waiting for an event that has been and gone would leave a
@@ -57,7 +63,7 @@ async function boot() {
 
 function wireTokenPanel() {
   const msg = $("token-msg");
-  if (localStorage.getItem(TOKEN_KEY)) {
+  if (token()) {
     msg.textContent = "A key is saved in this browser.";
   }
   $("token-save").addEventListener("click", () => {
@@ -453,10 +459,6 @@ function deliveriesPanel() {
 /* A month picker, because it gives a clean 2026-09 with no parsing and
    no chance of two months colliding. */
 function monthField(label, d) {
-  const lab = document.createElement("label");
-  lab.className = "field";
-  const span = document.createElement("span");
-  span.textContent = label;
   const input = document.createElement("input");
   input.type = "month";
   input.value = d.month || "";
@@ -475,7 +477,10 @@ function monthField(label, d) {
     }
   });
 
-  lab.append(span, input);
+  /* Declared after the listener that mentions it, which is fine: the
+     listener only ever runs long after this returns. It needs the
+     label itself, because the name it fills in lives in a sibling. */
+  const lab = field(label, input);
   return lab;
 }
 
@@ -517,7 +522,7 @@ function fileArea(d) {
     const files = [...pick.files];
     pick.value = "";
     if (!d.month) { msg.textContent = "Pick a month before adding files."; return; }
-    if (!localStorage.getItem(TOKEN_KEY)) { msg.textContent = "Save your access key first."; return; }
+    if (!token()) { msg.textContent = "Save your access key first."; return; }
 
     for (let i = 0; i < files.length; i++) {
       const file = files[i];
@@ -549,7 +554,7 @@ function uploadDelivery(month, file, onProgress) {
 
     const xhr = new XMLHttpRequest();
     xhr.open("POST", url);
-    xhr.setRequestHeader("X-Studio-Key", localStorage.getItem(TOKEN_KEY));
+    xhr.setRequestHeader("X-Studio-Key", token());
     xhr.setRequestHeader("X-File-Type", file.type || "application/octet-stream");
 
     xhr.upload.addEventListener("progress", (e) => {
@@ -627,10 +632,6 @@ function stageSummary(project) {
 /* The current stage is picked by name but stored as a position, so
    renaming a stage never loses where the job is. */
 function stageField(project) {
-  const lab = document.createElement("label");
-  lab.className = "field";
-  const span = document.createElement("span");
-  span.textContent = "Where it is now";
   const sel = document.createElement("select");
 
   (project.stages || DEFAULT_STAGES).forEach((name, i) => {
@@ -642,17 +643,12 @@ function stageField(project) {
   });
 
   sel.addEventListener("change", () => { project.stage = Number(sel.value); });
-  lab.append(span, sel);
-  return lab;
+  return field("Where it is now", sel);
 }
 
 /* Like selectField, but the stored value and the label differ and a
    change can trigger something, which the kind switch needs. */
 function switchField(label, obj, key, pairs, onChange) {
-  const lab = document.createElement("label");
-  lab.className = "field";
-  const span = document.createElement("span");
-  span.textContent = label;
   const sel = document.createElement("select");
 
   for (const [value, text] of pairs) {
@@ -668,8 +664,7 @@ function switchField(label, obj, key, pairs, onChange) {
     if (onChange) onChange();
   });
 
-  lab.append(span, sel);
-  return lab;
+  return field(label, sel);
 }
 
 /* Wipes the shoot once it is done or once it is called off, so the
@@ -716,7 +711,7 @@ function clearShootControl() {
 
 async function clearNextShoot(btn) {
   const msg = $("shoot-msg");
-  if (!localStorage.getItem(TOKEN_KEY)) {
+  if (!token()) {
     msg.textContent = "Save your access key first (top of the page).";
     return;
   }
@@ -901,7 +896,7 @@ function parsePick(text) {
 
 async function confirmPick(item, btn) {
   const msg = $("pick-msg");
-  if (!localStorage.getItem(TOKEN_KEY)) {
+  if (!token()) {
     msg.textContent = "Save your access key first (top of the page).";
     return;
   }
@@ -961,7 +956,7 @@ async function inviteToShoot(pick) {
   try {
     const res = await fetch(
       `https://api.github.com/repos/${OWNER}/studio-private/contents/contacts.json`,
-      { headers: { Authorization: "Bearer " + localStorage.getItem(TOKEN_KEY), Accept: "application/vnd.github+json" }, cache: "no-store" }
+      { headers: { Authorization: "Bearer " + token(), Accept: "application/vnd.github+json" }, cache: "no-store" }
     );
     if (!res.ok) return "";
 
@@ -974,7 +969,7 @@ async function inviteToShoot(pick) {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        key: localStorage.getItem(TOKEN_KEY),
+        key: token(),
         client: CLIENT,
         email: who.email,
         name: who.person || who.name || "",
@@ -999,7 +994,7 @@ async function inviteToShoot(pick) {
    put back after somebody has tapped a date on it. */
 async function resetPicks(btn) {
   const msg = $("pick-msg");
-  if (!localStorage.getItem(TOKEN_KEY)) {
+  if (!token()) {
     msg.textContent = "Save your access key first (top of the page).";
     return;
   }
@@ -1129,12 +1124,11 @@ async function fetchRequests(state, label) {
     `?labels=${encodeURIComponent((label || "idea") + "," + CLIENT_LABEL)}` +
     `&state=${state}&sort=created&direction=desc&per_page=100`;
 
-  const t = localStorage.getItem(TOKEN_KEY);
   let res = null;
 
-  if (t) {
+  if (token()) {
     res = await fetch(url, {
-      headers: { Accept: "application/vnd.github+json", Authorization: "Bearer " + t },
+      headers: { Accept: "application/vnd.github+json", Authorization: "Bearer " + token() },
       cache: "no-store"
     });
     // a stale key should not hide the requests: the repo is public,
@@ -1215,9 +1209,8 @@ function drawRequests(wrap, items, isRemoved) {
 
 async function setRequestState(item, state, btn) {
   const msg = $("req-msg");
-  const token = localStorage.getItem(TOKEN_KEY);
 
-  if (!token) {
+  if (!token()) {
     msg.textContent = "Save your access key first (top of the page).";
     btn.textContent = state === "closed" ? "Remove" : "Restore";
     return;
@@ -1251,7 +1244,7 @@ async function setIssueState(number, state) {
   const res = await fetch(`https://api.github.com/repos/${OWNER}/${REPO}/issues/${number}`, {
     method: "PATCH",
     headers: {
-      "Authorization": "Bearer " + localStorage.getItem(TOKEN_KEY),
+      "Authorization": "Bearer " + token(),
       "Accept": "application/vnd.github+json",
       "Content-Type": "application/json"
     },
@@ -1515,16 +1508,23 @@ function row(...fields) {
   return div;
 }
 
-function textField(label, obj, key, multiline) {
+/* Every field on this page is the same shape: a label, a control, and
+   a listener writing straight back into the plan. Only the control and
+   what it writes differ, so only that is worth spelling out. */
+function field(label, control) {
   const lab = document.createElement("label");
   lab.className = "field";
   const span = document.createElement("span");
   span.textContent = label;
+  lab.append(span, control);
+  return lab;
+}
+
+function textField(label, obj, key, multiline) {
   const input = document.createElement(multiline ? "textarea" : "input");
   input.value = obj[key] == null ? "" : obj[key];
   input.addEventListener("input", () => { obj[key] = input.value; });
-  lab.append(span, input);
-  return lab;
+  return field(label, input);
 }
 
 /* ============ ONE FRAME FROM A POST ============ */
@@ -1607,7 +1607,7 @@ function thumbField(post) {
     const file = input.files && input.files[0];
     if (!file) return;
 
-    if (!localStorage.getItem(TOKEN_KEY)) { said.textContent = "Save your access key first."; return; }
+    if (!token()) { said.textContent = "Save your access key first."; return; }
 
     said.textContent = "Shrinking...";
     let blob;
@@ -1628,7 +1628,7 @@ function thumbField(post) {
         `${THUMB_RELAY}/thumb?client=${encodeURIComponent(CLIENT)}&post=${encodeURIComponent(id)}`,
         {
           method: "POST",
-          headers: { "X-Studio-Key": localStorage.getItem(TOKEN_KEY), "X-File-Type": "image/jpeg" },
+          headers: { "X-Studio-Key": token(), "X-File-Type": "image/jpeg" },
           body: blob
         }
       );
@@ -1653,7 +1653,7 @@ function thumbField(post) {
     try {
       await fetch(
         `${THUMB_RELAY}/thumb/drop?client=${encodeURIComponent(CLIENT)}&post=${encodeURIComponent(post.thumb)}`,
-        { method: "POST", headers: { "X-Studio-Key": localStorage.getItem(TOKEN_KEY) } }
+        { method: "POST", headers: { "X-Studio-Key": token() } }
       );
     } catch { /* the record going is what matters */ }
     delete post.thumb;
@@ -1675,12 +1675,6 @@ function thumbField(post) {
    example portal stopped carrying photos. So the block is read
    defensively and created only when a number is actually typed. */
 function countField(label, owner, block, key, blank) {
-  const lab = document.createElement("label");
-  lab.className = "field";
-
-  const span = document.createElement("span");
-  span.textContent = label;
-
   const input = document.createElement("input");
   input.type = "number";
   input.min = "0";
@@ -1696,15 +1690,10 @@ function countField(label, owner, block, key, blank) {
     owner[block][key] = Number(input.value) || 0;
   });
 
-  lab.append(span, input);
-  return lab;
+  return field(label, input);
 }
 
 function selectField(label, obj, key, options) {
-  const lab = document.createElement("label");
-  lab.className = "field";
-  const span = document.createElement("span");
-  span.textContent = label;
   const sel = document.createElement("select");
   for (const o of options) {
     const opt = document.createElement("option");
@@ -1714,22 +1703,16 @@ function selectField(label, obj, key, options) {
     sel.appendChild(opt);
   }
   sel.addEventListener("change", () => { obj[key] = sel.value; });
-  lab.append(span, sel);
-  return lab;
+  return field(label, sel);
 }
 
 function linesField(label, obj, key) {
-  const lab = document.createElement("label");
-  lab.className = "field";
-  const span = document.createElement("span");
-  span.textContent = label;
   const ta = document.createElement("textarea");
   ta.value = (obj[key] || []).join("\n");
   ta.addEventListener("input", () => {
     obj[key] = ta.value.split("\n").map((s) => s.trim()).filter(Boolean);
   });
-  lab.append(span, ta);
-  return lab;
+  return field(label, ta);
 }
 
 /* ============ SAVE ============ */
@@ -1737,8 +1720,7 @@ function linesField(label, obj, key) {
 async function save() {
   const msg = $("save-msg");
   const btn = $("save-btn");
-  const token = localStorage.getItem(TOKEN_KEY);
-  if (!token) {
+  if (!token()) {
     msg.textContent = "Save your access key first (top of the page).";
     return;
   }
