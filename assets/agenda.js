@@ -109,45 +109,31 @@ function partnerRow(p) {
   view.textContent = "View";
   head.appendChild(view);
 
-  const remove = document.createElement("button");
-  remove.className = "btn-mini danger";
-  remove.textContent = "Remove";
-  let armed = false;
-  remove.addEventListener("click", async () => {
-    if (!armed) {
-      armed = true;
-      remove.textContent = "Sure?";
-      setTimeout(() => { if (armed) { armed = false; remove.textContent = "Remove"; } }, 4000);
-      return;
-    }
-    armed = false;
-    remove.disabled = true;
-    /* Redrawing regardless of the answer made a refusal look like a
-       deletion: the row came back and nothing said why. */
+  /* Redrawing regardless of the answer made a refusal look like a
+     deletion: the row came back and nothing said why. */
+  head.appendChild(dangerButton("Remove", async () => {
+    let res;
     try {
-      const res = await fetch(`${AGENDA_RELAY}/ref/remove`, {
+      res = await fetch(`${AGENDA_RELAY}/ref/remove`, {
         method: "POST",
         headers: { "X-Studio-Key": token(), "Content-Type": "application/json" },
         body: JSON.stringify({ id: p.id })
       });
-      if (!res.ok) {
-        let why = String(res.status);
-        try { why = (await res.json()).error || why; } catch { /* keep the number */ }
-        say("ref-msg", "Could not remove " + (p.name || p.id) + ": " + why);
-        remove.disabled = false;
-        remove.textContent = "Remove";
-        return;
-      }
-      say("ref-msg", "");
-      drawPartners();
     } catch (err) {
       say("ref-msg", "Could not reach the relay to remove that partner.");
-      console.error("partner remove failed:", err);
-      remove.disabled = false;
-      remove.textContent = "Remove";
+      throw err;
     }
-  });
-  head.appendChild(remove);
+
+    if (!res.ok) {
+      let why = String(res.status);
+      try { why = (await res.json()).error || why; } catch { /* keep the number */ }
+      say("ref-msg", "Could not remove " + (p.name || p.id) + ": " + why);
+      return;
+    }
+
+    say("ref-msg", "");
+    drawPartners();
+  }));
 
   row.appendChild(head);
   return row;
@@ -473,31 +459,14 @@ function inviteRow(inv) {
   open.textContent = "View";
   head.appendChild(open);
 
-  const remove = document.createElement("button");
-  remove.className = "btn-mini danger";
-  remove.textContent = "Remove";
-  let armed = false;
-  remove.addEventListener("click", async () => {
-    if (!armed) {
-      armed = true;
-      remove.textContent = "Sure?";
-      setTimeout(() => { if (armed) { armed = false; remove.textContent = "Remove"; } }, 4000);
-      return;
-    }
-    armed = false;
-    remove.disabled = true;
-    try {
-      await fetch(`${AGENDA_RELAY}/call/uninvite`, {
-        method: "POST",
-        headers: { "X-Studio-Key": token(), "Content-Type": "application/json" },
-        body: JSON.stringify({ id: inv.id })
-      });
-      drawInvites();
-    } catch {
-      remove.disabled = false;
-    }
-  });
-  head.appendChild(remove);
+  head.appendChild(dangerButton("Remove", async () => {
+    await fetch(`${AGENDA_RELAY}/call/uninvite`, {
+      method: "POST",
+      headers: { "X-Studio-Key": token(), "Content-Type": "application/json" },
+      body: JSON.stringify({ id: inv.id })
+    });
+    drawInvites();
+  }));
 
   row.appendChild(head);
   return row;
@@ -734,38 +703,17 @@ function agendaRow(e, past) {
 }
 
 function cancelCallButton(e, row) {
-  const btn = document.createElement("button");
-  btn.className = "btn-mini danger";
-  btn.textContent = "Cancel";
-  let armed = false;
-
-  btn.addEventListener("click", async () => {
-    if (!armed) {
-      armed = true;
-      btn.textContent = "Sure?";
-      setTimeout(() => { if (armed) { armed = false; btn.textContent = "Cancel"; } }, 4000);
-      return;
-    }
-    armed = false;
-    btn.disabled = true;
-
-    try {
-      const res = await fetch(`${AGENDA_RELAY}/call/cancel`, {
-        method: "POST",
-        headers: { "X-Studio-Key": token(), "Content-Type": "application/json" },
-        body: JSON.stringify({ id: e.id })
-      });
-      if (!res.ok) throw new Error(String(res.status));
-      // the slot goes back on offer, so both lists need redrawing
-      loadAgenda();
-      drawSlotEditor();
-    } catch (err) {
-      btn.disabled = false;
-      btn.textContent = "Did not cancel";
-    }
+  return dangerButton("Cancel", async () => {
+    const res = await fetch(`${AGENDA_RELAY}/call/cancel`, {
+      method: "POST",
+      headers: { "X-Studio-Key": token(), "Content-Type": "application/json" },
+      body: JSON.stringify({ id: e.id })
+    });
+    if (!res.ok) throw new Error(String(res.status));
+    // the slot goes back on offer, so both lists need redrawing
+    loadAgenda();
+    drawSlotEditor();
   });
-
-  return btn;
 }
 
 /* "Thursday 10 September, 19:00" reads faster than a date does, and

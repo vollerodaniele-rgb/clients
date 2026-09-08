@@ -345,6 +345,58 @@ function describeShoot(date) {
   return `Last shoot ${when}`;
 }
 
+/* A button that asks once before doing something you cannot undo.
+
+   The first press arms it, the second does it, and it disarms itself
+   after four seconds so a stray tap on a phone cannot leave a live
+   button sitting armed in a list.
+
+   This was written out eight times across four files, and the copies
+   had drifted: one left the label reading "Sure?" after a failure,
+   another never re-enabled itself. Everything that runs through here
+   now behaves the same way, and `run` only has to describe the thing
+   being done.
+
+   Shared with agenda.js, which loads after this file. */
+function dangerButton(label, run) {
+  const btn = document.createElement("button");
+  btn.className = "btn-mini danger";
+  btn.textContent = label;
+
+  let armed = false;
+  let timer = 0;
+
+  btn.addEventListener("click", async () => {
+    if (!armed) {
+      armed = true;
+      btn.textContent = "Sure?";
+      timer = setTimeout(() => {
+        if (armed) { armed = false; btn.textContent = label; }
+      }, 4000);
+      return;
+    }
+
+    clearTimeout(timer);
+    armed = false;
+    btn.disabled = true;
+
+    try {
+      await run();
+    } catch (err) {
+      console.error(label.toLowerCase() + " failed:", err);
+    } finally {
+      /* Whatever ran may have redrawn the list this button was in, in
+         which case this element is already gone and none of it
+         matters. When it has not, the button has to come back usable
+         rather than sitting spent. */
+      btn.disabled = false;
+      btn.textContent = label;
+    }
+  });
+
+  return btn;
+}
+
 function escHtml(s) {
   const div = document.createElement("div");
   div.textContent = s == null ? "" : String(s);
@@ -938,21 +990,13 @@ function drawMoney() {
       await saveMoney(e.status === "paid" ? "Mark paid" : "Mark open");
     });
 
-    const remove = document.createElement("button");
-    remove.className = "btn-mini";
-    remove.style.padding = "0.25rem 0.7rem";
-    remove.textContent = "Remove";
-    let armed = false;
-    remove.addEventListener("click", async () => {
-      if (!armed) {
-        armed = true;
-        remove.textContent = "Sure?";
-        setTimeout(() => { if (armed) { armed = false; remove.textContent = "Remove"; } }, 4000);
-        return;
-      }
+    const remove = dangerButton("Remove", async () => {
       money.entries = money.entries.filter((x) => x !== e);
       await saveMoney("Remove a payment");
     });
+    // this one is a quiet row in a list, not a red button on a card
+    remove.className = "btn-mini";
+    remove.style.padding = "0.25rem 0.7rem";
 
     row.append(action, remove);
     list.appendChild(row);
