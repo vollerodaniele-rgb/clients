@@ -24,13 +24,21 @@ document.addEventListener("DOMContentLoaded", () => {
    link and greets them by name. Without one it is the open booking
    page. The hash rather than a query because this link gets pasted
    into mail and chat clients that rewrite what they touch. */
-const INVITE = location.hash.replace(/^#/, "").trim();
+const HASH = location.hash.replace(/^#/, "").trim();
+
+/* A third way in. "move-" in front of the secret keeps it apart from
+   an invitation id, which is the same alphabet and could otherwise be
+   mistaken for one. */
+const MOVING = HASH.startsWith("move-") ? HASH.slice(5) : "";
+const INVITE = MOVING ? "" : HASH;
 
 async function load() {
   try {
-    const url = INVITE
-      ? `${RELAY}/call/invite?id=${encodeURIComponent(INVITE)}`
-      : `${RELAY}/call/slots`;
+    const url = MOVING
+      ? `${RELAY}/call/booking?m=${encodeURIComponent(MOVING)}`
+      : INVITE
+        ? `${RELAY}/call/invite?id=${encodeURIComponent(INVITE)}`
+        : `${RELAY}/call/slots`;
 
     const res = await fetch(url, { cache: "no-store" });
     if (!res.ok) {
@@ -43,6 +51,32 @@ async function load() {
 
     if (data.name) {
       $("title").textContent = data.name + ", pick a time";
+    }
+
+    if (MOVING) {
+      $("title").textContent = "Move your call";
+      $("intro").textContent =
+        "You have " + longDate(data.booked.date) + " at " + data.booked.time +
+        ". Pick a different time and that one goes back on offer.";
+
+      if (!data.slots.length) {
+        $("intro").textContent =
+          "You have " + longDate(data.booked.date) + " at " + data.booked.time +
+          ", and there is nothing else free at the moment. Reply to the email and we will find something.";
+        return;
+      }
+
+      /* Who they are is already on the booking, so the form asks for
+         nothing. All that is in question is the new hour. */
+      for (const id of ["who", "mail", "phone", "about"]) {
+        const f = $(id);
+        if (f && f.closest("label")) f.closest("label").hidden = true;
+      }
+      $("book").textContent = "Move it";
+
+      if (data.mode === "hours") drawCalendar(data.slots);
+      else draw(data.slots);
+      return;
     }
 
     // their link, already used
@@ -242,6 +276,8 @@ async function book() {
   const btn = $("book");
   if (!picked) { msg.textContent = "Pick a time first."; return; }
 
+  if (MOVING) return move(msg, btn);
+
   const name = $("who").value.trim();
   const email = $("mail").value.trim();
 
@@ -292,6 +328,44 @@ async function book() {
   } catch (err) {
     console.error("booking failed:", err);
     msg.textContent = "Could not book that. Try again in a minute.";
+    btn.disabled = false;
+  }
+}
+
+/* Swapping one hour for another. Nothing is asked for and nothing is
+   confirmed twice: the relay frees the old one in the same step. */
+async function move(msg, btn) {
+  btn.disabled = true;
+  msg.textContent = "Moving...";
+
+  try {
+    const res = await fetch(`${RELAY}/call/move`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ m: MOVING, date: picked.date, time: picked.time })
+    });
+
+    if (res.status === 409) {
+      msg.textContent = "That time has just gone. Pick another.";
+      btn.disabled = false;
+      load();
+      return;
+    }
+    if (!res.ok) throw new Error(String(res.status));
+
+    document.querySelector("main").innerHTML = `
+      <p class="transfer-kicker">NOIR AU NOIR</p>
+      <h1 class="transfer-title">Moved.</h1>
+      <p class="transfer-note">
+        ${esc(longDate(picked.date))} at ${esc(picked.time)}. A new confirmation is on its
+        way, with a calendar invitation. The old time is back on offer.
+      </p>
+      <p class="transfer-expiry">Need to move it again? The link in that email still works.</p>
+    `;
+    document.title = "Moved";
+  } catch (err) {
+    console.error("move failed:", err);
+    msg.textContent = "Could not move it. Try again in a minute.";
     btn.disabled = false;
   }
 }
