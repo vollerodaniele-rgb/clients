@@ -211,7 +211,8 @@
         "location": "Café Nord, Gent",
         "focus": "Team portraits"
       }
-    ]
+    ],
+    "rolling": true
   },
   "project": {
     "what": "",

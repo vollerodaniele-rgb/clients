@@ -418,8 +418,13 @@ async function setupShootPick(pick, rolling) {
 
   /* The month shift has already moved these. Anything still behind is
      a day early in the month that has been and gone, so it is walked
-     on by whole weeks as well. */
-  if (rolling) options = rollForward(options);
+     on by whole weeks as well.
+
+     Either flag will do. A page and its script are cached separately,
+     so for ten minutes after a change one version of this file can
+     meet the other version of the data, and reading only one of them
+     is how the example quietly stopped rolling at all. */
+  if (rolling || (pick && pick.rolling)) options = rollForward(options);
 
   // while we are asking, the picker stands in for the shoot card
   const card = $("shoot-card");
