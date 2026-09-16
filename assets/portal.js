@@ -37,6 +37,10 @@ async function loadPlan() {
     return;
   }
 
+  // the example only: everything below then draws a current month
+  // without knowing that is what it is doing
+  if (data.rolling) rollTheExample(data);
+
   const name = data.name || CLIENT.toUpperCase();
   $("client-name").textContent = name;
   document.title = name + " | Content Portal";
@@ -56,7 +60,7 @@ async function loadPlan() {
 
   renderDeal(data.deal || []);
   renderShoot(data.nextShoot);
-  setupShootPick(data.shootPick);
+  setupShootPick(data.shootPick, data.rolling);
   renderFilmPlan(data.filmPlan);
   renderMonths(data.months || []);
   renderDocs(data.documents || [], data.deliveries || []);
@@ -277,6 +281,102 @@ const PICK_RE = /Picked (\d{4}-\d{2}-\d{2})(?: at (\d{1,2}:\d{2}))?/;
 // the option the client has tapped, held until they press Send
 let picked = null;
 
+/* ============ AN EXAMPLE THAT NEVER GOES STALE ============ */
+/* The demo is the only thing a prospect can look at before buying, and
+   it was written around one month. Left alone it becomes a portal
+   showing last spring, which says the opposite of what it is there to
+   say.
+
+   So everything dated in it is moved on at render time, by however
+   many whole months it takes to make the month marked active the month
+   it actually is. Whole months, so the shape stays intact: two months
+   delivered, this one running, the invoices matching.
+
+   Nothing is written anywhere. The file keeps the dates he typed, and
+   only the example carries the flag that turns this on. */
+
+const MONTH_NAMES = ["January", "February", "March", "April", "May", "June",
+                     "July", "August", "September", "October", "November", "December"];
+
+function readMonthLabel(label) {
+  const m = String(label || "").match(/^([A-Za-z]+)\s+(\d{4})$/);
+  if (!m) return null;
+  const at = MONTH_NAMES.indexOf(m[1]);
+  return at < 0 ? null : { y: Number(m[2]), m: at };
+}
+
+const writeMonthLabel = (y, m) => MONTH_NAMES[m] + " " + y;
+
+/* Adding months to a date has one trap: the 31st of a month followed
+   by a 30 day one. Clamped to the last day rather than rolling into
+   the next month, which would put an invoice in the wrong period. */
+function addMonths(iso, by) {
+  const m = String(iso || "").match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (!m) return iso;
+
+  const y = Number(m[1]), mo = Number(m[2]) - 1, day = Number(m[3]);
+  const target = new Date(Date.UTC(y, mo + by, 1));
+  const lastDay = new Date(Date.UTC(target.getUTCFullYear(), target.getUTCMonth() + 1, 0)).getUTCDate();
+  target.setUTCDate(Math.min(day, lastDay));
+
+  const pad = (n) => String(n).padStart(2, "0");
+  return target.getUTCFullYear() + "-" + pad(target.getUTCMonth() + 1) + "-" + pad(target.getUTCDate());
+}
+
+/* How far the whole file has to move: from the month it calls active
+   to the month it is. */
+function monthsToNow(data) {
+  const active = (data.months || []).find((m) => m.status === "active")
+    || (data.months || [])[(data.months || []).length - 1];
+  const from = readMonthLabel(active && active.label) || readMonthLabel(data.filmPlan && data.filmPlan.month);
+  if (!from) return 0;
+
+  const now = new Date();
+  return (now.getFullYear() - from.y) * 12 + (now.getMonth() - from.m);
+}
+
+function rollTheExample(data) {
+  const by = monthsToNow(data);
+  if (!by) return data;
+
+  for (const m of data.months || []) {
+    const at = readMonthLabel(m.label);
+    if (at) m.label = writeMonthLabel(...(() => {
+      const d = new Date(Date.UTC(at.y, at.m + by, 1));
+      return [d.getUTCFullYear(), d.getUTCMonth()];
+    })());
+  }
+
+  if (data.filmPlan) {
+    const at = readMonthLabel(data.filmPlan.month);
+    if (at) {
+      const d = new Date(Date.UTC(at.y, at.m + by, 1));
+      data.filmPlan.month = writeMonthLabel(d.getUTCFullYear(), d.getUTCMonth());
+    }
+  }
+
+  for (const post of data.posts || []) post.date = addMonths(post.date, by);
+
+  for (const inv of data.invoices || []) {
+    inv.issued = addMonths(inv.issued, by);
+    const at = readMonthLabel(inv.period);
+    if (at) {
+      const d = new Date(Date.UTC(at.y, at.m + by, 1));
+      inv.period = writeMonthLabel(d.getUTCFullYear(), d.getUTCMonth());
+    }
+  }
+
+  if (data.nextShoot && data.nextShoot.date) {
+    data.nextShoot.date = addMonths(data.nextShoot.date, by);
+  }
+
+  if (data.shootPick && Array.isArray(data.shootPick.options)) {
+    data.shootPick.options = data.shootPick.options.map((o) => ({ ...o, date: addMonths(o.date, by) }));
+  }
+
+  return data;
+}
+
 /* An example portal has to keep working without anybody tending it.
 
    Its offered dates were fixed, so they quietly went into the past and
@@ -312,11 +412,14 @@ function rollForward(options) {
   });
 }
 
-async function setupShootPick(pick) {
+async function setupShootPick(pick, rolling) {
   let options = ((pick && pick.options) || []).filter((o) => o && o.date);
   if (!pick || !pick.asked || !options.length) return;
 
-  if (pick.rolling) options = rollForward(options);
+  /* The month shift has already moved these. Anything still behind is
+     a day early in the month that has been and gone, so it is walked
+     on by whole weeks as well. */
+  if (rolling) options = rollForward(options);
 
   // while we are asking, the picker stands in for the shoot card
   const card = $("shoot-card");

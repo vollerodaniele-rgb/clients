@@ -2,7 +2,7 @@
   "name": "CAFÉ NORD",
   "notice": "An example portal, so you can see what yours would look like. The business, the numbers and the names are invented.",
   "tagline": "Monthly reels for Café Nord. Everything about the collaboration in one place: planning, deliveries, documents and billing.",
-  "dealNotes": "What we deliver every month, agreed in June. Adjust anytime, this page always shows the current agreement.",
+  "dealNotes": "What we deliver every month, agreed at the start. Adjust anytime, this page always shows the current agreement.",
   "deal": [
     {
       "num": "12",
@@ -74,7 +74,7 @@
         "done": 12,
         "total": 12
       },
-      "notes": "Summer terrace, iced drinks, the late evening light."
+      "notes": "The terrace, cold drinks, the late evening light."
     },
     {
       "label": "September 2026",
@@ -83,14 +83,14 @@
         "done": 4,
         "total": 12
       },
-      "notes": "Autumn menu launch and the new roast."
+      "notes": "The new menu and the new roast."
     }
   ],
   "documents": [
     {
       "type": "Contract",
       "title": "Collaboration agreement",
-      "note": "Signed June 2026",
+      "note": "Signed at the start",
       "url": ""
     },
     {
@@ -101,13 +101,13 @@
     },
     {
       "type": "Delivery",
-      "title": "August content package",
+      "title": "Last month's package",
       "note": "12 reels",
       "url": ""
     },
     {
       "type": "Delivery",
-      "title": "July content package",
+      "title": "The month before",
       "note": "12 reels",
       "url": ""
     }
@@ -191,7 +191,7 @@
   },
   "shootPick": {
     "asked": true,
-    "note": "Three dates for the September shoot. Tap whichever suits you and we lock it in.",
+    "note": "Three dates for the next shoot. Tap whichever suits you and we lock it in.",
     "options": [
       {
         "date": "2026-09-10",
@@ -211,8 +211,7 @@
         "location": "Café Nord, Gent",
         "focus": "Team portraits"
       }
-    ],
-    "rolling": true
+    ]
   },
   "project": {
     "what": "",
@@ -225,5 +224,6 @@
     "stage": 0,
     "deliverBy": ""
   },
-  "deliveries": []
+  "deliveries": [],
+  "rolling": true
 }
