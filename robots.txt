@@ -1,2 +1,34 @@
+# Nothing on this site should turn up in a search, and nothing here is
+# what stops it. Every page carries noindex, which is what keeps them
+# out of results.
+#
+# This file decides something different: whether a crawler may fetch a
+# page at all. Blocking everything, as this used to, also blocked the
+# fetchers behind WhatsApp, LinkedIn and the rest, so a link forwarded
+# to a restaurant owner arrived as a bare address with no title, no
+# description and no picture.
+#
+# So the pages meant to be handed to somebody are fetchable, and the
+# ones that carry a client's name, terms or invoices are not.
+
 User-agent: *
+
 Disallow: /
+
+# The pages he sends to people, plus the card they preview with
+Allow: /$
+Allow: /index.html
+Allow: /r/
+Allow: /call/
+Allow: /t/
+Allow: /demo/
+Allow: /assets/
+
+# Everything else stays shut: a client's portal, their plan, their
+# invoices, a proposal and its prices, and the idea boxes.
+Disallow: /admin/
+Disallow: /data/
+Disallow: /p/
+Disallow: /proposals/
+Disallow: /i/
+Disallow: /boxes/
