@@ -277,9 +277,46 @@ const PICK_RE = /Picked (\d{4}-\d{2}-\d{2})(?: at (\d{1,2}:\d{2}))?/;
 // the option the client has tapped, held until they press Send
 let picked = null;
 
+/* An example portal has to keep working without anybody tending it.
+
+   Its offered dates were fixed, so they quietly went into the past and
+   a prospect opening it was asked to pick a day that had already been.
+   With `rolling` set, a date that has gone is walked forward a week at
+   a time until it is ahead again, which keeps its weekday: a Tuesday
+   stays a Tuesday.
+
+   Only the example sets that flag. A real client's dates must be
+   exactly the ones he offered, and shifting those would have somebody
+   booking a shoot he never proposed. */
+function rollForward(options) {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  const days = options.map((o) => new Date(o.date + "T00:00:00"));
+  if (days.some((d) => isNaN(d.getTime()))) return options;
+
+  /* The whole set moves by the same number of weeks, decided by the
+     earliest one. Rolling each date on its own closed the gaps between
+     them: a tenth, a fifteenth and a twenty second became two offers
+     on the same day. Whole weeks, so every date keeps its weekday. */
+  const earliest = new Date(Math.min(...days));
+  let weeks = 0;
+  while (new Date(earliest).setDate(earliest.getDate() + weeks * 7) <= +today) weeks++;
+  if (!weeks) return options;
+
+  const pad = (n) => String(n).padStart(2, "0");
+  return options.map((o, i) => {
+    const d = days[i];
+    d.setDate(d.getDate() + weeks * 7);
+    return { ...o, date: d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate()) };
+  });
+}
+
 async function setupShootPick(pick) {
-  const options = ((pick && pick.options) || []).filter((o) => o && o.date);
+  let options = ((pick && pick.options) || []).filter((o) => o && o.date);
   if (!pick || !pick.asked || !options.length) return;
+
+  if (pick.rolling) options = rollForward(options);
 
   // while we are asking, the picker stands in for the shoot card
   const card = $("shoot-card");
