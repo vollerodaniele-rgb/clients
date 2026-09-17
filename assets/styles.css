@@ -2115,6 +2115,11 @@ select { background-color: #0B0B0B; border-color: rgba(255, 255, 255, 0.12); bor
 /* ---------- panes ---------- */
 .pt-stack { display: grid; gap: var(--pt-gap); }
 .pt-row { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); gap: var(--pt-gap); align-items: start; }
+/* equal halves, stretched to the taller one; the bars sit at the top and
+   whatever text the pane has settles to the bottom */
+.pt-row.even { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); align-items: stretch; }
+.pt-row.even > .pt-pane { display: flex; flex-direction: column; }
+.pt-row.even #deal-notes { margin-top: auto; padding-top: 1rem; }
 
 .pt-pane {
   position: relative;
@@ -2263,7 +2268,7 @@ select { background-color: #0B0B0B; border-color: rgba(255, 255, 255, 0.12); bor
 @media (max-width: 900px) {
   .pt-intro { grid-template-columns: minmax(0, 1fr); gap: 1.2rem; padding-top: 2.8rem; }
   .pt-pills { justify-content: flex-start; }
-  .pt-row, .pt-result.has-frame { grid-template-columns: minmax(0, 1fr); }
+  .pt-row, .pt-row.even, .pt-result.has-frame { grid-template-columns: minmax(0, 1fr); }
   .pt-result-frame { min-height: 0; aspect-ratio: 16 / 10; }
   .pt-brand span { display: none; }
 }

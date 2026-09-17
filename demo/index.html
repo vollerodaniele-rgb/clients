@@ -24,7 +24,7 @@
        changes. Pages caches this page and its files separately for ten
        minutes, and without a new address a fresh page can meet a stale
        stylesheet and render bare. -->
-  <link rel="stylesheet" href="../assets/styles.css?v=2026-09-17b">
+  <link rel="stylesheet" href="../assets/styles.css?v=2026-09-17c">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎬</text></svg>">
 </head>
 <body class="portal">
@@ -66,23 +66,25 @@
           <div class="shoot-card" id="shoot-card"><p class="muted">Loading...</p></div>
         </section>
 
-        <section id="deal" class="pt-pane">
-          <div class="pt-head section-head"><h2 class="pt-eyebrow">Our agreement</h2></div>
-          <div class="tiles" id="deal-tiles"></div>
-          <p class="pt-small" id="deal-notes"></p>
-        </section>
-
-        <div class="pt-row">
+        <!-- two panes of about the same height side by side, so neither
+             leaves a gap under it -->
+        <div class="pt-row even">
           <section class="pt-pane" id="progress-card">
             <div class="pt-head"><p class="pt-eyebrow">Progress</p><span class="pt-meta" id="progress-meta"></span></div>
             <div id="progress-body"><p class="muted">Loading...</p></div>
           </section>
 
-          <section id="filmplan" class="pt-pane">
-            <div class="pt-head"><p class="pt-eyebrow" id="filmplan-title">What we film this month</p></div>
-            <ol class="plan-list" id="plan-list"></ol>
+          <section id="deal" class="pt-pane">
+            <div class="pt-head section-head"><h2 class="pt-eyebrow">Our agreement</h2></div>
+            <div class="tiles" id="deal-tiles"></div>
+            <p class="pt-small" id="deal-notes"></p>
           </section>
         </div>
+
+        <section id="filmplan" class="pt-pane">
+          <div class="pt-head"><p class="pt-eyebrow" id="filmplan-title">What we film this month</p></div>
+          <ol class="plan-list" id="plan-list"></ol>
+        </section>
 
         <section class="pt-pane pt-result" id="results" hidden></section>
       </div>
@@ -186,6 +188,6 @@
     <p class="muted">Questions about planning or content? One message away.</p>
   </footer>
 
-  <script src="../assets/portal.js?v=2026-09-17b"></script>
+  <script src="../assets/portal.js?v=2026-09-17c"></script>
 </body>
 </html>
