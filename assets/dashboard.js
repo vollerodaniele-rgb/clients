@@ -216,7 +216,7 @@ function clientCard({ name, plan, requests }) {
     <div class="client-links">
       <a class="btn-mini solid" href="../${name}/admin.html">Edit</a>
       <a class="btn-mini" href="../${name}/">Portal</a>
-      ${isProject ? "" : `<a class="btn-mini" href="../${name}/schedule.html">Plan</a>`}
+      ${isProject ? "" : `<a class="btn-mini" href="../${name}/#posts">Plan</a>`}
     </div>
     <p class="form-msg card-msg"></p>
   `;

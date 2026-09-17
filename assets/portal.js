@@ -27,6 +27,10 @@ const $ = (id) => document.getElementById(id);
 document.addEventListener("DOMContentLoaded", loadPlan);
 
 async function loadPlan() {
+  // before the data, so the other pages are tucked away at once rather
+  // than showing for as long as the fetch takes
+  setupTabs();
+
   let data;
   try {
     const res = await fetch(DATA_URL, { cache: "no-store" });
@@ -58,20 +62,421 @@ async function loadPlan() {
     $("tagline").after(note);
   }
 
+  const isProject = data.kind === "project";
+
   renderDeal(data.deal || []);
   renderShoot(data.nextShoot);
   setupShootPick(data.shootPick, data.rolling);
   renderFilmPlan(data.filmPlan);
   renderMonths(data.months || []);
+  renderIntro(data, isProject);
+  renderProgress(data.months || []);
+  renderResults(data.posts || []);
   renderDocs(data.documents || [], data.deliveries || []);
   renderInvoices(data.invoices || []);
-  const isProject = data.kind === "project";
   renderFooter(data.contact, isProject);
   // last, so it can override headings the renders above just set
   if (isProject) setupProject(data);
+  else setupPosts(data.posts || []);
 
   loadRequests();
   if (CONFIG.submitUrl) setupRequestForm();
+}
+
+/* ============ THE PAGES OF THE PORTAL ============ */
+/* One address, five pages: the month, the posts, the files, the bills
+   and the ideas. Which one is open lives in the hash, so a link can
+   point straight at billing and a reload stays where it was.
+
+   The pages are all visible in the markup and this is what hides them.
+   So a cached copy of the old script, which knows nothing of tabs,
+   shows one long page the way the portal used to look, instead of
+   leaving four pages hidden. A page cached from before the tabs has
+   none of this markup, and everything below finds nothing to do. */
+
+const VIEWS = ["month", "posts", "files", "billing", "ideas"];
+
+// set once the tabs are wired, so the data can move the page later
+let showView = () => {};
+
+function setupTabs() {
+  const tabs = [...document.querySelectorAll(".pt-tab")];
+  if (!tabs.length) return;
+
+  // read each time: a one off hides its posts tab after the data arrives
+  const usable = () => tabs.filter((t) => !t.hidden);
+
+  const show = (view, focus) => {
+    if (!usable().some((t) => t.dataset.view === view)) view = "month";
+    for (const t of tabs) {
+      const on = t.dataset.view === view;
+      t.setAttribute("aria-selected", on ? "true" : "false");
+      t.tabIndex = on ? 0 : -1;
+      const panel = $("v-" + t.dataset.view);
+      if (panel) panel.hidden = !on;
+      if (on && focus) t.focus();
+    }
+    if (location.hash.slice(1) !== view) history.replaceState(null, "", "#" + view);
+  };
+
+  for (const t of tabs) {
+    t.addEventListener("click", () => { show(t.dataset.view); window.scrollTo(0, 0); });
+    t.addEventListener("keydown", (e) => {
+      if (e.key !== "ArrowRight" && e.key !== "ArrowLeft") return;
+      const list = usable();
+      const step = e.key === "ArrowRight" ? 1 : list.length - 1;
+      show(list[(list.indexOf(t) + step) % list.length].dataset.view, true);
+    });
+  }
+
+  document.addEventListener("click", (e) => {
+    const go = e.target.closest("[data-go]");
+    if (go) { show(go.dataset.go); window.scrollTo(0, 0); }
+  });
+
+  // an address from before the tabs (#billing, #requests) still lands on
+  // the page that now holds that section
+  const hash = location.hash.slice(1);
+  const target = hash && !VIEWS.includes(hash) && document.getElementById(hash);
+  const holder = target && target.closest(".pt-view");
+  show(holder ? holder.id.slice(2) : hash);
+  window.addEventListener("hashchange", () => show(location.hash.slice(1)));
+  showView = show;
+}
+
+const activeMonth = (months) => months.find((m) => m.status === "active") || null;
+
+function shortDate(iso) {
+  const d = new Date(iso + "T00:00:00");
+  if (isNaN(d.getTime())) return iso;
+  return d.toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short" });
+}
+
+const fmtNum = (n) => Number(n || 0).toLocaleString("en-GB");
+
+/* The top of the month page: which month, and the state of it in two
+   small pills. */
+function renderIntro(data, isProject) {
+  const title = $("month-title");
+  if (!title) return;
+
+  const now = activeMonth(data.months || []);
+  const what = (data.project && data.project.what) || "";
+
+  if (isProject) {
+    $("month-kicker").textContent = "Your project";
+    // the description is a sentence; only a short one reads as a title
+    title.textContent = what && what.length <= 60 ? what : "Your film";
+  } else {
+    $("month-kicker").textContent = "Your month";
+    title.textContent = (now && now.label) || (data.filmPlan && data.filmPlan.month) || "Your portal";
+  }
+
+  const pills = $("month-pills");
+  if (!pills) return;
+  const add = (text, cls, id) => {
+    const pill = document.createElement("span");
+    pill.className = "pt-pill" + (cls ? " " + cls : "");
+    pill.textContent = text;
+    if (id) pill.id = id;
+    pills.appendChild(pill);
+  };
+
+  if (!isProject && now) add("Month in progress", "live");
+
+  const shoot = data.nextShoot;
+  const pick = data.shootPick;
+  // the same test setupShootPick uses, so this pill is only made when
+  // something is coming to replace its text
+  const asking = pick && pick.asked && (pick.options || []).some((o) => o && o.date);
+  if (asking) add("Checking your shoot day", "", "shoot-pill");
+  else if (shoot && shoot.date) add("Shoot " + shortDate(shoot.date) + (shoot.time ? ", " + shoot.time : ""));
+}
+
+/* This month's reels and photos, as two bars. A one off replaces this
+   with its stages, from setupProject. */
+function renderProgress(months) {
+  const body = $("progress-body");
+  if (!body) return;
+
+  const now = activeMonth(months) || months.find((m) => m.status !== "done");
+  if (!now) {
+    body.innerHTML = `<p class="muted">Progress shows here once the month is planned.</p>`;
+    return;
+  }
+
+  if ($("progress-meta")) $("progress-meta").textContent = now.label || "";
+
+  const rows = [["Reels", now.reels], ["Photos", now.photos]].filter(([, v]) => v && Number(v.total));
+  body.innerHTML = rows.length
+    ? `<div class="pt-meters">${rows.map(([label, v]) => meter(label, v)).join("")}</div>`
+    : `<p class="muted">Nothing counted for ${esc(now.label || "this month")} yet.</p>`;
+}
+
+function meter(label, v) {
+  const done = Number(v.done) || 0;
+  const total = Number(v.total);
+  const pct = Math.min(100, Math.round((done / total) * 100));
+  return `
+    <div class="pt-meter">
+      <div class="pt-meter-top"><span class="pt-meta">${esc(label)}</span><b>${done}<span> / ${total}</span></b></div>
+      <span class="bar"><i style="width:${pct}%"></i></span>
+    </div>`;
+}
+
+/* The latest month that has numbers, as one headline. Hidden until
+   there is something counted, so a first month shows no zeros. */
+function renderResults(posts) {
+  const box = $("results");
+  if (!box) return;
+
+  const counted = posts.filter((p) => p && p.date && postCount(p, "views"));
+  if (!counted.length) return;
+
+  const latest = counted.map((p) => p.date.slice(0, 7)).sort().pop();
+  const inMonth = counted.filter((p) => p.date.startsWith(latest));
+  const sum = (which) => inMonth.reduce((t, p) => t + postCount(p, which), 0);
+  const best = inMonth.reduce((a, b) => (postCount(b, "views") > postCount(a, "views") ? b : a));
+  const month = MONTH_NAMES[Number(latest.slice(5, 7)) - 1];
+  const many = inMonth.length > 1;
+
+  box.innerHTML = `
+    ${best.thumb ? `
+      <figure class="pt-result-frame">
+        <img src="${esc(frameUrl(best))}" alt="">
+        <span class="pt-badge">${many ? "Best post" : "Post"} &middot; ${esc(shortDate(best.date))}</span>
+      </figure>` : ""}
+    <div class="pt-result-body">
+      <p class="pt-eyebrow">How ${esc(month)} went</p>
+      <p class="pt-big">${fmtNum(sum("views"))}</p>
+      <p class="pt-lede">views across ${inMonth.length} post${many ? "s" : ""}.${many
+        ? ` The best one had ${fmtNum(postCount(best, "views"))} on its own.` : ""}</p>
+      <div class="pt-result-stats">
+        <div><b>${fmtNum(sum("likes"))}</b><span class="pt-meta">Likes</span></div>
+        <div><b>${fmtNum(sum("shares"))}</b><span class="pt-meta">Shares</span></div>
+        <button type="button" class="btn-month" data-go="posts">See each post</button>
+      </div>
+    </div>`;
+
+  const img = box.querySelector("img");
+  if (img) img.addEventListener("error", () => img.closest("figure").remove());
+  box.classList.toggle("has-frame", Boolean(best.thumb));
+  box.hidden = false;
+}
+
+/* ============ POSTS ============ */
+/* The posting plan, which used to be its own page. What goes out on
+   which day, a frame from each piece, the caption ready to copy, and
+   once a month has passed, how each one did. */
+
+const frameUrl = (post) =>
+  `${CONFIG.submitUrl}/thumb?client=${encodeURIComponent(CLIENT)}&post=${encodeURIComponent(post.thumb)}`;
+
+const postCount = (p, which) => Number(p.how && p.how[which]) || 0;
+const postHasNumbers = (p) => postCount(p, "views") || postCount(p, "likes") || postCount(p, "shares");
+
+// 12400 reads worse than 12.4k on a card this size
+function shortNum(n) {
+  if (n >= 1000000) return (n / 1000000).toFixed(1).replace(/\.0$/, "") + "m";
+  if (n >= 1000) return (n / 1000).toFixed(1).replace(/\.0$/, "") + "k";
+  return String(n);
+}
+
+const isoDay = (d) => d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") +
+  "-" + String(d.getDate()).padStart(2, "0");
+
+let postList = [];
+let postView = new Date();
+
+function setupPosts(posts) {
+  if (!$("cal") || !$("post-list")) return;
+
+  postList = posts.filter((p) => p && p.date).sort((a, b) => a.date.localeCompare(b.date));
+
+  // open on the first month that still has something planned
+  const next = postList.find((p) => p.status !== "posted") || postList[postList.length - 1];
+  if (next) postView = new Date(next.date + "T00:00:00");
+
+  $("prev-month").addEventListener("click", () => shiftPostMonth(-1));
+  $("next-month").addEventListener("click", () => shiftPostMonth(1));
+  $("today-month").addEventListener("click", () => { postView = new Date(); drawPostMonth(); });
+
+  drawPostMonth();
+}
+
+function shiftPostMonth(by) {
+  postView = new Date(postView.getFullYear(), postView.getMonth() + by, 1);
+  drawPostMonth();
+}
+
+function drawPostMonth() {
+  const year = postView.getFullYear();
+  const month = postView.getMonth();
+  const prefix = year + "-" + String(month + 1).padStart(2, "0");
+  const monthPosts = postList.filter((p) => p.date.startsWith(prefix));
+
+  $("cal-title").textContent = MONTH_NAMES[month] + " " + year;
+  drawPostCalendar(year, month);
+  drawPostTotals(monthPosts);
+  drawPostCards(monthPosts, MONTH_NAMES[month]);
+}
+
+function drawPostCalendar(year, month) {
+  const cal = $("cal");
+  cal.innerHTML = "";
+
+  for (const d of ["Mo", "Tu", "We", "Th", "Fr", "Sa", "Su"]) {
+    cal.appendChild(Object.assign(document.createElement("div"), { className: "cal-head", textContent: d }));
+  }
+
+  // weeks start on Monday
+  const lead = (new Date(year, month, 1).getDay() + 6) % 7;
+  for (let i = 0; i < lead; i++) {
+    cal.appendChild(Object.assign(document.createElement("div"), { className: "cal-cell empty" }));
+  }
+
+  const today = isoDay(new Date());
+  const days = new Date(year, month + 1, 0).getDate();
+
+  for (let day = 1; day <= days; day++) {
+    const iso = isoDay(new Date(year, month, day));
+    const onDay = postList.filter((p) => p.date === iso);
+
+    const cell = document.createElement(onDay.length ? "button" : "div");
+    cell.className = "cal-cell" + (onDay.length ? " has-posts" : "") + (iso === today ? " today" : "");
+    cell.innerHTML = `<span class="cal-num">${day}</span>`;
+
+    /* Not lazy: absolutely positioned inside a grid cell, a lazy frame
+       sat at 0x0 and never loaded. A month is a dozen small images. */
+    const withFrame = onDay.find((p) => p.thumb);
+    if (withFrame) {
+      const frame = document.createElement("img");
+      frame.className = "cal-frame";
+      frame.src = frameUrl(withFrame);
+      frame.alt = "";
+      frame.addEventListener("error", () => frame.remove());
+      cell.appendChild(frame);
+      cell.classList.add("has-frame");
+    }
+
+    if (onDay.length) {
+      cell.type = "button";
+      const views = onDay.reduce((t, p) => t + postCount(p, "views"), 0);
+      if (views) cell.insertAdjacentHTML("beforeend", `<span class="cal-views">${shortNum(views)}</span>`);
+
+      const dots = document.createElement("span");
+      dots.className = "cal-dots";
+      for (const p of onDay.slice(0, 4)) {
+        dots.appendChild(Object.assign(document.createElement("span"), {
+          className: "dot " + (p.status === "posted" ? "posted" : "planned")
+        }));
+      }
+      cell.appendChild(dots);
+      cell.setAttribute("aria-label", day + " " + MONTH_NAMES[month] + ": " +
+        onDay.map((p) => p.title || "a post").join(", "));
+      cell.addEventListener("click", () => {
+        const card = document.querySelector(`.post-card[data-date="${iso}"]`);
+        if (!card) return;
+        card.scrollIntoView({ behavior: "smooth", block: "center" });
+        card.classList.remove("flash");
+        void card.offsetWidth;
+        card.classList.add("flash");
+      });
+    }
+
+    cal.appendChild(cell);
+  }
+}
+
+/* What the month did, added up. Only once there is something to add up,
+   so a month still being filmed does not show three zeros. */
+function drawPostTotals(monthPosts) {
+  const wrap = $("month-totals");
+  const counted = monthPosts.filter(postHasNumbers);
+  wrap.hidden = !counted.length;
+  if (!counted.length) return;
+
+  const sum = (which) => counted.reduce((t, p) => t + postCount(p, which), 0);
+  wrap.innerHTML = ["views", "likes", "shares"].map((k) => `
+    <div><b>${fmtNum(sum(k))}</b><span class="pt-meta">${k}</span></div>`).join("");
+}
+
+function drawPostCards(monthPosts, monthName) {
+  const wrap = $("post-list");
+  wrap.innerHTML = "";
+
+  if (!monthPosts.length) {
+    wrap.innerHTML = `<p class="muted pt-empty">Nothing planned for ${esc(monthName)} yet.</p>`;
+    $("posts-lede").textContent = "Tap a day to jump to its post. Tap a caption to copy it.";
+    return;
+  }
+
+  const done = monthPosts.filter((p) => p.status === "posted").length;
+  $("posts-lede").textContent =
+    `${monthPosts.length} post${monthPosts.length === 1 ? "" : "s"} in ${monthName}, ${done} already out. ` +
+    "Tap a caption to copy it.";
+
+  for (const p of monthPosts) {
+    const d = new Date(p.date + "T00:00:00");
+    const card = document.createElement("article");
+    card.className = "post-card" + (p.status === "posted" ? " posted" : "");
+    card.dataset.date = p.date;
+
+    card.innerHTML = `
+      ${p.thumb ? `<img class="post-frame" src="${esc(frameUrl(p))}" alt="">` : ""}
+      <div class="post-when">
+        <span class="post-day">${d.getDate()}</span>
+        <span class="post-dow">${d.toLocaleDateString("en-GB", { weekday: "short" })}</span>
+        ${p.time ? `<span class="post-time">${esc(p.time)}</span>` : ""}
+      </div>
+      <div class="post-body">
+        <div class="post-top">
+          ${p.platform ? `<span class="post-platform">${esc(p.platform)}</span>` : ""}
+          <span class="badge ${p.status === "posted" ? "done" : ""}">${p.status === "posted" ? "Posted" : "Planned"}</span>
+        </div>
+        ${p.title ? `<h3 class="post-title">${esc(p.title)}</h3>` : ""}
+        ${postHasNumbers(p) ? `
+          <div class="post-numbers">
+            <span><b>${shortNum(postCount(p, "views"))}</b> views</span>
+            <span><b>${shortNum(postCount(p, "likes"))}</b> likes</span>
+            <span><b>${shortNum(postCount(p, "shares"))}</b> shares</span>
+          </div>` : ""}
+        ${p.caption ? `<div class="caption" role="button" tabindex="0" title="Tap to copy">${esc(p.caption)}<span class="copy-hint">copy</span></div>` : ""}
+      </div>
+    `;
+
+    const frame = card.querySelector(".post-frame");
+    if (frame) frame.addEventListener("error", () => frame.remove());
+
+    const cap = card.querySelector(".caption");
+    if (cap) wireCopy(cap, p.caption);
+
+    wrap.appendChild(card);
+  }
+}
+
+function wireCopy(cap, text) {
+  const hint = cap.querySelector(".copy-hint");
+  const copy = async () => {
+    try {
+      await navigator.clipboard.writeText(text);
+      cap.classList.add("copied");
+      hint.textContent = "copied";
+      setTimeout(() => { cap.classList.remove("copied"); hint.textContent = "copy"; }, 1600);
+    } catch {
+      // clipboard blocked: select the text so it can be copied by hand
+      const range = document.createRange();
+      range.selectNodeContents(cap);
+      const sel = window.getSelection();
+      sel.removeAllRanges();
+      sel.addRange(range);
+      hint.textContent = "selected, press copy";
+    }
+  };
+  cap.addEventListener("click", copy);
+  cap.addEventListener("keydown", (e) => {
+    if (e.key === "Enter" || e.key === " ") { e.preventDefault(); copy(); }
+  });
 }
 
 /* ============ IDEAS & REQUESTS ============ */
@@ -220,10 +625,20 @@ function setupProject(data) {
   const nav = document.querySelector(".hero-nav");
   if (nav) nav.hidden = true;
 
+  // one job has no posting plan, and its first page is not a month
+  const postsTab = document.querySelector('.pt-tab[data-view="posts"]');
+  if (postsTab) {
+    postsTab.hidden = true;
+    $("v-posts").hidden = true;
+    if (location.hash === "#posts") showView("month");
+  }
+  const firstTab = document.querySelector('.pt-tab[data-view="month"]');
+  if (firstTab) firstTab.firstChild.textContent = "Project";
+
   const dealHead = document.querySelector("#deal .section-head h2");
-  if (dealHead) dealHead.textContent = "What You Get";
+  if (dealHead) dealHead.textContent = "What you get";
   const filmTitle = $("filmplan-title");
-  if (filmTitle) filmTitle.textContent = "What We Film";
+  if (filmTitle) filmTitle.textContent = "What we film";
 
   renderStages(project);
 }
@@ -235,12 +650,13 @@ function renderStages(project) {
   const at = Math.max(0, Math.min(list.length - 1, Number(project.stage) || 0));
   const done = at === list.length - 1;
 
-  const section = document.createElement("section");
-  section.id = "progress";
-  section.className = "section";
-  section.innerHTML = `
-    <div class="section-head"><h2>Where We Are</h2></div>
-    ${project.what ? `<p class="section-lede">${esc(project.what)}</p>` : ""}
+  const body = $("progress-body");
+  // on the tabbed page a short description is already the page title
+  const title = $("month-title");
+  const said = body && title && title.textContent === project.what;
+
+  const strip = `
+    ${project.what && !said ? `<p class="section-lede">${esc(project.what)}</p>` : ""}
     <div class="stage-row">
       ${list.map((name, i) => `
         <div class="stage ${i < at ? "done" : i === at ? "now" : ""}">
@@ -250,6 +666,20 @@ function renderStages(project) {
     </div>
     ${deliveryLine(project, done)}
   `;
+
+  // the tabbed page has a pane waiting for this; an older cached page
+  // does not, and gets its own section as before
+  if (body) {
+    body.innerHTML = strip;
+    const meta = $("progress-meta");
+    if (meta) meta.textContent = list[at];
+    return;
+  }
+
+  const section = document.createElement("section");
+  section.id = "progress";
+  section.className = "section";
+  section.innerHTML = `<div class="section-head"><h2>Where We Are</h2></div>${strip}`;
 
   const deal = $("deal");
   if (deal) deal.before(section);
@@ -437,9 +867,21 @@ async function setupShootPick(pick, rolling) {
   const already = await loadExistingPick();
   if (already) {
     drawPicked(wrap, already);
+    setShootHeading("Next shoot", "Your pick is in", false, already);
     return;
   }
   drawOptions(wrap, options, pick.note);
+  // the one thing on the page that is waiting on the client
+  setShootHeading("Needs you", "Pick your shoot day", true);
+}
+
+function setShootHeading(kicker, title, waiting, chosen) {
+  if ($("shoot-kicker")) $("shoot-kicker").textContent = kicker;
+  if ($("shoot-title")) $("shoot-title").textContent = title;
+  if ($("needs-dot")) $("needs-dot").hidden = !waiting;
+  const pill = $("shoot-pill");
+  if (pill) pill.textContent = waiting ? "Shoot day not set yet"
+    : "Shoot " + shortDate(chosen.date) + (chosen.time ? ", " + chosen.time : "");
 }
 
 /* A pick that was already made shows as picked, so reloading the page
@@ -540,6 +982,7 @@ async function sendPick(wrap, opt) {
     });
     if (!res.ok) throw new Error("relay " + res.status);
     drawPicked(wrap, { date: opt.date, time: opt.time || "" });
+    setShootHeading("Next shoot", "Your pick is in", false, opt);
   } catch (err) {
     console.error("pick submit failed:", err);
     msg.textContent = "Could not send that right now. Try again in a minute.";
@@ -574,7 +1017,7 @@ function renderFilmPlan(plan) {
     return;
   }
   if (plan.month) {
-    $("filmplan-title").textContent = "What We Film: " + plan.month;
+    $("filmplan-title").textContent = "What we film in " + plan.month;
   }
   plan.items.forEach((item, i) => {
     const li = document.createElement("li");

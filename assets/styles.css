@@ -1968,3 +1968,322 @@ select { background-color: #0B0B0B; border-color: rgba(255, 255, 255, 0.12); bor
 .invoice-table th { border-bottom-width: 1px; }
 .footer { border-top-color: var(--line-soft); }
 .footer p:first-child { letter-spacing: 0.26em; text-transform: uppercase; font-size: 0.9rem; }
+
+/* ============ THE CLIENT PORTAL, IN PAGES ============ */
+/* A floating bar with the client's name and five pages, a large title
+   per page, and the existing cards set into panes. Scoped to
+   body.portal, so the dashboard, the admin and every page he sends are
+   left exactly as they are. */
+
+.portal { --pt-max: 74rem; --pt-gap: 1rem; }
+
+.pt-top {
+  position: sticky;
+  top: 0.8rem;
+  z-index: 90;
+  max-width: var(--pt-max);
+  margin: 0.8rem auto 0;
+  padding: 0 1.25rem;
+}
+
+.pt-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.45rem 0.45rem 0.45rem 1.3rem;
+  border: 1px solid var(--glass-float-edge);
+  border-radius: 999px;
+  background: var(--glass-float);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  box-shadow: var(--glass-float-lip);
+}
+
+.pt-brand { display: flex; align-items: baseline; gap: 0.6rem; white-space: nowrap; min-width: 0; }
+.pt-brand b { font-weight: 500; font-size: 0.92rem; letter-spacing: 0.24em; text-transform: uppercase; overflow: hidden; text-overflow: ellipsis; }
+.pt-brand span { font-size: 0.62rem; letter-spacing: 0.24em; text-transform: uppercase; color: rgba(242, 242, 242, 0.45); }
+
+.pt-tabs {
+  display: flex;
+  gap: 0.2rem;
+  padding: 0.28rem;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.12) inset;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.pt-tabs::-webkit-scrollbar { display: none; }
+
+.pt-tab {
+  position: relative;
+  padding: 0.62rem 1rem;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: rgba(242, 242, 242, 0.66);
+  font-family: var(--font-body);
+  font-size: 0.66rem;
+  font-weight: 500;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background 0.25s, color 0.25s;
+}
+.pt-tab:hover { background: rgba(255, 255, 255, 0.08); color: var(--text); }
+.pt-tab[aria-selected="true"] { background: rgba(242, 242, 242, 0.92); color: #000; }
+.pt-tab:focus-visible { outline: 1px solid #fff; outline-offset: 2px; }
+
+/* something on the month page is waiting on the client */
+.pt-dot { position: absolute; top: 0.4rem; right: 0.45rem; width: 5px; height: 5px; border-radius: 999px; background: #fff; }
+.pt-tab[aria-selected="true"] .pt-dot { background: #000; }
+
+.pt-shell { max-width: var(--pt-max); margin: 0 auto; padding: 0 1.25rem; }
+
+.pt-view { animation: pt-rise 0.55s cubic-bezier(.2, .8, .2, 1) both; }
+@keyframes pt-rise { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+
+/* ---------- type ---------- */
+.pt-eyebrow {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  font-family: var(--font-body);
+  font-size: 0.62rem;
+  font-weight: 400;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: rgba(242, 242, 242, 0.45);
+}
+.pt-eyebrow::before { content: ""; flex: none; width: 5px; height: 5px; border-radius: 999px; background: #fff; }
+
+.pt-display {
+  margin-top: 1.1rem;
+  font-weight: 500;
+  font-size: clamp(2.5rem, 6vw, 5.2rem);
+  line-height: 0.94;
+  letter-spacing: -0.05em;
+  text-wrap: balance;
+}
+
+.pt-h2 {
+  margin-top: 0.8rem;
+  font-weight: 500;
+  font-size: clamp(1.6rem, 2.8vw, 2.2rem);
+  line-height: 1.05;
+  letter-spacing: -0.04em;
+}
+
+/* the example portal's "this is invented" line, a pane rather than a pill
+   now that it runs to three lines under a big title */
+.portal .hero-notice { margin-top: 1rem; max-width: 36rem; border-radius: 14px; padding: 0.7rem 1rem; line-height: 1.55; }
+
+.pt-lede { margin-top: 1rem; max-width: 36rem; font-size: 0.95rem; line-height: 1.7; color: rgba(242, 242, 242, 0.66); }
+.pt-small { margin-top: 1rem; font-size: 0.84rem; line-height: 1.6; color: rgba(242, 242, 242, 0.6); }
+.pt-meta { font-size: 0.64rem; letter-spacing: 0.22em; text-transform: uppercase; color: rgba(242, 242, 242, 0.6); }
+
+.pt-intro {
+  display: grid;
+  grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr);
+  gap: 2rem;
+  align-items: end;
+  padding: 4.2rem 0 2.2rem;
+}
+
+.pt-pills { display: flex; flex-wrap: wrap; gap: 0.5rem; justify-content: flex-end; }
+
+.pt-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.4rem 0.75rem;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 999px;
+  font-size: 0.6rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: rgba(242, 242, 242, 0.7);
+  white-space: nowrap;
+}
+.pt-pill::before { content: ""; width: 5px; height: 5px; border-radius: 999px; border: 1px solid currentColor; }
+.pt-pill.live::before { background: #fff; border-color: #fff; animation: pt-pulse 2s ease-in-out infinite; }
+@keyframes pt-pulse { 50% { opacity: 0.25; } }
+
+/* ---------- panes ---------- */
+.pt-stack { display: grid; gap: var(--pt-gap); }
+.pt-row { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); gap: var(--pt-gap); align-items: start; }
+
+.pt-pane {
+  position: relative;
+  padding: 1.75rem;
+  border: 1px solid var(--glass-edge);
+  border-radius: 20px;
+  background: var(--glass);
+  box-shadow: var(--glass-lip);
+}
+
+.pt-head { display: flex; justify-content: space-between; align-items: center; gap: 0.8rem; margin-bottom: 1.3rem; }
+.pt-head h2 { margin: 0; }
+/* #deal keeps its old .section-head so a cached old script can still
+   rename it; without this, that rule would blow the label up */
+.portal .section-head h2.pt-eyebrow {
+  font-family: var(--font-body);
+  font-size: 0.62rem;
+  font-weight: 400;
+  line-height: 1.4;
+  letter-spacing: 0.3em;
+  color: rgba(242, 242, 242, 0.45);
+}
+
+/* the pane that needs the client gets the brighter edge */
+.pt-needs { padding: 2rem; border-color: rgba(242, 242, 242, 0.4); box-shadow: var(--glass-lip), 0 0 70px -24px rgba(255, 255, 255, 0.18); }
+.pt-needs .shoot-card,
+.pt-needs #pick-wrap { margin-top: 1.4rem; }
+.pt-needs .shoot-card { border-color: var(--glass-edge); box-shadow: none; background: rgba(0, 0, 0, 0.25); }
+/* the pane's own heading already says it */
+.pt-needs .pick-kicker { display: none; }
+
+/* cards that were full sections now sit inside a pane, so they step down */
+.portal .pt-pane .tile,
+.portal .pt-pane .month-card,
+.portal .pt-pane .doc-card,
+.portal .pt-pane .delivery { background-color: rgba(0, 0, 0, 0.26); border-color: var(--line-soft); box-shadow: none; }
+
+.portal .pt-pane .tiles { grid-template-columns: repeat(auto-fit, minmax(8.5rem, 1fr)); gap: 0.6rem; }
+.portal .pt-pane .tile { padding: 1rem 1.1rem; }
+.portal .pt-pane .tile .num { font-size: 1.8rem; }
+.portal .pt-pane .tile .lbl { font-weight: 400; letter-spacing: 0.16em; font-size: 0.62rem; }
+
+.portal .pt-pane .month-list { gap: 0.6rem; }
+.portal .pt-pane .month-card { padding: 1rem 1.15rem; }
+.portal .pt-pane .month-title { font-size: 1.05rem; }
+.portal .pt-pane .month-top { margin-bottom: 0.5rem; }
+
+.portal .pt-pane .plan-list { border-top: 0; }
+.portal .pt-pane .plan-list li { padding: 0.85rem 0; }
+.portal .pt-pane .plan-list li:last-child { border-bottom: 0; }
+.portal .pt-pane .plan-num { font-size: 0.8rem; min-width: 1.6rem; text-align: left; }
+.portal .pt-pane .plan-what { font-weight: 500; letter-spacing: -0.01em; }
+
+.portal .pt-pane .stage-row { margin-top: 0.4rem; }
+.portal .pt-pane .section-lede { margin: 0 0 1rem; }
+
+.pt-meters { display: grid; gap: 1.3rem; }
+.pt-meter { display: grid; gap: 0.6rem; }
+.pt-meter-top { display: flex; justify-content: space-between; align-items: baseline; }
+.pt-meter-top b { font-weight: 500; font-size: 2rem; letter-spacing: -0.045em; line-height: 1; font-variant-numeric: tabular-nums; }
+.pt-meter-top b span { font-size: 0.95rem; color: rgba(242, 242, 242, 0.45); letter-spacing: -0.02em; }
+.pt-meter .bar { display: block; height: 6px; }
+
+/* ---------- last month ---------- */
+.pt-result { padding: 0; display: grid; overflow: hidden; }
+.pt-result.has-frame { grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); }
+.pt-result-frame { position: relative; margin: 0; min-height: 17rem; background: #0B0B0B; }
+.pt-result-frame img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; filter: saturate(0.8) brightness(0.86); }
+.pt-result-frame::after { content: ""; position: absolute; inset: 0; background: linear-gradient(180deg, transparent 50%, rgba(0, 0, 0, 0.6)); }
+
+.pt-badge {
+  position: absolute;
+  top: 1rem;
+  left: 1rem;
+  z-index: 1;
+  padding: 0.4rem 0.8rem;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 999px;
+  background: rgba(20, 20, 24, 0.46);
+  backdrop-filter: blur(18px) saturate(180%);
+  -webkit-backdrop-filter: blur(18px) saturate(180%);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.2) inset;
+  font-size: 0.58rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+}
+
+.pt-result-body { padding: 1.75rem; display: flex; flex-direction: column; }
+.pt-big { margin-top: 1rem; font-weight: 500; font-size: clamp(3rem, 5vw, 4.4rem); line-height: 0.9; letter-spacing: -0.05em; font-variant-numeric: tabular-nums; }
+.pt-result-body .pt-lede { margin-top: 0.7rem; }
+
+.pt-result-stats {
+  display: flex;
+  align-items: center;
+  gap: 1.6rem;
+  flex-wrap: wrap;
+  margin-top: auto;
+  padding-top: 1.3rem;
+  border-top: 1px solid var(--line-soft);
+}
+.pt-result-stats b,
+.pt-totals b { display: block; font-weight: 500; font-size: 1.35rem; letter-spacing: -0.03em; font-variant-numeric: tabular-nums; }
+.pt-result-stats .btn-month { margin-left: auto; }
+
+/* ---------- posts ---------- */
+.pt-cal-head { display: flex; justify-content: space-between; align-items: center; gap: 1rem; flex-wrap: wrap; }
+.pt-month { margin: 0 0.4rem; min-width: 9.5rem; text-align: center; font-weight: 500; font-size: 1.15rem; letter-spacing: -0.02em; }
+.pt-totals { display: flex; gap: 1.6rem; }
+.pt-totals .pt-meta { display: block; }
+.portal #calendar .cal { margin-top: 1.3rem; }
+
+/* a day with posts is a real button now */
+.portal button.cal-cell {
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+  width: 100%;
+}
+/* one height for every day, so a week with frames is no taller than one
+   without, and a wide screen does not blow the month up */
+.portal #calendar .cal-cell { aspect-ratio: auto; height: clamp(3.2rem, 6.4vw, 5.6rem); min-height: 0; }
+.portal .cal-cell.has-frame::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0.4), transparent 40%, transparent 55%, rgba(0, 0, 0, 0.65));
+}
+.portal .cal-cell.has-frame .cal-num,
+.portal .cal-cell.has-frame .cal-dots,
+.portal .cal-views { position: relative; z-index: 1; }
+.cal-views { font-size: 0.7rem; font-weight: 500; letter-spacing: -0.01em; font-variant-numeric: tabular-nums; }
+.portal .cal-cell.has-frame .cal-dots { display: none; }
+
+.portal #v-posts .post-list { margin-top: var(--pt-gap); }
+.post-card.flash { animation: pt-flash 1.4s ease; }
+@keyframes pt-flash { 0%, 40% { border-color: rgba(242, 242, 242, 0.8); } }
+.pt-empty { padding: 2rem 0.2rem; }
+
+/* ---------- ideas + billing ---------- */
+.portal #requests .request-form { margin-top: 0; }
+.portal #billing .table-wrap { margin-bottom: 0; }
+
+.portal .footer { max-width: var(--pt-max); margin: 4rem auto 0; }
+
+@media (max-width: 900px) {
+  .pt-intro { grid-template-columns: minmax(0, 1fr); gap: 1.2rem; padding-top: 2.8rem; }
+  .pt-pills { justify-content: flex-start; }
+  .pt-row, .pt-result.has-frame { grid-template-columns: minmax(0, 1fr); }
+  .pt-result-frame { min-height: 0; aspect-ratio: 16 / 10; }
+  .pt-brand span { display: none; }
+}
+
+@media (max-width: 600px) {
+  .pt-top { padding: 0 0.6rem; top: 0.5rem; }
+  .pt-bar { flex-direction: column; align-items: stretch; gap: 0.35rem; padding: 0.55rem 0.45rem 0.45rem; border-radius: 26px; }
+  .pt-brand { justify-content: center; }
+  .pt-tab { flex: 1; padding: 0.6rem 0.4rem; letter-spacing: 0.08em; font-size: 0.6rem; }
+  .pt-dot { top: 0.3rem; right: 0.3rem; }
+  .pt-shell { padding: 0 0.8rem; }
+  .pt-pane, .pt-needs { padding: 1.25rem; }
+  .pt-result { padding: 0; }
+  .pt-result-body { padding: 1.25rem; }
+  .pt-month { min-width: 0; font-size: 1rem; }
+  .pt-cal-head #today-month { display: none; }
+  .cal-views { display: none; }
+  .portal .cal { gap: 3px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pt-view, .pt-pill.live::before, .post-card.flash { animation: none; }
+}
