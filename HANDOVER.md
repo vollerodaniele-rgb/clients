@@ -36,9 +36,9 @@ JSON or run commands if a button can do it.
 
 | What | Address | Repo | Local |
 |---|---|---|---|
-| **Control room** | clients.noiraunoir.com/admin/ | `clients` | `C:\Users\erbli\claude\clients` |
-| Sakas portal (new) | clients.noiraunoir.com/sakas/ | `clients` | same |
-| Fema proposal | clients.noiraunoir.com/p/Tr1_ZkuT9dA_/ | `clients` | same |
+| **Control room** | noiraunoir.com/admin/ | `clients` | `C:\Users\erbli\claude\clients` |
+| Sakas portal (new) | noiraunoir.com/sakas/ | `clients` | same |
+| Fema proposal | noiraunoir.com/p/Tr1_ZkuT9dA_/ | `clients` | same |
 | Kresha idea box | kresha.noiraunoir.com | `mc-kresha-hub` | `C:\Users\erbli\claude\mc-kresha-hub` |
 | Sakas idea box | sakasidea.noiraunoir.com | `sakas-idea` | `C:\Users\erbli\claude\sakas-idea` |
 | Sakas portal (OLD, duplicate) | sakas.noiraunoir.com | `sakas-portal` | `C:\Users\erbli\claude\sakas-portal` |
@@ -60,7 +60,7 @@ Everything new goes here. Structure:
 ```
 clients/
   .nojekyll              REQUIRED. Without it Pages hides _folders
-  CNAME                  clients.noiraunoir.com
+  CNAME                  noiraunoir.com
   index.html / 404.html  just the studio name, gives nothing away
   robots.txt             disallow all
   admin/
@@ -257,7 +257,7 @@ admin page.
 
 ## 8. What the dashboard can already do
 
-`clients.noiraunoir.com/admin/` — one key covers everything.
+`noiraunoir.com/admin/` — one key covers everything.
 
 - **Money**: add a payment (date, client, what for, amount, paid/open),
   totals for paid this year / this month / outstanding, flags anything
@@ -301,7 +301,7 @@ He ticks items there. The ones flagged "start here":
 `sakas-portal` repo, with its own separate request pool. It has already
 confused him once ("1 request waiting but there is none" — he was looking
 at the old one). **Recommended fix:** turn `sakas-portal` into a forwarder
-to `clients.noiraunoir.com/sakas/`, exactly as was done for the `proposal`
+to `noiraunoir.com/sakas/`, exactly as was done for the `proposal`
 repo. He has been told twice and has not yet said go.
 
 Kresha and the Sakas idea box could also fold into `clients` as `/i/<slug>/`

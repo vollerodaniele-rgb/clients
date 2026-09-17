@@ -416,7 +416,7 @@ onReady(() => {
 
   const showPreview = () => {
     const s = slugify(slugInput.value || nameInput.value);
-    preview.textContent = "clients.noiraunoir.com/" + (s || "<address>") + "/";
+    preview.textContent = "noiraunoir.com/" + (s || "<address>") + "/";
   };
 
   // the address follows the name until it is edited by hand
@@ -494,7 +494,7 @@ async function createClient() {
     await commitFiles(files, `Add ${displayName} as a client`);
 
     msg.innerHTML = `<b>${escHtml(displayName)}</b> is ready. ` +
-      `It goes live in about a minute at clients.noiraunoir.com/${escHtml(slug)}/ ` +
+      `It goes live in about a minute at noiraunoir.com/${escHtml(slug)}/ ` +
       `<a href="../${escHtml(slug)}/admin.html">Open its admin</a>`;
 
     const email = ($("new-email") ? $("new-email").value : "").trim();

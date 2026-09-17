@@ -35,4 +35,4 @@ Disallow: /proposals/
 Disallow: /i/
 Disallow: /boxes/
 
-Sitemap: https://clients.noiraunoir.com/sitemap.xml
+Sitemap: https://noiraunoir.com/sitemap.xml

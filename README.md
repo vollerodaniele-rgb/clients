@@ -1,18 +1,18 @@
 # Client portals
 
 Every client portal lives in this one repo and is served from
-`clients.noiraunoir.com/<client>/`.
+`noiraunoir.com/<client>/`.
 
-- `clients.noiraunoir.com/sakas/` — the portal
-- `clients.noiraunoir.com/sakas/schedule.html` — the posting plan
-- `clients.noiraunoir.com/sakas/admin.html` — where you edit it (not linked anywhere)
+- `noiraunoir.com/sakas/` — the portal
+- `noiraunoir.com/sakas/schedule.html` — the posting plan
+- `noiraunoir.com/sakas/admin.html` — where you edit it (not linked anywhere)
 
 The root and any unknown address show only the studio name, so the
 domain gives nothing away on its own.
 
 ## The dashboard
 
-`clients.noiraunoir.com/admin/` lists every client and links to each
+`noiraunoir.com/admin/` lists every client and links to each
 portal, plan and admin. It finds clients by reading the data folder, so
 it needs no list of its own. It also holds the access key: paste it
 there once and every client admin on this site can use it.
