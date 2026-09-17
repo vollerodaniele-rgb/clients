@@ -1,6 +1,7 @@
-# Nothing on this site should turn up in a search, and nothing here is
-# what stops it. Every page carries noindex, which is what keeps them
-# out of results.
+# Nothing on this site should turn up in a search except /call/, which
+# is the studio's official page since September 2026 (noiraunoir.com
+# redirects to it). Every other page carries noindex, which is what keeps
+# it out of results; robots.txt is not what does that.
 #
 # This file decides something different: whether a crawler may fetch a
 # page at all. Blocking everything, as this used to, also blocked the
@@ -20,6 +21,7 @@ Allow: /$
 Allow: /index.html
 Allow: /r/
 Allow: /call/
+Allow: /sitemap.xml
 Allow: /t/
 Allow: /demo/
 Allow: /assets/
@@ -32,3 +34,5 @@ Disallow: /p/
 Disallow: /proposals/
 Disallow: /i/
 Disallow: /boxes/
+
+Sitemap: https://clients.noiraunoir.com/sitemap.xml

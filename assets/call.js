@@ -32,6 +32,9 @@ const HASH = location.hash.replace(/^#/, "").trim();
 const MOVING = HASH.startsWith("move-") ? HASH.slice(5) : "";
 const INVITE = MOVING ? "" : HASH;
 
+// the line about the studio is for strangers; a personal link knows us
+if (HASH && document.getElementById("studio-line")) document.getElementById("studio-line").hidden = true;
+
 async function load() {
   try {
     const url = MOVING
