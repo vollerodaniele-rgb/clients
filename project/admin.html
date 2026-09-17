@@ -5,9 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Portal Admin</title>
   <meta name="robots" content="noindex">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
   <!-- GitHub Pages tells the browser to keep these files for ten
        minutes. On a public page that is welcome. Here it means saving a
        change and not seeing it, so both are asked for with a timestamp
@@ -31,15 +28,16 @@
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎛️</text></svg>">
   <style>
     .admin-wrap { max-width: 52rem; margin: 0 auto; padding: 3rem 1.5rem 5rem; }
-    .admin-title { font-family: var(--font-display); font-size: 2.2rem; font-weight: 700; }
+    .admin-title { font-family: var(--font-display); font-size: 2.2rem; font-weight: 500; letter-spacing: -0.03em; }
     .admin-sub { color: var(--dim); margin: 0.4rem 0 2rem; }
     .panel {
       border: 1px solid var(--line); border-radius: var(--radius);
       padding: 1.4rem 1.5rem; margin-bottom: 1.4rem;
     }
     .panel h2 {
-      font-family: var(--font-display); font-size: 1.35rem; font-weight: 600;
+      font-family: var(--font-display); font-size: 1.35rem; font-weight: 500;
       margin-bottom: 1rem;
+      letter-spacing: -0.03em;
     }
     .row { display: flex; gap: 0.8rem; flex-wrap: wrap; margin-bottom: 0.8rem; }
     .row .field { min-width: 10rem; }
@@ -50,12 +48,12 @@
     }
     .btn-mini {
       font-size: 0.72rem; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase;
-      background: none; border: 1px solid var(--line); color: var(--dim);
+      background: rgba(255, 255, 255, 0.06); border: 1px solid rgba(255, 255, 255, 0.14); color: var(--dim);
       border-radius: 999px; padding: 0.3rem 0.9rem; cursor: pointer;
       transition: color 0.15s, border-color 0.15s;
     }
     .btn-mini:hover { color: var(--text); border-color: var(--text); }
-    .btn-mini.danger:hover { color: #fff; border-color: #fff; }
+    .btn-mini.danger:hover { color: #FFFFFF; border-color: #FFFFFF; }
     .item .remove { position: absolute; top: 0.7rem; right: 0.8rem; }
 
     /* A folded entry. The posting schedule is a dozen posts and a post

@@ -1,15 +1,30 @@
 /* Proposals - pitch black, plain white, no colour */
 
 :root {
+  /* Proposals. Glass on black: one typeface, no colour,
+     type dimmed by opacity rather than by a grey. */
   --bg: #000000;
-  --line: #333333;
-  --line-soft: #1e1e1e;
-  --text: #ffffff;
-  --dim: #9a9a9a;
-  --radius: 12px;
-  --font-display: "Playfair Display", Georgia, serif;
-  --font-body: "Inter", system-ui, sans-serif;
+  --line: rgba(255, 255, 255, 0.12);
+  --line-soft: rgba(255, 255, 255, 0.08);
+  --text: #F2F2F2;
+  --dim: rgba(242, 242, 242, 0.62);
+  --radius: 14px;
+  --font-display: "Satoshi", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-body: "Satoshi", system-ui, -apple-system, "Segoe UI", sans-serif;
+
+  --glass: rgba(255, 255, 255, 0.05);
+  --glass-edge: rgba(255, 255, 255, 0.11);
+  --glass-lip: 0 1px 0 rgba(255, 255, 255, 0.14) inset;
+  --glass-float: rgba(20, 20, 24, 0.42);
+  --glass-float-edge: rgba(255, 255, 255, 0.12);
+  --glass-float-lip: 0 1px 0 rgba(255, 255, 255, 0.16) inset, 0 18px 50px -18px rgba(0, 0, 0, 0.9);
+  --glass-blur: blur(26px) saturate(180%);
+  --well: rgba(0, 0, 0, 0.3);
 }
+
+@font-face { font-family: "Satoshi"; src: url("fonts/satoshi-400.woff2") format("woff2"); font-weight: 400; font-style: normal; font-display: swap; }
+@font-face { font-family: "Satoshi"; src: url("fonts/satoshi-500.woff2") format("woff2"); font-weight: 500; font-style: normal; font-display: swap; }
+@font-face { font-family: "Satoshi"; src: url("fonts/satoshi-700.woff2") format("woff2"); font-weight: 700; font-style: normal; font-display: swap; }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -45,7 +60,7 @@ header.masthead {
 .client-title {
   font-family: var(--font-display);
   font-size: clamp(2.6rem, 9vw, 4.4rem);
-  font-weight: 700;
+  font-weight: 500;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   line-height: 1.05;
@@ -80,6 +95,7 @@ header.masthead {
   max-width: 40rem;
   margin: 0 auto;
   text-align: center;
+  letter-spacing: -0.03em;
 }
 
 .intro .lead {
@@ -105,7 +121,7 @@ header.masthead {
 .sec-head h2 {
   font-family: var(--font-display);
   font-size: 1.6rem;
-  font-weight: 600;
+  font-weight: 500;
   letter-spacing: 0.05em;
   margin-top: 0.7rem;
 }
@@ -131,7 +147,7 @@ header.masthead {
   border-bottom: 1px solid var(--line-soft);
 }
 
-.pkg-name { font-family: var(--font-display); font-size: 1.5rem; font-weight: 600; }
+.pkg-name { font-family: var(--font-display); font-size: 1.5rem; font-weight: 500; letter-spacing: -0.03em; }
 
 .pkg-tag {
   font-size: 0.7rem;
@@ -158,8 +174,9 @@ header.masthead {
 .price .amt {
   font-family: var(--font-display);
   font-size: 2.3rem;
-  font-weight: 700;
+  font-weight: 500;
   line-height: 1;
+  letter-spacing: -0.03em;
 }
 
 .price .was {
@@ -170,6 +187,7 @@ header.masthead {
   display: inline-block;
   position: relative;
   margin-bottom: 0.5rem;
+  letter-spacing: -0.03em;
 }
 
 /* struck through with a plain white line, no colour needed */
@@ -367,7 +385,7 @@ ul.feat li .sub {
   padding: 1.4rem 1.3rem;
 }
 
-.step .n { font-family: var(--font-display); font-size: 1.7rem; font-weight: 600; color: var(--dim); }
+.step .n { font-family: var(--font-display); font-size: 1.7rem; font-weight: 500; color: var(--dim); letter-spacing: -0.03em; }
 .step h4 { font-size: 0.88rem; font-weight: 600; margin: 0.6rem 0 0.4rem; }
 .step p { font-size: 0.85rem; color: var(--dim); line-height: 1.65; }
 
@@ -438,3 +456,46 @@ footer.end { text-align: center; padding: 3.5rem 0 4.5rem; }
 }
 
 .note-link:hover { border-color: var(--text); }
+
+/* ============ GLASS: THE ROOM ============ */
+/* Glass on flat black does nothing, so two soft lights sit behind every
+   page. Fixed, so they stay put while the panels scroll over them. */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(56rem 38rem at 88% -8%, rgba(255, 255, 255, 0.09), transparent 62%),
+    radial-gradient(48rem 34rem at -8% 108%, rgba(255, 255, 255, 0.06), transparent 62%);
+}
+
+/* the only texture in the system */
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  pointer-events: none;
+  opacity: 0.05;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3'/></filter><rect width='160' height='160' filter='url(%23n)'/></svg>");
+}
+
+::selection { background: #FFFFFF; color: #000000; }
+
+@media print {
+  body::before, body::after { display: none; }
+}
+
+/* ============ GLASS: SURFACES ============ */
+.pkg, .step, .note, .term, .chip {
+  background-color: var(--glass);
+  border-color: var(--glass-edge);
+  box-shadow: var(--glass-lip);
+}
+.chip { background-color: rgba(255, 255, 255, 0.08); }
+
+@media print {
+  .pkg, .step, .note, .term, .chip { background: none; box-shadow: none; }
+}

@@ -5,9 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>NOIR AU NOIR | Clients</title>
   <meta name="robots" content="noindex, nofollow">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
   <!-- GitHub Pages keeps these for ten minutes, which on a page you
        work in means saving a change and being shown the old file.
        Asking with a timestamp keeps this page current. Inserted where
@@ -31,7 +28,7 @@
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎛️</text></svg>">
   <style>
     .dash { max-width: 56rem; margin: 0 auto; padding: 3rem 1.5rem 5rem; }
-    .dash-title { font-family: var(--font-display); font-size: 2.4rem; font-weight: 700; }
+    .dash-title { font-family: var(--font-display); font-size: 2.4rem; font-weight: 500; letter-spacing: -0.03em; }
     .dash-sub { color: var(--dim); margin: 0.4rem 0 2rem; }
 
     /* The sheets. Nine panels down one page meant scrolling past
@@ -91,14 +88,15 @@
       padding: 1.4rem 1.5rem; margin-bottom: 1.8rem;
     }
     .panel h2 {
-      font-family: var(--font-display); font-size: 1.3rem; font-weight: 600;
+      font-family: var(--font-display); font-size: 1.3rem; font-weight: 500;
       margin-bottom: 0.9rem;
+      letter-spacing: -0.03em;
     }
     .row { display: flex; gap: 0.8rem; flex-wrap: wrap; align-items: flex-end; }
 
     .btn-mini {
       font-size: 0.72rem; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase;
-      background: none; border: 1px solid var(--line); color: var(--dim);
+      background: rgba(255, 255, 255, 0.06); border: 1px solid rgba(255, 255, 255, 0.14); color: var(--dim);
       border-radius: 999px; padding: 0.4rem 0.95rem; cursor: pointer;
       text-decoration: none; display: inline-block;
       transition: color 0.15s, border-color 0.15s;
@@ -120,7 +118,8 @@
     }
     .client-card:hover { border-color: var(--text); }
     .client-name {
-      font-family: var(--font-display); font-size: 1.5rem; font-weight: 600;
+      font-family: var(--font-display); font-size: 1.5rem; font-weight: 500;
+      letter-spacing: -0.03em;
     }
     .client-line { font-size: 0.85rem; color: var(--dim); }
     .client-flag {
@@ -134,7 +133,8 @@
 
     .totals { display: flex; gap: 2.4rem; flex-wrap: wrap; }
     .total .num {
-      font-family: var(--font-display); font-size: 2.4rem; font-weight: 700; line-height: 1.1;
+      font-family: var(--font-display); font-size: 2.4rem; font-weight: 500; line-height: 1.1;
+      letter-spacing: -0.03em;
     }
     .total .lbl {
       font-size: 0.68rem; font-weight: 600; letter-spacing: 0.14em;
