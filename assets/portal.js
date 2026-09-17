@@ -1034,6 +1034,8 @@ function renderFilmPlan(plan) {
 
 function renderMonths(months) {
   const wrap = $("month-list");
+  // the tabbed page dropped this list; the progress pane covers this month
+  if (!wrap) return;
   wrap.innerHTML = "";
 
   // a heading over nothing looks broken. On day one this is simply not

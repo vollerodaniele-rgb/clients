@@ -9,17 +9,18 @@
        changes. Pages caches this page and its files separately for ten
        minutes, and without a new address a fresh page can meet a stale
        stylesheet and render bare. -->
-  <link rel="stylesheet" href="../assets/styles.css?v=2026-09-17">
+  <link rel="stylesheet" href="../assets/styles.css?v=2026-09-17b">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎬</text></svg>">
 </head>
 <body class="portal">
 
-  <!-- Every id the script looked for before this layout is still here,
-       so a cached copy of the old script still finds what it needs. -->
+  <!-- The versioned addresses above keep this page with its own script.
+       The script still checks for each part before drawing it, so an old
+       cached page without them does not break. -->
 
   <header class="pt-top">
     <div class="pt-bar">
-      <p class="pt-brand"><b id="client-name">&nbsp;</b><span>&times; Noir au Noir</span></p>
+      <p class="pt-brand"><b id="client-name">&nbsp;</b></p>
       <nav class="pt-tabs" role="tablist" aria-label="Portal">
         <button type="button" class="pt-tab" role="tab" data-view="month" aria-controls="v-month">Month<i class="pt-dot" id="needs-dot" hidden></i></button>
         <button type="button" class="pt-tab" role="tab" data-view="posts" aria-controls="v-posts">Posts</button>
@@ -50,6 +51,12 @@
           <div class="shoot-card" id="shoot-card"><p class="muted">Loading...</p></div>
         </section>
 
+        <section id="deal" class="pt-pane">
+          <div class="pt-head section-head"><h2 class="pt-eyebrow">Our agreement</h2></div>
+          <div class="tiles" id="deal-tiles"></div>
+          <p class="pt-small" id="deal-notes"></p>
+        </section>
+
         <div class="pt-row">
           <section class="pt-pane" id="progress-card">
             <div class="pt-head"><p class="pt-eyebrow">Progress</p><span class="pt-meta" id="progress-meta"></span></div>
@@ -63,19 +70,6 @@
         </div>
 
         <section class="pt-pane pt-result" id="results" hidden></section>
-
-        <div class="pt-row">
-          <section id="deal" class="pt-pane">
-            <div class="pt-head section-head"><h2 class="pt-eyebrow">Our agreement</h2></div>
-            <div class="tiles" id="deal-tiles"></div>
-            <p class="pt-small" id="deal-notes"></p>
-          </section>
-
-          <section id="months" class="pt-pane">
-            <div class="pt-head"><p class="pt-eyebrow">Month by month</p></div>
-            <div class="month-list" id="month-list"></div>
-          </section>
-        </div>
       </div>
     </div>
 
@@ -177,6 +171,6 @@
     <p class="muted">Questions about planning or content? One message away.</p>
   </footer>
 
-  <script src="../assets/portal.js?v=2026-09-17"></script>
+  <script src="../assets/portal.js?v=2026-09-17b"></script>
 </body>
 </html>
