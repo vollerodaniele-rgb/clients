@@ -69,7 +69,7 @@ clients/
   assets/                the ONLY copy of every script and style
     styles.css           house style + portal + schedule + idea box CSS
     portal.js            client portal page
-    schedule.js          posting plan page
+    (schedule.js removed Sep 2026: the posting plan is the portal's Posts page)
     admin.js             client portal admin
     dashboard.js         dashboard core: key, money, clients, commitFiles
     proposals.js         proposals panel (loaded after dashboard.js)
