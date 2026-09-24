@@ -2287,6 +2287,9 @@ select { background-color: #0B0B0B; border-color: rgba(255, 255, 255, 0.12); bor
   transition: background 0.2s;
 }
 .post-film:hover { background: rgba(255, 255, 255, 0.12); }
+/* a carousel: one pill per piece, wrapping, instead of one long button */
+.post-films { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.9rem; }
+.post-films .post-film { margin-top: 0; }
 .post-film span { font-size: 0.7rem; color: var(--dim); overflow: hidden; text-overflow: ellipsis; max-width: 14rem; white-space: nowrap; }
 .portal .cal-cell.has-frame .cal-dots { display: none; }
 

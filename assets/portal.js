@@ -272,11 +272,43 @@ function renderResults(posts) {
 const frameUrl = (post) =>
   `${CONFIG.submitUrl}/thumb?client=${encodeURIComponent(CLIENT)}&post=${encodeURIComponent(post.thumb)}`;
 
-const filmUrl = (post) =>
-  `${CONFIG.submitUrl}/file?client=${encodeURIComponent(CLIENT)}` +
-  `&month=${encodeURIComponent(post.video.month)}&name=${encodeURIComponent(post.video.name)}`;
+/* A post can carry one file or, for a carousel, several. Older plans
+   hold a single `video`, newer ones a `videos` list; both are read. */
+const filesOf = (p) => {
+  if (!p) return [];
+  const list = Array.isArray(p.videos) ? p.videos : (p.video ? [p.video] : []);
+  return list.filter((f) => f && f.month && f.name);
+};
 
-const hasFilm = (p) => Boolean(p && p.video && p.video.month && p.video.name);
+const fileUrl = (f) =>
+  `${CONFIG.submitUrl}/file?client=${encodeURIComponent(CLIENT)}` +
+  `&month=${encodeURIComponent(f.month)}&name=${encodeURIComponent(f.name)}`;
+
+const hasFilm = (p) => filesOf(p).length > 0;
+
+// a carousel of stills should not offer to download "the film"
+const isPicture = (name) => /\.(jpe?g|png|webp|heic|heif|tiff?|gif)$/i.test(name);
+const fileWord = (files) =>
+  files.every((f) => isPicture(f.name)) ? "photo" : files.some((f) => isPicture(f.name)) ? "file" : "film";
+
+function downloads(p) {
+  const files = filesOf(p);
+  if (!files.length) return "";
+
+  if (files.length === 1) {
+    const f = files[0];
+    return `<a class="post-film" href="${esc(fileUrl(f))}" download="${esc(f.name)}">` +
+      `Download the ${fileWord(files)}<span>${esc(f.name)}</span></a>`;
+  }
+
+  // one pill per piece, numbered in the order they go out
+  const word = fileWord(files);
+  return `<div class="post-films">` + files.map((f, i) =>
+    `<a class="post-film" href="${esc(fileUrl(f))}" download="${esc(f.name)}">` +
+    `${word === "file" ? "Piece" : word[0].toUpperCase() + word.slice(1)} ${i + 1} of ${files.length}` +
+    `<span>${esc(f.name)}</span></a>`
+  ).join("") + `</div>`;
+}
 
 const postCount = (p, which) => Number(p.how && p.how[which]) || 0;
 const postHasNumbers = (p) => postCount(p, "views") || postCount(p, "likes") || postCount(p, "shares");
@@ -384,7 +416,9 @@ function drawPostCalendar(year, month) {
       cell.appendChild(dots);
       cell.setAttribute("aria-label", day + " " + MONTH_NAMES[month] + ": " +
         onDay.map((p) => p.title || "a post").join(", ") +
-        (onDay.some(hasFilm) ? ", film ready to download" : ""));
+        (onDay.some(hasFilm)
+          ? ", " + onDay.reduce((n, p) => n + filesOf(p).length, 0) + " to download"
+          : ""));
       cell.addEventListener("click", () => {
         const card = document.querySelector(`.post-card[data-date="${iso}"]`);
         if (!card) return;
@@ -453,7 +487,7 @@ function drawPostCards(monthPosts, monthName) {
             <span><b>${shortNum(postCount(p, "shares"))}</b> shares</span>
           </div>` : ""}
         ${p.caption ? `<div class="caption" role="button" tabindex="0" title="Tap to copy">${esc(p.caption)}<span class="copy-hint">copy</span></div>` : ""}
-        ${hasFilm(p) ? `<a class="post-film" href="${esc(filmUrl(p))}" download="${esc(p.video.name)}">Download the film<span>${esc(p.video.name)}</span></a>` : ""}
+        ${downloads(p)}
       </div>
     `;
 

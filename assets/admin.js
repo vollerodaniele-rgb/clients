@@ -1460,6 +1460,13 @@ function sublist(arr, blank, fillItem, addLabel, rowLabel) {
       body.hidden = openAt !== i;
       fillItem(item, body);
 
+      /* The one line summary is written when the list is drawn, so it
+         went on saying "No date" after a date was typed. It follows the
+         fields now. */
+      const retitle = () => { title.textContent = rowLabel(item, i); };
+      body.addEventListener("input", retitle);
+      body.addEventListener("change", retitle);
+
       head.addEventListener("click", () => {
         // one at a time, so the panel cannot grow back into the wall
         // of fields this exists to get rid of
@@ -1600,49 +1607,118 @@ async function listFilms() {
   return found;
 }
 
+/* One post can be several files: a carousel is five pictures, or a
+   picture and two films. Older plans hold a single `video`; from here
+   on a post keeps a `videos` list, and a single one is moved into it
+   the first time the post is opened, so both readers stay in step. */
+function filesOf(post) {
+  if (!Array.isArray(post.videos)) {
+    post.videos = post.video && post.video.name ? [post.video] : [];
+  }
+  delete post.video;
+  return post.videos;
+}
+
 function filmField(post) {
-  const sel = document.createElement("select");
-  const draw = (films) => {
-    const chosen = post.video || {};
-    sel.innerHTML = "";
+  const list = document.createElement("div");
+  list.style.cssText = "display:grid;gap:0.5rem";
+
+  const add = document.createElement("button");
+  add.type = "button";
+  add.className = "btn-mini";
+  add.style.marginTop = "0.6rem";
+  add.textContent = "+ Add another file";
+
+  const chosen = filesOf(post);
+
+  /* the list the post keeps is rebuilt from the pickers every time one
+     changes, so an emptied picker simply drops out */
+  const collect = () => {
+    const picked = [...list.querySelectorAll("select")]
+      .map((sel) => sel.value)
+      .filter(Boolean)
+      .map((v) => {
+        const at = v.indexOf("|");
+        return { month: v.slice(0, at), name: v.slice(at + 1) };
+      });
+    post.videos = picked;
+    if (!picked.length) delete post.videos;
+  };
+
+  const picker = (current, films) => {
+    const line = document.createElement("div");
+    line.style.cssText = "display:flex;gap:0.5rem;align-items:center";
+
+    const sel = document.createElement("select");
+    sel.style.flex = "1";
 
     const none = document.createElement("option");
     none.value = "";
-    none.textContent = films.length ? "No film on this day" : "Nothing delivered yet";
+    none.textContent = films.length ? "Nothing picked" : "Nothing delivered yet";
     sel.appendChild(none);
 
-    /* a film named on the post but no longer in storage still shows,
+    /* a file named on the post but no longer in storage still shows,
        so a renamed file is visible rather than silently dropped */
     const all = films.slice();
-    if (chosen.name && !all.some((f) => f.month === chosen.month && f.name === chosen.name)) {
-      all.push({ month: chosen.month, name: chosen.name, gone: true });
+    if (current && current.name && !all.some((f) => f.month === current.month && f.name === current.name)) {
+      all.push({ month: current.month, name: current.name, gone: true });
     }
 
     for (const film of all) {
       const opt = document.createElement("option");
       opt.value = film.month + "|" + film.name;
       opt.textContent = film.name + (film.gone ? " (not in storage)" : "") + " · " + film.month;
-      if (chosen.name === film.name && chosen.month === film.month) opt.selected = true;
+      if (current && current.name === film.name && current.month === film.month) opt.selected = true;
       sel.appendChild(opt);
     }
+
+    sel.addEventListener("change", collect);
+
+    const drop = document.createElement("button");
+    drop.type = "button";
+    drop.className = "btn-mini";
+    drop.textContent = "Remove";
+    drop.addEventListener("click", () => {
+      line.remove();
+      collect();
+      // never leave the field with nothing to pick from
+      if (!list.children.length) list.appendChild(picker(null, films));
+    });
+
+    line.append(sel, drop);
+    return line;
   };
 
-  draw(filmsKnown || []);
-  if (!filmsKnown) {
-    const wait = document.createElement("option");
+  const draw = (films) => {
+    list.innerHTML = "";
+    const start = (post.videos && post.videos.length) ? post.videos : [null];
+    for (const current of start) list.appendChild(picker(current, films));
+  };
+
+  add.addEventListener("click", () => list.appendChild(picker(null, filmsKnown || [])));
+
+  if (filmsKnown) {
+    draw(filmsKnown);
+  } else {
+    const wait = document.createElement("p");
+    wait.className = "muted";
+    wait.style.fontSize = "0.85rem";
     wait.textContent = "Reading what is delivered...";
-    sel.innerHTML = "";
-    sel.appendChild(wait);
+    list.appendChild(wait);
     listFilms().then(draw);
   }
 
-  sel.addEventListener("change", () => {
-    if (!sel.value) { delete post.video; return; }
-    const at = sel.value.indexOf("|");
-    post.video = { month: sel.value.slice(0, at), name: sel.value.slice(at + 1) };
-  });
+  // an empty list is not kept, the portal reads its absence as no file
+  if (!chosen.length) delete post.videos;
 
-  return field("The film for this day", sel);
+  /* A div rather than the usual label: a label around several pickers
+     and buttons sends a click on its text to the first of them. */
+  const box = document.createElement("div");
+  box.className = "field";
+  const caption = document.createElement("span");
+  caption.textContent = "The files for this post";
+  box.append(caption, list, add);
+  return box;
 }
 
 const thumbUrl = (post) =>
