@@ -256,12 +256,19 @@
       "thumb": "x5JtA0T4"
     },
     {
-      "date": "",
+      "date": "2026-10-17",
       "time": "",
-      "platform": "Instagram Reel",
+      "platform": "Carousel",
       "title": "",
       "caption": "",
-      "status": "planned"
+      "status": "planned",
+      "videos": [
+        {
+          "month": "2026-09",
+          "name": "prep.mp4"
+        }
+      ],
+      "thumb": "-Oyp2-si"
     }
   ],
   "project": {
