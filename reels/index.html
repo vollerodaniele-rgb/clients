@@ -286,21 +286,28 @@
     .step-btn { flex: 1; min-height: 2.75rem; font-size: 0.78rem; }
   }
 
-  /* ============ TEN OF THEM ============ */
-  /* A fixed grid: ten slots, five and five on a desktop, whatever the
-     files are. Nothing plays by itself, because ten moving tiles is a
-     shop window, not a page. */
+  /* ============ SOME OF THEM ============ */
+  /* Rows that always reach both edges. Each film keeps its own shape and
+     the row decides the height, the way a contact sheet is printed, so
+     there is no hole under a wide one and nothing is cropped to fit.
+     The sizes are set by script, since only the files know their shape. */
   .shots {
-    display: grid;
-    grid-template-columns: repeat(5, minmax(0, 1fr));
-    gap: 0.6rem;
+    display: flex;
+    flex-wrap: wrap;
+    /* a full row fills exactly, so this only ever moves a last row that
+       could not be filled, and a centred short row reads as the end of
+       something rather than as a gap */
+    justify-content: center;
+    gap: 0.5rem;
     margin-top: 1.2rem;
   }
 
   .shot {
     position: relative;
+    flex: 0 0 auto;
+    /* until the film says how wide it is */
+    width: 8rem;
     aspect-ratio: 9 / 16;
-    align-self: start;
     border: 1px solid var(--glass-edge);
     border-radius: 12px;
     background: var(--well);
@@ -316,7 +323,7 @@
     display: block;
   }
 
-  /* the number, so a tile reads as one of ten even before it loads */
+  /* the number, so a tile reads as one of a set even before it loads */
   .shot b {
     position: absolute;
     left: 0.5rem;
@@ -343,16 +350,8 @@
   .shot.playing i { opacity: 0; }
   .shot:focus-visible { outline: 2px solid var(--text); outline-offset: 2px; }
 
-  /* A horizontal film is not a tall one with the sides cut off, so it
-     takes two slots and its own shape. The grid is a contact sheet, and
-     a contact sheet is allowed to be ragged. */
-  .shot.wide { aspect-ratio: 16 / 9; grid-column: span 2; }
-
   .shots-note { margin-top: 0.9rem; font-size: 0.8rem; color: rgba(242, 242, 242, 0.45); }
 
-  @media (max-width: 56rem) { .shots { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
-  /* two on a phone: ten tiles three abreast is a contact sheet, not a reel */
-  @media (max-width: 34rem) { .shots { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.5rem; } }
 
   @media (prefers-reduced-motion: reduce) {
     .frame, .playhead { transition: none; }
@@ -410,7 +409,7 @@
          and the whole section hides when none of them load, so the page
          is never a wall of broken tiles. -->
     <section class="reel-pane" id="shots-pane" hidden>
-      <p class="inc-head">Ten of them</p>
+      <p class="inc-head">Some of them</p>
       <div class="shots" id="shots"></div>
       <p class="shots-note">Tap one to play it. They are silent on purpose, the feed is too.</p>
     </section>
@@ -472,19 +471,19 @@
   </main>
 
 <script>
-/* ============ TEN OF THEM ============ */
-/* The files decide what shows. Drop 01.mp4 to 10.mp4 into reels/examples
-   and they appear in that order; a number with no file quietly drops
-   out. Nothing preloads more than its first frame and nothing plays
-   until it is asked to, so the page costs the same as before. */
-const SHOTS = { folder: "examples/", count: 10, ext: ".mp4" };
+/* ============ SOME OF THEM ============ */
+/* The files decide what shows. Drop them into reels/examples named
+   01.mp4 or 1.mp4, either way, and they appear in that order; a number
+   with no file quietly drops out and the section stays hidden until at
+   least one has loaded. Nothing preloads beyond its first frame and
+   nothing plays until it is asked to. */
+const SHOTS = { folder: "examples/", count: 8, ext: ".mp4", gap: 8, row: 270 };
 
 (function () {
   const wrap = document.getElementById("shots");
   if (!wrap) return;
 
   const pane = document.getElementById("shots-pane");
-  let alive = 0;
 
   for (let n = 1; n <= SHOTS.count; n++) {
     const num = String(n).padStart(2, "0");
@@ -496,34 +495,26 @@ const SHOTS = { folder: "examples/", count: 10, ext: ".mp4" };
 
     const film = document.createElement("video");
     film.src = SHOTS.folder + num + SHOTS.ext;
-
-    /* Files land here named 01.mp4 or 1.mp4 depending on what the phone
-       called them, and both are the same slot. The padded name is asked
-       for first and the bare one is the second try, so neither naming
-       has to be corrected by hand. */
-    let tried = false;
     film.muted = true;
     film.loop = true;
     film.playsInline = true;
     film.preload = "metadata";
 
-    // a slot with no file is not a broken tile, it is not a tile, and
-    // the section only appears once something in it has actually loaded
+    /* Files land named 01.mp4 or 1.mp4 depending on what the camera or
+       the phone called them, and both are the same slot: the padded name
+       is asked for first and the bare one is the second try. */
+    let tried = false;
     film.addEventListener("error", () => {
       if (!tried) { tried = true; film.src = SHOTS.folder + n + SHOTS.ext; film.load(); return; }
       tile.remove();
-      alive--;
+      place();
     });
+
     film.addEventListener("loadedmetadata", () => {
-      // the file says which way round it is, so nothing has to be named
-      // or listed: drop a horizontal one in and it lands horizontal
-      if (film.videoWidth > film.videoHeight) {
-        tile.classList.add("wide");
-        // its own shape, not a 16:9 guess: a 5:4 film would lose its top
-        // and bottom to a tile that assumed widescreen
-        tile.style.aspectRatio = film.videoWidth + " / " + film.videoHeight;
-      }
+      // its own shape, whichever way round it was filmed
+      tile.dataset.ratio = film.videoWidth / film.videoHeight;
       pane.hidden = false;
+      place();
     });
 
     const mark = document.createElement("b");
@@ -533,7 +524,7 @@ const SHOTS = { folder: "examples/", count: 10, ext: ".mp4" };
 
     tile.addEventListener("click", () => {
       const running = !film.paused;
-      // one at a time: ten of them going at once is noise, even silent
+      // one at a time: several going at once is a shop window, even silent
       for (const other of wrap.querySelectorAll("video")) {
         other.pause();
         other.parentElement.classList.remove("playing");
@@ -544,8 +535,65 @@ const SHOTS = { folder: "examples/", count: 10, ext: ".mp4" };
 
     tile.append(film, mark, play);
     wrap.appendChild(tile);
-    alive++;
   }
+
+  /* Rows that reach both edges. Tiles go into a row until the row would
+     be shorter than the height we are aiming for, then the row is scaled
+     to the exact width it has: every film keeps its shape, the row
+     carries the difference, and no hole is left under a wide one. */
+  function place() {
+    const tiles = [...wrap.children].filter((t) => t.dataset.ratio);
+    if (!tiles.length) { pane.hidden = true; return; }
+
+    const width = wrap.clientWidth;
+    if (!width) return;
+
+    // shorter rows on a narrow screen, or one film fills the whole thing
+    const aim = width < 30 * 16 ? 190 : width < 48 * 16 ? 230 : SHOTS.row;
+
+    let row = [];
+    let sum = 0;
+
+    const settle = (last) => {
+      if (!row.length) return;
+      const space = width - SHOTS.gap * (row.length - 1);
+      /* A last row of one or two must not blow up to fill a wide page,
+         but on a phone a single upright film filling the width is what
+         an upright film is for, so the ceiling is higher there. */
+      const ceiling = aim * (width < 30 * 16 ? 2.8 : 1.25);
+      const height = last ? Math.min(space / sum, ceiling) : space / sum;
+      for (const tile of row) {
+        tile.style.width = Math.floor(Number(tile.dataset.ratio) * height) + "px";
+        tile.style.height = Math.floor(height) + "px";
+        tile.style.aspectRatio = "auto";
+      }
+      row = [];
+      sum = 0;
+    };
+
+    /* A film joins the row unless it would squash it well below the
+       height we are aiming for. Closing the row one film early is often
+       nearer the aim than cramming that film in, and cramming is what
+       left a single tile alone on the last row. */
+    for (const tile of tiles) {
+      const ratio = Number(tile.dataset.ratio);
+
+      if (row.length) {
+        const withIt = (width - SHOTS.gap * row.length) / (sum + ratio);
+        if (withIt < aim) {
+          const without = (width - SHOTS.gap * (row.length - 1)) / sum;
+          if (Math.abs(aim - without) <= Math.abs(aim - withIt)) settle(false);
+        }
+      }
+
+      row.push(tile);
+      sum += Number(tile.dataset.ratio);
+    }
+    settle(true);
+  }
+
+  let again;
+  addEventListener("resize", () => { clearTimeout(again); again = setTimeout(place, 120); });
 })();
 
 /* Everything adjustable lives here. */
