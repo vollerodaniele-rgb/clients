@@ -26,6 +26,7 @@ const SHEETS = [
   { id: "partners", name: "Partners" },
   { id: "files", name: "Files" },
   { id: "boxes", name: "Boxes" },
+  { id: "links", name: "Links" },
   // short so the whole bar stays on one line, which is the point
   { id: "key", name: "Key" }
 ];

@@ -272,6 +272,12 @@ function renderResults(posts) {
 const frameUrl = (post) =>
   `${CONFIG.submitUrl}/thumb?client=${encodeURIComponent(CLIENT)}&post=${encodeURIComponent(post.thumb)}`;
 
+const filmUrl = (post) =>
+  `${CONFIG.submitUrl}/file?client=${encodeURIComponent(CLIENT)}` +
+  `&month=${encodeURIComponent(post.video.month)}&name=${encodeURIComponent(post.video.name)}`;
+
+const hasFilm = (p) => Boolean(p && p.video && p.video.month && p.video.name);
+
 const postCount = (p, which) => Number(p.how && p.how[which]) || 0;
 const postHasNumbers = (p) => postCount(p, "views") || postCount(p, "likes") || postCount(p, "shares");
 
@@ -363,6 +369,10 @@ function drawPostCalendar(year, month) {
       cell.type = "button";
       const views = onDay.reduce((t, p) => t + postCount(p, "views"), 0);
       if (views) cell.insertAdjacentHTML("beforeend", `<span class="cal-views">${shortNum(views)}</span>`);
+      if (onDay.some(hasFilm)) {
+        cell.classList.add("has-film");
+        cell.insertAdjacentHTML("beforeend", '<span class="cal-film" aria-hidden="true">↓</span>');
+      }
 
       const dots = document.createElement("span");
       dots.className = "cal-dots";
@@ -373,7 +383,8 @@ function drawPostCalendar(year, month) {
       }
       cell.appendChild(dots);
       cell.setAttribute("aria-label", day + " " + MONTH_NAMES[month] + ": " +
-        onDay.map((p) => p.title || "a post").join(", "));
+        onDay.map((p) => p.title || "a post").join(", ") +
+        (onDay.some(hasFilm) ? ", film ready to download" : ""));
       cell.addEventListener("click", () => {
         const card = document.querySelector(`.post-card[data-date="${iso}"]`);
         if (!card) return;
@@ -442,6 +453,7 @@ function drawPostCards(monthPosts, monthName) {
             <span><b>${shortNum(postCount(p, "shares"))}</b> shares</span>
           </div>` : ""}
         ${p.caption ? `<div class="caption" role="button" tabindex="0" title="Tap to copy">${esc(p.caption)}<span class="copy-hint">copy</span></div>` : ""}
+        ${hasFilm(p) ? `<a class="post-film" href="${esc(filmUrl(p))}" download="${esc(p.video.name)}">Download the film<span>${esc(p.video.name)}</span></a>` : ""}
       </div>
     `;
 

@@ -17,7 +17,7 @@
       css.rel = "stylesheet";
       css.href = "../assets/styles.css?t=" + stamp;
       here.parentNode.insertBefore(css, here);
-      ["dashboard.js", "proposals.js", "boxes.js", "transfers.js", "agenda.js", "sheets.js"].forEach(function (file) {
+      ["dashboard.js", "proposals.js", "boxes.js", "transfers.js", "agenda.js", "links.js", "sheets.js"].forEach(function (file) {
         var js = document.createElement("script");
         js.src = "../assets/" + file + "?t=" + stamp;
         js.async = false;
@@ -73,6 +73,34 @@
     /* white on black for the one you are on. A border alone is close
        to invisible against this background, which is the same trap the
        shoot date picker fell into. */
+    .link-head {
+      margin: 1.4rem 0 0.5rem;
+      font-size: 0.68rem;
+      letter-spacing: 0.24em;
+      text-transform: uppercase;
+      color: var(--dim);
+    }
+    .link-head:first-child { margin-top: 0; }
+
+    .link-row {
+      display: flex;
+      align-items: center;
+      gap: 0.8rem;
+      padding: 0.7rem 0;
+      border-top: 1px solid var(--line-soft);
+    }
+
+    .link-what { flex: 1; min-width: 0; display: grid; gap: 0.15rem; }
+    .link-what b { font-weight: 500; font-size: 0.95rem; }
+    .link-what a { font-size: 0.82rem; color: var(--dim); text-decoration: none; overflow: hidden; text-overflow: ellipsis; }
+    .link-what a:hover { color: var(--text); }
+    .link-what .muted { font-size: 0.78rem; }
+
+    @media (max-width: 40rem) {
+      .link-row { flex-wrap: wrap; }
+      .link-what { flex-basis: 100%; }
+    }
+
     .sheet-tab.on {
       background: var(--text);
       border-color: var(--text);
@@ -352,6 +380,22 @@
       </div>
       <p class="form-msg" id="transfer-msg" style="margin-top:0.7rem"></p>
       <div id="transfer-list" style="margin-top:1rem"></div>
+    </div>
+
+    </section>
+
+    <section id="sheet-links" hidden>
+    <div class="panel">
+      <h2>Every link</h2>
+      <p class="how" style="margin-bottom:1rem">
+        Every address you have, in the order you use them. Copy one straight from here
+        rather than typing it. The ones marked never to send are the pages where things
+        are edited.
+      </p>
+      <div class="row">
+        <button class="btn-mini" id="links-again">Read them again</button>
+      </div>
+      <div id="link-list" style="margin-top:1rem"></div>
     </div>
 
     </section>

@@ -186,6 +186,7 @@ function render() {
         countField("Likes", post, "how", "likes"),
         countField("Shares", post, "how", "shares")
       ));
+      body.appendChild(filmField(post));
       body.appendChild(thumbField(post));
     }, plan.posts.length
       ? plan.posts.filter((p) => p.status === "posted").length + " of " + plan.posts.length + " posted"
@@ -1558,6 +1559,85 @@ async function shrinkFrame(file) {
     if (blob && blob.size <= 900 * 1024) return blob;
   }
   throw new Error("that frame will not shrink small enough");
+}
+
+/* ============ THE FILM BEHIND A POST ============ */
+/* A post already carries a frame and its numbers. This ties it to one
+   of the files already delivered, so the client can take that day's
+   film straight off the calendar instead of hunting through a month.
+   Nothing is copied: the post keeps the month and the file name, and
+   the file stays the one in storage. */
+
+let filmsKnown = null;
+
+async function listFilms() {
+  if (filmsKnown) return filmsKnown;
+
+  const months = (plan.deliveries || []).map((d) => d.month).filter(Boolean);
+  const found = [];
+
+  for (const month of months) {
+    try {
+      const res = await fetch(
+        `${RELAY_URL}/delivery?client=${encodeURIComponent(CLIENT)}&month=${encodeURIComponent(month)}`,
+        { cache: "no-store" }
+      );
+      if (!res.ok) continue;
+      for (const file of (await res.json()).files || []) {
+        found.push({ month, name: file.name });
+      }
+    } catch (err) {
+      console.error("films in " + month + " failed:", err);
+    }
+  }
+
+  filmsKnown = found;
+  return found;
+}
+
+function filmField(post) {
+  const sel = document.createElement("select");
+  const draw = (films) => {
+    const chosen = post.video || {};
+    sel.innerHTML = "";
+
+    const none = document.createElement("option");
+    none.value = "";
+    none.textContent = films.length ? "No film on this day" : "Nothing delivered yet";
+    sel.appendChild(none);
+
+    /* a film named on the post but no longer in storage still shows,
+       so a renamed file is visible rather than silently dropped */
+    const all = films.slice();
+    if (chosen.name && !all.some((f) => f.month === chosen.month && f.name === chosen.name)) {
+      all.push({ month: chosen.month, name: chosen.name, gone: true });
+    }
+
+    for (const film of all) {
+      const opt = document.createElement("option");
+      opt.value = film.month + "|" + film.name;
+      opt.textContent = film.name + (film.gone ? " (not in storage)" : "") + " · " + film.month;
+      if (chosen.name === film.name && chosen.month === film.month) opt.selected = true;
+      sel.appendChild(opt);
+    }
+  };
+
+  draw(filmsKnown || []);
+  if (!filmsKnown) {
+    const wait = document.createElement("option");
+    wait.textContent = "Reading what is delivered...";
+    sel.innerHTML = "";
+    sel.appendChild(wait);
+    listFilms().then(draw);
+  }
+
+  sel.addEventListener("change", () => {
+    if (!sel.value) { delete post.video; return; }
+    const at = sel.value.indexOf("|");
+    post.video = { month: sel.value.slice(0, at), name: sel.value.slice(at + 1) };
+  });
+
+  return field("The film for this day", sel);
 }
 
 const thumbUrl = (post) =>
