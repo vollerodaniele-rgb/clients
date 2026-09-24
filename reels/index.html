@@ -248,7 +248,26 @@
   .lock-send .btn-send { border-radius: 999px; }
   .lock-send a { font-size: 0.72rem; letter-spacing: 0.16em; text-transform: uppercase; color: var(--dim); text-decoration: none; }
   .lock-send a:hover { color: var(--text); }
-  .lock-form input[type="date"], .lock-form input[type="time"] { color-scheme: dark; }
+  .lock-form input[type="date"] { color-scheme: dark; }
+
+  /* the real times, the same ones the call page hands out */
+  .call-hint { margin-top: 0.7rem; font-size: 0.85rem; line-height: 1.6; color: var(--dim); }
+  .chips { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.8rem; }
+  .chip {
+    padding: 0.55rem 0.95rem;
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.06);
+    color: var(--text);
+    font-family: var(--font-body);
+    font-size: 0.78rem;
+    letter-spacing: 0.06em;
+    cursor: pointer;
+    font-variant-numeric: tabular-nums;
+    transition: background 0.2s, color 0.2s;
+  }
+  .chip:hover { background: rgba(255, 255, 255, 0.12); }
+  .chip[aria-pressed="true"] { background: var(--text); color: var(--bg); border-color: var(--text); }
   .lock-done { margin-top: 1.4rem; font-size: 0.95rem; line-height: 1.7; color: var(--text); }
 
   .num { font-variant-numeric: tabular-nums; }
@@ -350,12 +369,12 @@
         <label class="field"><span>Phone</span>
           <input type="tel" id="lock-phone" maxlength="30" autocomplete="tel" placeholder="The number we should call" required>
         </label>
-        <label class="field"><span>The day we should call you</span>
-          <input type="date" id="call-date" required>
-        </label>
-        <label class="field"><span>And what time, between 11:00 and 19:00</span>
-          <input type="time" id="call-time" step="900" value="11:00" min="11:00" max="19:00" required>
-        </label>
+        <div class="field lock-wide">
+          <span>The call, so we can confirm it</span>
+          <p class="call-hint" id="call-hint">Loading the times we are free...</p>
+          <div class="chips" id="call-days"></div>
+          <div class="chips" id="call-hours" hidden></div>
+        </div>
         <label class="field lock-wide"><span>The place, and anything we should know (optional)</span>
           <input type="text" id="lock-note" maxlength="200" placeholder="Your kitchen, your shop, your studio">
         </label>
@@ -382,8 +401,8 @@ const CONFIG = {
   max: 20,
   step: 1,
   secondsPerReel: 15,
-  callFrom: "11:00",  // the hours he answers the phone
-  callTo: "19:00",
+  daysOffered: 10,    // how many free days to show at once
+  hoursOffered: 14,   // and how many hours inside a day
   noticeDays: 1,      // the soonest day a visit can be asked for
   horizonDays: 120,   // and the furthest ahead
   currency: "€",
@@ -464,17 +483,16 @@ slider.addEventListener("input", draw);
 $("down").addEventListener("click", () => nudge(-CONFIG.step));
 $("up").addEventListener("click", () => nudge(CONFIG.step));
 
-/* ---------- lock in a day ---------- */
-/* The same relay route the call back form uses, so a date asked for here
-   pings Telegram and turns up in the agenda with the selection attached.
-   Nothing is written to the site, and the confirmation goes to his own
-   address, never to one the sender chooses. */
+/* ---------- the filming day, and the call that confirms it ---------- */
+/* The call is a real booking, taken from the same free times the call
+   page hands out and written through the same route, so the two can
+   never give the same half hour to two people. The filming day travels
+   with it as a note, because shoot days are not slots in the system. */
 const RELAY = "https://kresha-idea-box.vollerodaniele.workers.dev";
 
 const form = $("lock-form");
 const dateField = $("lock-date");
 
-/* the soonest day worth offering, so nobody asks for this afternoon */
 const iso = (d) => d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate());
 const soonest = new Date();
 soonest.setDate(soonest.getDate() + CONFIG.noticeDays);
@@ -483,21 +501,98 @@ furthest.setDate(furthest.getDate() + CONFIG.horizonDays);
 dateField.min = iso(soonest);
 dateField.max = iso(furthest);
 
-/* the call can be today, the filming cannot */
-const callDate = $("call-date");
-const callTime = $("call-time");
-callTime.min = CONFIG.callFrom;
-callTime.max = CONFIG.callTo;
-callTime.value = CONFIG.callFrom;
-callDate.min = iso(new Date());
-callDate.max = iso(furthest);
-
 const longDate = (value) => {
   const d = new Date(value + "T00:00:00");
   return isNaN(d.getTime()) ? value : d.toLocaleDateString("en-GB", {
     weekday: "long", day: "numeric", month: "long", year: "numeric"
   });
 };
+const shortDay = (value) => {
+  const d = new Date(value + "T00:00:00");
+  return isNaN(d.getTime()) ? value : d.toLocaleDateString("en-GB", {
+    weekday: "short", day: "numeric", month: "short"
+  });
+};
+
+let byDay = new Map();
+let picked = null;
+
+function drawDays() {
+  const days = [...byDay.keys()].sort().slice(0, CONFIG.daysOffered);
+  $("call-days").innerHTML = days.map((day) =>
+    '<button class="chip" type="button" aria-pressed="false" data-day="' + day + '">' + shortDay(day) + "</button>"
+  ).join("");
+  $("call-hours").hidden = true;
+  $("call-hours").innerHTML = "";
+}
+
+function drawHours(day) {
+  const hours = (byDay.get(day) || []).slice(0, CONFIG.hoursOffered);
+  $("call-hours").innerHTML = hours.map((time) =>
+    '<button class="chip" type="button" aria-pressed="false" data-time="' + time + '">' + time + "</button>"
+  ).join("");
+  $("call-hours").hidden = !hours.length;
+}
+
+/* What is actually free, straight from the studio. With nothing free the
+   form still sends, as a request for a time, rather than dead ending. */
+async function loadTimes(keepMessage) {
+  try {
+    const res = await fetch(RELAY + "/call/slots", { cache: "no-store" });
+    if (!res.ok) throw new Error("relay " + res.status);
+    const data = await res.json();
+
+    byDay = new Map();
+    for (const slot of data.slots || []) {
+      if (!byDay.has(slot.date)) byDay.set(slot.date, []);
+      byDay.get(slot.date).push(slot.time);
+    }
+    picked = null;
+
+    if (!byDay.size) {
+      $("call-hint").textContent = "No times are open at the moment. Send this anyway and we will ring you to agree one.";
+      $("call-days").innerHTML = "";
+      $("call-hours").hidden = true;
+      return;
+    }
+
+    if (!keepMessage) {
+      $("call-hint").textContent = "Pick a day, then an hour" +
+        (data.minutes ? ". " + data.minutes + " minutes" : "") +
+        ". The time is held the moment you send this.";
+    }
+    drawDays();
+  } catch (err) {
+    console.error("times failed:", err);
+    $("call-hint").textContent = "Could not load our free times. Send this anyway and we will ring you to agree one.";
+    byDay = new Map();
+    $("call-days").innerHTML = "";
+    $("call-hours").hidden = true;
+  }
+}
+
+$("call-days").addEventListener("click", (event) => {
+  const chip = event.target.closest(".chip");
+  if (!chip) return;
+  for (const other of $("call-days").children) {
+    other.setAttribute("aria-pressed", other === chip ? "true" : "false");
+  }
+  picked = null;
+  drawHours(chip.dataset.day);
+});
+
+$("call-hours").addEventListener("click", (event) => {
+  const chip = event.target.closest(".chip");
+  if (!chip) return;
+  for (const other of $("call-hours").children) {
+    other.setAttribute("aria-pressed", other === chip ? "true" : "false");
+  }
+  const day = $("call-days").querySelector('[aria-pressed="true"]');
+  picked = { date: day.dataset.day, time: chip.dataset.time };
+  $("lock-msg").textContent = "";
+});
+
+loadTimes();
 
 form.addEventListener("submit", async (event) => {
   event.preventDefault();
@@ -511,53 +606,59 @@ form.addEventListener("submit", async (event) => {
   const phone = $("lock-phone").value.trim();
   const about = $("lock-note").value.trim();
 
-  const ringDay = callDate.value;
-  const ringAt = callTime.value;
-
   if (!date) { msg.textContent = "Pick the day you want to be filmed."; dateField.focus(); return; }
   if (date < dateField.min) { msg.textContent = "Pick a filming day from tomorrow onwards."; dateField.focus(); return; }
   if (!name) { msg.textContent = "Please add your name."; $("lock-name").focus(); return; }
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) { msg.textContent = "Please add an email we can confirm it to."; $("lock-email").focus(); return; }
   if (!/^[+(\d][\d\s()./-]{5,}$/.test(phone)) { msg.textContent = "Please add a number we can call you on."; $("lock-phone").focus(); return; }
-  if (!ringDay) { msg.textContent = "Pick the day we should call you."; callDate.focus(); return; }
-  if (ringDay < callDate.min) { msg.textContent = "Pick a call day from today onwards."; callDate.focus(); return; }
-  if (!ringAt) { msg.textContent = "Pick a time for the call."; callTime.focus(); return; }
-  // the phone is answered between these two, so nothing outside them is offered
-  if (ringAt < CONFIG.callFrom || ringAt > CONFIG.callTo) {
-    msg.textContent = "We take calls between " + CONFIG.callFrom + " and " + CONFIG.callTo + ".";
-    callTime.focus();
+  if (byDay.size && !picked) {
+    msg.textContent = "Pick a day and an hour for the call.";
+    $("call-days").scrollIntoView({ block: "center" });
     return;
   }
 
   btn.disabled = true;
-  msg.textContent = "Sending...";
+  msg.textContent = picked ? "Booking..." : "Sending...";
 
   const note = "One take reels: " + count + " reels for " +
     money(count * CONFIG.pricePerReel) + "." +
     "\nFilming day asked for: " + longDate(date) +
-    "\nWants a call: " + longDate(ringDay) + " at " + ringAt +
     (about ? "\nWhere: " + about : "");
 
+  const body = { name, email, phone, note, website: $("lock-website").value };
+  if (picked) { body.date = picked.date; body.time = picked.time; }
+
   try {
-    const res = await fetch(RELAY + "/call/back", {
+    const res = await fetch(RELAY + (picked ? "/call/book" : "/call/back"), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name, email, phone, note, website: $("lock-website").value })
+      body: JSON.stringify(body)
     });
+
+    /* somebody else took that half hour while this page was open */
+    if (res.status === 409) {
+      btn.disabled = false;
+      msg.textContent = "That time has just gone. Pick another.";
+      await loadTimes(true);
+      return;
+    }
     if (!res.ok) throw new Error("relay " + res.status);
 
     const done = document.createElement("p");
     done.className = "lock-done";
-    done.textContent = "Asked for " + longDate(date) + ". We ring you on " +
-      longDate(ringDay) + " at " + ringAt + " to confirm it.";
+    done.textContent = picked
+      ? "Filming day asked for " + longDate(date) + ". We ring you on " +
+        longDate(picked.date) + " at " + picked.time + ", and that time is now held for you."
+      : "Filming day asked for " + longDate(date) + ". We will ring you to agree a time.";
     form.replaceWith(done);
-    $("lock-lede").textContent = "That day is with us now.";
+    $("lock-lede").textContent = "That is with us now.";
   } catch (err) {
     console.error("lock failed:", err);
     msg.textContent = "Could not send that right now. Try again in a minute, or write to info@noiraunoir.com.";
     btn.disabled = false;
   }
 });
+
 
 draw();
 </script>
