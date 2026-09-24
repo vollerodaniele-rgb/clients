@@ -194,11 +194,36 @@
       "title": "",
       "caption": "",
       "status": "planned",
-      "video": {
-        "month": "2026-09",
-        "name": "fire post test music.mp4"
-      },
-      "thumb": "tDaYhBm2"
+      "thumb": "tDaYhBm2",
+      "videos": [
+        {
+          "month": "2026-09",
+          "name": "fire post test music.mp4"
+        }
+      ]
+    },
+    {
+      "date": "2026-10-07",
+      "time": "",
+      "platform": "Carousel",
+      "title": "",
+      "caption": "",
+      "status": "planned",
+      "videos": [
+        {
+          "month": "2026-09",
+          "name": "1.mp4"
+        },
+        {
+          "month": "2026-09",
+          "name": "2.mp4"
+        },
+        {
+          "month": "2026-09",
+          "name": "3.mp4"
+        }
+      ],
+      "thumb": "OGnGyoqd"
     }
   ],
   "project": {
