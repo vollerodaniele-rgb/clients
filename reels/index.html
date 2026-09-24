@@ -350,6 +350,31 @@
   .shot.playing i { opacity: 0; }
   .shot:focus-visible { outline: 2px solid var(--text); outline-offset: 2px; }
 
+  .shots-nav { display: none; gap: 0.5rem; margin-top: 0.9rem; }
+
+  /* On a phone the rows stop being rows. Justified rows on a narrow
+     screen give one film a whole screen and the next one a sliver, so
+     here it is a single rail of the same height, swiped or stepped with
+     the two buttons. */
+  @media (max-width: 40rem) {
+    .shots {
+      flex-wrap: nowrap;
+      justify-content: flex-start;
+      overflow-x: auto;
+      /* the films are not all the same height here, since each one is
+         sized to fit the screen whichever way round it was filmed */
+      align-items: center;
+      scroll-snap-type: x mandatory;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+    }
+    .shots::-webkit-scrollbar { display: none; }
+    .shot { scroll-snap-align: center; }
+    .shots-nav { display: flex; }
+    /* a thumb sized target, the same as the ones under the strip */
+    .shots-nav .step-btn { flex: 1; min-height: 2.75rem; }
+  }
+
   .shots-note { margin-top: 0.9rem; font-size: 0.8rem; color: rgba(242, 242, 242, 0.45); }
 
 
@@ -411,6 +436,11 @@
     <section class="reel-pane" id="shots-pane" hidden>
       <p class="inc-head">Some of them</p>
       <div class="shots" id="shots"></div>
+      <!-- only on a phone, where the rows become one rail you swipe -->
+      <div class="shots-nav">
+        <button type="button" class="step-btn" id="shots-prev" aria-label="Previous film">&larr;</button>
+        <button type="button" class="step-btn" id="shots-next" aria-label="Next film">&rarr;</button>
+      </div>
       <p class="shots-note">Tap one to play it. They are silent on purpose, the feed is too.</p>
     </section>
 
@@ -548,8 +578,26 @@ const SHOTS = { folder: "examples/", count: 8, ext: ".mp4", gap: 8, row: 270 };
     const width = wrap.clientWidth;
     if (!width) return;
 
+    /* A phone gets one rail: every film the same height, whatever its
+       shape, so an upright one does not swallow the screen while the one
+       after it arrives as a sliver. The rest of the page keeps rows. */
+    if (matchMedia("(max-width: 40rem)").matches) {
+      const tall = Math.min(innerHeight * 0.52, 420);
+      for (const tile of tiles) {
+        const ratio = Number(tile.dataset.ratio);
+        // fits the screen both ways: an upright film is as tall as it is
+        // allowed to be, a wide one is as wide as the rail
+        const height = Math.round(Math.min(tall, width / ratio));
+        tile.style.height = height + "px";
+        tile.style.width = Math.round(ratio * height) + "px";
+        tile.style.aspectRatio = "auto";
+      }
+      arrows();
+      return;
+    }
+
     // shorter rows on a narrow screen, or one film fills the whole thing
-    const aim = width < 30 * 16 ? 190 : width < 48 * 16 ? 230 : SHOTS.row;
+    const aim = width < 48 * 16 ? 230 : SHOTS.row;
 
     let row = [];
     let sum = 0;
@@ -591,6 +639,75 @@ const SHOTS = { folder: "examples/", count: 8, ext: ".mp4", gap: 8, row: 270 };
     }
     settle(true);
   }
+
+  /* The two buttons, and whether either of them has anywhere to go. */
+  const prev = document.getElementById("shots-prev");
+  const next = document.getElementById("shots-next");
+
+  function arrows() {
+    const room = wrap.scrollWidth - wrap.clientWidth;
+    if (prev) prev.disabled = wrap.scrollLeft < 8;
+    if (next) next.disabled = wrap.scrollLeft > room - 8;
+  }
+
+  /* One film at a time, landed in the middle, which is where the snap
+     leaves it when you swipe as well. */
+  function step(dir) {
+    const tiles = [...wrap.children];
+    const edge = wrap.getBoundingClientRect().left;
+    const mid = wrap.clientWidth / 2;
+
+    const where = (tile) => {
+      const box = tile.getBoundingClientRect();
+      return box.left - edge + box.width / 2;
+    };
+
+    const found = dir > 0
+      ? tiles.find((t) => where(t) > mid + 8)
+      : [...tiles].reverse().find((t) => where(t) < mid - 8);
+    if (!found) return;
+
+    glide(wrap.scrollLeft + where(found) - mid);
+  }
+
+  /* The move is animated by hand. A smooth scrollTo does nothing at all
+     on a snapping rail in some browsers, and a button that sometimes
+     works is worse than one that never does. The snapping is switched
+     off while it runs, or it fights the animation frame by frame. */
+  function glide(to) {
+    const from = wrap.scrollLeft;
+    const span = to - from;
+    if (!span) return;
+
+    if (matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      wrap.scrollLeft = to;
+      arrows();
+      return;
+    }
+
+    wrap.style.scrollSnapType = "none";
+    const began = performance.now();
+
+    /* A frame never comes while the tab is in the background, so the
+       press would appear to do nothing until you looked at it again.
+       This lands it either way. */
+    const land = setTimeout(() => { wrap.scrollLeft = to; done(); }, 420);
+    const done = () => { clearTimeout(land); wrap.style.scrollSnapType = ""; arrows(); };
+
+    const frame = (now) => {
+      const part = Math.min(1, (now - began) / 320);
+      const eased = part < 0.5 ? 2 * part * part : 1 - Math.pow(-2 * part + 2, 2) / 2;
+      wrap.scrollLeft = from + span * eased;
+      if (part < 1) requestAnimationFrame(frame);
+      else done();
+    };
+
+    requestAnimationFrame(frame);
+  }
+
+  if (prev) prev.addEventListener("click", () => step(-1));
+  if (next) next.addEventListener("click", () => step(1));
+  wrap.addEventListener("scroll", arrows, { passive: true });
 
   let again;
   addEventListener("resize", () => { clearTimeout(again); again = setTimeout(place, 120); });
