@@ -26,6 +26,12 @@
      assets/styles.css: black ground, Satoshi, ink dimmed by opacity, glass
      panes, no colour. Emphasis is white or space. */
 
+  /* A quick second tap on + 1 was being read as a double tap and zoomed
+     the page. This takes the double tap to zoom away while leaving pinch
+     to zoom alone, so the page can still be made bigger by anyone who
+     needs that. */
+  body { touch-action: manipulation; }
+
   .reel-wrap { max-width: 47.5rem; margin: 0 auto; padding: 0 1.25rem 5rem; }
 
   .reel-head { padding: 4.5rem 0 2.5rem; }
@@ -255,7 +261,8 @@
     /* every second number goes, so the row never crowds */
     .ticks span:nth-child(even) { visibility: hidden; }
     .inc { grid-template-columns: minmax(0, 1fr); gap: 0; }
-    .step-btn { flex: 1; }
+    /* a thumb sized target, since this is the button people press twice */
+    .step-btn { flex: 1; min-height: 2.75rem; font-size: 0.78rem; }
   }
 
   @media (prefers-reduced-motion: reduce) {
