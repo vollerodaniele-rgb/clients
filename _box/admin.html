@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="locked">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -68,6 +68,20 @@
   </style>
 </head>
 <body>
+
+  <!-- The lock. First in the page and the only thing on screen until
+       lock.js says otherwise, so what it covers is never shown for a
+       frame before it is shut. -->
+  <section class="lock" id="lock">
+    <p class="lock-mark">NOIR AU NOIR</p>
+    <div class="lock-field">
+      <input id="lock-input" type="password" autocomplete="off" spellcheck="false"
+        aria-label="Your GitHub key">
+      <button type="button" class="lock-go" id="lock-open" aria-label="Open">&#8594;</button>
+    </div>
+    <p class="lock-msg" id="lock-msg" role="status"></p>
+  </section>
+
   <div class="admin-wrap">
     <a class="back" href="index.html">&larr; back to the box</a>
     <h1 class="admin-title">Idea Box Admin</h1>
@@ -105,5 +119,7 @@
     </div>
   </div>
   <script src="../../assets/box-admin.js"></script>
+  <!-- after box-admin.js, which is where the key name and the repo live -->
+  <script src="../../assets/lock.js"></script>
 </body>
 </html>

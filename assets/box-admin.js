@@ -19,10 +19,18 @@ const TOKEN_KEY = "clients-admin-token";
 const $ = (id) => document.getElementById(id);
 
 document.addEventListener("DOMContentLoaded", () => {
-  wireTokenPanel();
-  $("refresh").addEventListener("click", loadAll);
-  $("toggle-removed").addEventListener("click", toggleRemoved);
-  loadAll();
+  /* Nothing starts while the lock is up, so a locked page fetches
+     nothing. Start anyway if lock.js is not there: without it the page
+     stays covered and starting costs nothing. */
+  const boot = () => {
+    wireTokenPanel();
+    $("refresh").addEventListener("click", loadAll);
+    $("toggle-removed").addEventListener("click", toggleRemoved);
+    loadAll();
+  };
+
+  if (typeof whenUnlocked === "function") whenUnlocked(boot);
+  else boot();
 });
 
 /* ============ TOKEN ============ */

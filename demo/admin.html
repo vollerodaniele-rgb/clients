@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="locked">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -19,10 +19,14 @@
       css.rel = "stylesheet";
       css.href = "../assets/styles.css?t=" + stamp;
       here.parentNode.insertBefore(css, here);
-      var js = document.createElement("script");
-      js.src = "../assets/admin.js?t=" + stamp;
-      js.async = false;
-      here.parentNode.insertBefore(js, here);
+      // admin.js first, for OWNER, REPO and the key name; then the
+      // lock, which holds admin.js back until a key is in
+      ["admin.js", "lock.js"].forEach(function (file) {
+        var js = document.createElement("script");
+        js.src = "../assets/" + file + "?t=" + stamp;
+        js.async = false;
+        here.parentNode.insertBefore(js, here);
+      });
     })();
   </script>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎛️</text></svg>">
@@ -95,6 +99,20 @@
   </style>
 </head>
 <body>
+
+  <!-- The lock. First in the page and the only thing on screen until
+       lock.js says otherwise, so what it covers is never shown for a
+       frame before it is shut. -->
+  <section class="lock" id="lock">
+    <p class="lock-mark">NOIR AU NOIR</p>
+    <div class="lock-field">
+      <input id="lock-input" type="password" autocomplete="off" spellcheck="false"
+        aria-label="Your GitHub key">
+      <button type="button" class="lock-go" id="lock-open" aria-label="Open">&#8594;</button>
+    </div>
+    <p class="lock-msg" id="lock-msg" role="status"></p>
+  </section>
+
   <div class="admin-wrap">
     <a class="back" href="index.html">&larr; back to the portal</a>
     <h1 class="admin-title" id="admin-title">Portal Admin</h1>

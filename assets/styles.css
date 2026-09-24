@@ -2328,3 +2328,91 @@ select { background-color: #0B0B0B; border-color: rgba(255, 255, 255, 0.12); bor
 @media (prefers-reduced-motion: reduce) {
   .pt-view, .pt-pill.live::before, .post-card.flash { animation: none; }
 }
+
+/* ============ THE LOCK ============ */
+/* On the dashboard and on each editor. Written the closed way round:
+   locked is what the markup says and unlocking is a class that lock.js
+   takes off, so a script that is blocked or broken leaves the page shut
+   rather than open.
+
+   It hides the interface, not the data: these pages and the files they
+   read are public. What it stops is somebody at an open browser using
+   the key saved in it. */
+html.locked body > :not(.lock) { display: none !important; }
+html:not(.locked) .lock { display: none; }
+
+/* No pane, no paragraph, no black of its own: the two soft lights
+   behind every page carry it, the way the booking page is carried. */
+.lock {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1.1rem;
+  padding: 1.5rem;
+  z-index: 50;
+}
+
+.lock-mark {
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.4em;
+  color: var(--dim);
+}
+
+.lock-field { position: relative; width: 100%; max-width: 19rem; }
+
+.lock-field input {
+  width: 100%;
+  padding: 0.85rem 3.2rem 0.85rem 1.1rem;
+  font-family: var(--font-body);
+  font-size: 0.95rem;
+  color: var(--text);
+  background: var(--glass);
+  border: 1px solid var(--glass-edge);
+  border-radius: 999px;
+  box-shadow: var(--glass-lip);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+}
+
+.lock-field input:focus { outline: none; border-color: rgba(255, 255, 255, 0.34); }
+
+.lock-go {
+  position: absolute;
+  top: 50%;
+  right: 0.35rem;
+  transform: translateY(-50%);
+  width: 2.3rem;
+  height: 2.3rem;
+  display: grid;
+  place-items: center;
+  font-size: 1rem;
+  color: var(--dim);
+  background: none;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s;
+}
+
+.lock-go:hover { color: var(--text); border-color: var(--line); }
+.lock-go:focus-visible { outline: 2px solid var(--text); outline-offset: 2px; }
+.lock-go:disabled { opacity: 0.4; cursor: default; }
+
+/* empty until something goes wrong, which is the only time this screen
+   has anything to say */
+.lock-msg {
+  min-height: 1.2rem;
+  max-width: 19rem;
+  font-size: 0.8rem;
+  line-height: 1.5;
+  color: var(--dim);
+  text-align: center;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lock-go { transition: none; }
+}

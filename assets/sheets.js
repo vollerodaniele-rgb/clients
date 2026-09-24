@@ -47,9 +47,13 @@ onReady(() => {
     bar.appendChild(tab);
   }
 
-  /* Without a key most panels can only say they need one, so a first
-     visit opens on the key rather than on a wall of that sentence. */
-  showSheet(hasKey() ? remembered() : "key");
+  /* Nothing opens while the lock is up, because opening a sheet is what
+     makes its panels fetch. Without a key most panels could only say
+     they need one, so a browser that somehow gets past the lock without
+     one lands on the key rather than on a wall of that sentence. */
+  const open = () => showSheet(hasKey() ? remembered() : "key");
+  if (typeof whenUnlocked === "function") whenUnlocked(open);
+  else open();
 });
 
 function remembered() {

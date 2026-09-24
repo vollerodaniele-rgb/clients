@@ -33,11 +33,20 @@ const token = () => localStorage.getItem(TOKEN_KEY) || "";
    cache, which means it can arrive after the document is already
    parsed. Waiting for an event that has been and gone would leave a
    blank page, so check before listening. */
+/* Nothing starts while the lock is up, so a locked page fetches
+   nothing and shows nothing. lock.js loads after this file, so ask for
+   it at ready rather than now, and start anyway if it is not there:
+   without it the page stays covered and starting costs nothing. */
+const start = () => {
+  if (typeof whenUnlocked === "function") whenUnlocked(boot);
+  else boot();
+};
+
 if (document.readyState === "loading") {
-  document.addEventListener("DOMContentLoaded", boot);
+  document.addEventListener("DOMContentLoaded", start);
 } else {
   // deferred, so the rest of this file finishes declaring itself
-  setTimeout(boot, 0);
+  setTimeout(start, 0);
 }
 
 async function boot() {

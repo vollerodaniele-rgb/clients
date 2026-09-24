@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="locked">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -17,7 +17,9 @@
       css.rel = "stylesheet";
       css.href = "../assets/styles.css?t=" + stamp;
       here.parentNode.insertBefore(css, here);
-      ["dashboard.js", "proposals.js", "boxes.js", "transfers.js", "agenda.js", "links.js", "sheets.js"].forEach(function (file) {
+      // lock.js after dashboard.js, which is where the key name and the
+      // unlock switch live, and before sheets.js, which is what it holds
+      ["dashboard.js", "lock.js", "proposals.js", "boxes.js", "transfers.js", "agenda.js", "links.js", "sheets.js"].forEach(function (file) {
         var js = document.createElement("script");
         js.src = "../assets/" + file + "?t=" + stamp;
         js.async = false;
@@ -185,9 +187,24 @@
       color: var(--text); border: 1px solid var(--line-soft);
       border-radius: 5px; padding: 0.05rem 0.35rem; font-size: 0.85rem;
     }
+
   </style>
 </head>
 <body>
+
+  <!-- The lock. First in the page and the only thing on screen until
+       lock.js says otherwise, so what it covers is never shown for a
+       frame before it is shut. -->
+  <section class="lock" id="lock">
+    <p class="lock-mark">NOIR AU NOIR</p>
+    <div class="lock-field">
+      <input id="lock-input" type="password" autocomplete="off" spellcheck="false"
+        aria-label="Your GitHub key">
+      <button type="button" class="lock-go" id="lock-open" aria-label="Open">&#8594;</button>
+    </div>
+    <p class="lock-msg" id="lock-msg" role="status"></p>
+  </section>
+
   <div class="dash">
     <h1 class="dash-title">Clients</h1>
     <p class="dash-sub">Every portal in one place. Pick one to edit it.</p>
@@ -208,6 +225,10 @@
         </label>
         <button class="btn-mini" id="token-save">Save key</button>
         <button class="btn-mini" id="token-clear">Forget key</button>
+        <!-- for a machine you are handing over: forget the key and shut
+             the page in one go, rather than trusting yourself to close
+             the tab afterwards -->
+        <button class="btn-mini" onclick="lockAgain()">Lock this browser</button>
       </div>
       <p class="form-msg" id="token-msg" style="margin-top:0.7rem"></p>
     </div>
