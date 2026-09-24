@@ -491,7 +491,6 @@
 
         <div class="lock-send">
           <button class="btn-send" type="submit" id="lock-btn">Lock in this date</button>
-          <a href="https://noiraunoir.com/call/">Rather talk first?</a>
           <p class="form-msg" id="lock-msg" role="status"></p>
         </div>
       </form>
@@ -514,6 +513,7 @@ const SHOTS = { folder: "examples/", count: 8, ext: ".mp4", gap: 8, row: 270 };
   if (!wrap) return;
 
   const pane = document.getElementById("shots-pane");
+  const phone = () => matchMedia("(max-width: 40rem)").matches;
 
   for (let n = 1; n <= SHOTS.count; n++) {
     const num = String(n).padStart(2, "0");
@@ -552,15 +552,18 @@ const SHOTS = { folder: "examples/", count: 8, ext: ".mp4", gap: 8, row: 270 };
     const play = document.createElement("i");
     play.textContent = "▶";
 
+    /* They run by themselves now, so a tap is for stopping one that you
+       want to look at, or starting one you stopped. A tile stopped by
+       hand stays stopped until it leaves the screen. */
     tile.addEventListener("click", () => {
-      const running = !film.paused;
-      // one at a time: several going at once is a shop window, even silent
-      for (const other of wrap.querySelectorAll("video")) {
-        other.pause();
-        other.parentElement.classList.remove("playing");
+      if (film.paused) {
+        delete tile.dataset.held;
+        film.play().then(() => tile.classList.add("playing")).catch(() => {});
+      } else {
+        film.pause();
+        tile.dataset.held = "1";
+        tile.classList.remove("playing");
       }
-      if (running) return;
-      film.play().then(() => tile.classList.add("playing")).catch(() => {});
     });
 
     tile.append(film, mark, play);
@@ -581,7 +584,7 @@ const SHOTS = { folder: "examples/", count: 8, ext: ".mp4", gap: 8, row: 270 };
     /* A phone gets one rail: every film the same height, whatever its
        shape, so an upright one does not swallow the screen while the one
        after it arrives as a sliver. The rest of the page keeps rows. */
-    if (matchMedia("(max-width: 40rem)").matches) {
+    if (phone()) {
       const tall = Math.min(innerHeight * 0.52, 420);
       for (const tile of tiles) {
         const ratio = Number(tile.dataset.ratio);
@@ -593,6 +596,7 @@ const SHOTS = { folder: "examples/", count: 8, ext: ".mp4", gap: 8, row: 270 };
         tile.style.aspectRatio = "auto";
       }
       arrows();
+      tuneSoon();
       return;
     }
 
@@ -619,6 +623,8 @@ const SHOTS = { folder: "examples/", count: 8, ext: ".mp4", gap: 8, row: 270 };
       sum = 0;
     };
 
+    tuneSoon();
+
     /* A film joins the row unless it would squash it well below the
        height we are aiming for. Closing the row one film early is often
        nearer the aim than cramming that film in, and cramming is what
@@ -639,6 +645,70 @@ const SHOTS = { folder: "examples/", count: 8, ext: ".mp4", gap: 8, row: 270 };
     }
     settle(true);
   }
+
+  /* ============ WHAT IS PLAYING ============ */
+  /* On a screen everything on show runs at once, quietly, the way a wall
+     of monitors in a studio does. On a phone that would be four films
+     downloading to watch one, so only the film the rail is sitting on
+     plays. Either way a film that has scrolled away stops, and somebody
+     who has asked for motion to be kept still gets none of it. */
+  const still = matchMedia("(prefers-reduced-motion: reduce)");
+
+  const onScreen = (tile) => {
+    const box = tile.getBoundingClientRect();
+    return box.bottom > 48 && box.top < innerHeight - 48;
+  };
+
+  function tune() {
+    const tiles = [...wrap.children];
+    if (!tiles.length) return;
+
+    let wanted = null;
+
+    // on the rail, the one nearest the middle, and only that one
+    if (phone()) {
+      const rail = wrap.getBoundingClientRect();
+      const mid = rail.left + rail.width / 2;
+      let nearest = Infinity;
+      for (const tile of tiles) {
+        const box = tile.getBoundingClientRect();
+        const off = Math.abs(box.left + box.width / 2 - mid);
+        if (off < nearest) { nearest = off; wanted = tile; }
+      }
+    }
+
+    for (const tile of tiles) {
+      const film = tile.querySelector("video");
+      if (!film) continue;
+
+      const run = !still.matches && onScreen(tile) && (!phone() || tile === wanted);
+
+      if (run && film.paused && tile.dataset.held !== "1") {
+        film.play().then(() => tile.classList.add("playing")).catch(() => {});
+      } else if (!run && !film.paused) {
+        film.pause();
+        tile.classList.remove("playing");
+        // out of sight is a clean slate: it may run again when it returns
+        delete tile.dataset.held;
+      }
+    }
+  }
+
+  let waiting = false;
+  function tuneSoon() {
+    if (waiting) return;
+    waiting = true;
+    setTimeout(() => { waiting = false; tune(); }, 120);
+  }
+
+  addEventListener("scroll", tuneSoon, { passive: true });
+  wrap.addEventListener("scroll", tuneSoon, { passive: true });
+  still.addEventListener("change", tune);
+
+  /* A browser will not start a film while its tab is in the background,
+     and it says nothing when it refuses, so the page comes back to a
+     wall of stills. This asks again the moment it is looked at. */
+  document.addEventListener("visibilitychange", () => { if (!document.hidden) tune(); });
 
   /* The two buttons, and whether either of them has anywhere to go. */
   const prev = document.getElementById("shots-prev");
@@ -692,7 +762,7 @@ const SHOTS = { folder: "examples/", count: 8, ext: ".mp4", gap: 8, row: 270 };
        press would appear to do nothing until you looked at it again.
        This lands it either way. */
     const land = setTimeout(() => { wrap.scrollLeft = to; done(); }, 420);
-    const done = () => { clearTimeout(land); wrap.style.scrollSnapType = ""; arrows(); };
+    const done = () => { clearTimeout(land); wrap.style.scrollSnapType = ""; arrows(); tuneSoon(); };
 
     const frame = (now) => {
       const part = Math.min(1, (now - began) / 320);
