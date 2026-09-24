@@ -443,10 +443,13 @@ function escHtml(s) {
 }
 
 /* ============ ADDING A CLIENT ============ */
-/* Writes the four files as a single commit, so a client is never
+/* Writes the three files as a single commit, so a client is never
    left half created if something fails partway. */
 
-const TEMPLATE_FILES = ["index.html", "schedule.html", "admin.html"];
+/* schedule.html is not among them any more. It forwards to the portal's
+   Posts page and exists only so the links sent before the two merged
+   still land: a client made today never had that address. */
+const TEMPLATE_FILES = ["index.html", "admin.html"];
 
 onReady(() => {
   const nameInput = $("new-name");

@@ -81,7 +81,7 @@ clients/
     box-admin.js         idea box moderation
   data/<client>.json     one client portal's entire content
   data/_example.json     starting point for a new client
-  _template/             index.html schedule.html admin.html (portal)
+  _template/             index.html admin.html (portal)
   _box/                  index.html admin.html (idea box)
   _proposal/             index.html (proposal page)
   <client>/              3 files copied verbatim from _template

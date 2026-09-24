@@ -4,7 +4,7 @@ Every client portal lives in this one repo and is served from
 `noiraunoir.com/<client>/`.
 
 - `noiraunoir.com/sakas/` — the portal
-- `noiraunoir.com/sakas/schedule.html` — the posting plan
+- `noiraunoir.com/sakas/#posts` — the posting plan, a page of the portal
 - `noiraunoir.com/sakas/admin.html` — where you edit it (not linked anywhere)
 
 The root and any unknown address show only the studio name, so the
@@ -23,12 +23,12 @@ itself, so they cannot be used as client names.
 ## Adding a client
 
 Use the Create button on the dashboard: type the name, check the
-address it suggests, press Create. It copies the three template files
-into a new folder, writes the data file and commits all four at once,
+address it suggests, press Create. It copies the two template files
+into a new folder, writes the data file and commits all three at once,
 so a client is never half created. It is live about a minute later.
 
 By hand is still possible: copy `data/_example.json` to
-`data/<client>.json`, copy the three files from `_template/` into a
+`data/<client>.json`, copy the two files from `_template/` into a
 `<client>/` folder, commit.
 
 Either way there is no new repo, DNS record, Pages setting or relay
