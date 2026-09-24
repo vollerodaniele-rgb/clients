@@ -20,7 +20,7 @@ onReady(() => {
     if (!touched) $("box-slug").value = slugifyBox($("box-title").value);
   });
 
-  loadBoxes();
+  whenSheet("boxes", loadBoxes);
 });
 
 function slugifyBox(s) {

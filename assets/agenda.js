@@ -21,13 +21,16 @@ function say(id, what) {
 }
 
 onReady(() => {
-  loadAgenda();
-  drawMainLink();
-  drawAsks();
-  drawInvites();
-  drawHours();
-  drawSlotEditor();
-  drawPartners();
+  whenSheet("agenda", () => {
+    loadAgenda();
+    drawMainLink();
+    drawAsks();
+    drawInvites();
+    drawHours();
+    drawSlotEditor();
+  });
+  // partners are their own sheet, so they wait for their own tab
+  whenSheet("partners", drawPartners);
   const make = $("ref-make");
   if (make) make.addEventListener("click", makePartner);
 });
@@ -562,7 +565,7 @@ async function shootsFromClients() {
   const names = await listClientNames();
   const found = await Promise.all(names.map(async (name) => {
     try {
-      const plan = await (await fetch(`../data/${name}.json`, { cache: "no-store" })).json();
+      const plan = await planOf(name);
       if (!plan.nextShoot || !plan.nextShoot.date) return null;
       return {
         kind: "shoot",

@@ -14,7 +14,7 @@ const TRANSFER_SITE = location.origin + "/t/#";
 
 onReady(() => {
   $("transfer-new").addEventListener("click", makeTransfer);
-  loadTransfers();
+  whenSheet("files", loadTransfers);
 });
 
 async function loadTransfers() {

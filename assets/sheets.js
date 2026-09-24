@@ -83,6 +83,10 @@ function showSheet(id) {
     tab.setAttribute("aria-current", on ? "true" : "false");
   }
 
+  /* The panels on this sheet load the first time it is opened, rather
+     than all of them at once when the page opens. */
+  if (typeof sheetOpened === "function") sheetOpened(id);
+
   try {
     localStorage.setItem(SHEET_MEMORY, id);
   } catch { /* it just will not be remembered */ }

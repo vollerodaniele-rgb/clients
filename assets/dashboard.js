@@ -26,6 +26,45 @@ const RESERVED = ["admin", "assets", "data", "_template", "p", "proposals", "_pr
 const $ = (id) => document.getElementById(id);
 const token = () => localStorage.getItem(TOKEN_KEY) || "";
 
+/* ============ LOAD A SHEET WHEN IT IS OPENED ============ */
+/* Every panel used to fetch the moment the page loaded: nine panels,
+   a dozen calls, most of them for sheets he was not looking at. Now a
+   panel says which sheet it belongs to and waits to be asked. The sheet
+   he opens on fires straight away, so nothing is slower than before,
+   and the rest cost nothing until he goes there. */
+
+const sheetWaiting = new Map();
+const sheetsOpened = new Set();
+
+function whenSheet(id, load) {
+  if (sheetsOpened.has(id)) { load(); return; }
+  if (!sheetWaiting.has(id)) sheetWaiting.set(id, []);
+  sheetWaiting.get(id).push(load);
+}
+
+function sheetOpened(id) {
+  if (sheetsOpened.has(id)) return;
+  sheetsOpened.add(id);
+  for (const load of sheetWaiting.get(id) || []) {
+    // one panel failing must never stop the next one drawing
+    try { load(); } catch (err) { console.error("sheet " + id + " failed:", err); }
+  }
+  sheetWaiting.delete(id);
+}
+
+/* The clients sheet and the agenda both read every client's plan. Read
+   once, and the second reader gets what the first one fetched. */
+const plansRead = new Map();
+
+function planOf(name) {
+  if (!plansRead.has(name)) {
+    plansRead.set(name, fetch(`../data/${name}.json`, { cache: "no-store" })
+      .then((res) => res.json())
+      .catch((err) => { plansRead.delete(name); throw err; }));
+  }
+  return plansRead.get(name);
+}
+
 onReady(() => {
   wireTokenPanel();
   /* The key, proposals and idea boxes used to be folded, because this
@@ -33,7 +72,7 @@ onReady(() => {
      rather than the parts you came for. Each has its own sheet now, so
      folding meant clicking a tab and then clicking again to see the
      thing the tab is named after. The folding went with them. */
-  loadClients();
+  whenSheet("clients", loadClients);
 });
 
 
@@ -125,7 +164,7 @@ async function loadClients() {
   const clients = await Promise.all(names.map(async (name) => {
     let plan = {};
     try {
-      plan = await (await fetch(`../data/${name}.json`, { cache: "no-store" })).json();
+      plan = await planOf(name);
     } catch { /* a client with unreadable data still deserves a card */ }
     return { name, plan, requests: await countRequests(name) };
   }));
@@ -900,7 +939,7 @@ onReady(() => {
     String(today.getDate()).padStart(2, "0");
 
   $("pay-add").addEventListener("click", addPayment);
-  loadMoney();
+  whenSheet("money", loadMoney);
 });
 
 async function loadMoney() {

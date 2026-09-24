@@ -13,7 +13,7 @@ const PROPOSAL_SITE = location.origin;
 
 onReady(() => {
   $("prop-create").addEventListener("click", createProposal);
-  loadProposals();
+  whenSheet("proposals", loadProposals);
 });
 
 function newSlug() {

@@ -37,7 +37,7 @@ const OLD_LINKS = [
 onReady(() => {
   const wrap = document.getElementById("link-list");
   if (!wrap) return;
-  drawLinks(wrap);
+  whenSheet("links", () => drawLinks(wrap));
 
   const again = document.getElementById("links-again");
   if (again) again.addEventListener("click", () => drawLinks(wrap));
