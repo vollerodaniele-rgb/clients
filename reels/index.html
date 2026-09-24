@@ -791,6 +791,7 @@ const CONFIG = {
   step: 1,
   secondsPerReel: 15,
   daysOffered: 10,    // how many free days to show at once
+  daysOnPhone: 9,     // fewer on a phone, where they land two to a row
   hoursOffered: 14,   // and how many hours inside a day
   noticeDays: 1,      // the soonest day a visit can be asked for
   horizonDays: 120,   // and the furthest ahead
@@ -907,7 +908,11 @@ let byDay = new Map();
 let picked = null;
 
 function drawDays() {
-  const days = [...byDay.keys()].sort().slice(0, CONFIG.daysOffered);
+  /* Nine is as long a list of days as a phone should carry. The dates
+     are wide enough that they land two to a row there, so the tenth
+     only adds scrolling between the form and the send button. */
+  const many = matchMedia("(max-width: 40rem)").matches ? CONFIG.daysOnPhone : CONFIG.daysOffered;
+  const days = [...byDay.keys()].sort().slice(0, many);
   $("call-days").innerHTML = days.map((day) =>
     '<button class="chip" type="button" aria-pressed="false" data-day="' + day + '">' + shortDay(day) + "</button>"
   ).join("");
@@ -959,6 +964,26 @@ async function loadTimes(keepMessage) {
     $("call-hours").hidden = true;
   }
 }
+
+/* Turning the phone sideways changes how many fit, and a day that is
+   no longer on offer must not stay chosen. */
+matchMedia("(max-width: 40rem)").addEventListener("change", () => {
+  if (!byDay.size) return;
+
+  const held = picked;
+  drawDays();
+  if (!held) return;
+
+  const again = $("call-days").querySelector('[data-day="' + held.date + '"]');
+  if (!again) { picked = null; return; }
+
+  // the day survived the change, so put the choice back as it was
+  again.setAttribute("aria-pressed", "true");
+  drawHours(held.date);
+  const hour = $("call-hours").querySelector('[data-time="' + held.time + '"]');
+  if (hour) hour.setAttribute("aria-pressed", "true");
+  else picked = null;
+});
 
 $("call-days").addEventListener("click", (event) => {
   const chip = event.target.closest(".chip");
