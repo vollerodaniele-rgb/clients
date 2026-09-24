@@ -301,7 +301,7 @@
       <p class="reel-intro">
         Short reels filmed in a single continuous shot. No heavy edit, just the moment as it
         happens in your kitchen, your shop or your studio. Pick how many you want this month,
-        from 8 reels.
+        from 8 to 12.
       </p>
       <p class="reel-run">Runtime approx. <b id="runtime">00:02:00:00</b> &middot; 1 visit</p>
     </header>
@@ -322,7 +322,7 @@
       <div class="strip-wrap">
         <div class="strip" id="strip" aria-hidden="true"></div>
         <div class="playhead" id="playhead" aria-hidden="true"></div>
-        <input type="range" id="slider" min="8" max="20" step="1" value="8" aria-label="Number of reels">
+        <input type="range" id="slider" min="8" max="12" step="1" value="8" aria-label="Number of reels">
       </div>
       <div class="ticks" id="ticks" aria-hidden="true"></div>
 
@@ -398,7 +398,7 @@
 const CONFIG = {
   pricePerReel: 40,
   minSpend: 300,
-  max: 20,
+  max: 12,
   step: 1,
   secondsPerReel: 15,
   daysOffered: 10,    // how many free days to show at once
@@ -407,9 +407,8 @@ const CONFIG = {
   horizonDays: 120,   // and the furthest ahead
   currency: "€",
   bands: [
-    { upTo: 12, title: "Every week", text: "Two or more reels a week. Enough to stay visible without thinking about it." },
-    { upTo: 16, title: "Most days", text: "Something new on your feed four or five days a week, all filmed in one visit." },
-    { upTo: 20, title: "Every day", text: "A reel almost every day of the month, all filmed in one visit." }
+    { upTo: 9, title: "Every week", text: "Two a week. Enough to stay visible without thinking about it." },
+    { upTo: 12, title: "Every few days", text: "Three a week, all filmed in one visit. The most one visit carries." }
   ]
 };
 
