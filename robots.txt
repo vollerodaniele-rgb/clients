@@ -22,6 +22,7 @@ Allow: /index.html
 Allow: /r/
 Allow: /call/
 Allow: /sitemap.xml
+Allow: /reels/
 Allow: /t/
 Allow: /demo/
 Allow: /assets/

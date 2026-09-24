@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>One take reels | Noir au Noir</title>
+  <meta name="robots" content="noindex, nofollow">
+
+  <!-- Sent to people, so it needs a preview when it is forwarded. -->
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Noir au Noir">
+  <meta property="og:title" content="One take. Straight to your feed.">
+  <meta property="og:description" content="Short reels filmed in a single continuous shot, all in one visit. Pick how many you want this month, from 8 reels.">
+  <meta property="og:url" content="https://noiraunoir.com/reels/">
+  <meta property="og:image" content="https://noiraunoir.com/assets/og-call.jpg?v=2">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="description" content="Short reels filmed in a single continuous shot, all in one visit. Pick how many you want this month, from 8 reels.">
+
+  <link rel="stylesheet" href="../assets/styles.css?v=2026-09-17c">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎬</text></svg>">
+
+<style>
+  /* One page, house style. Everything here leans on the shared tokens in
+     assets/styles.css: black ground, Satoshi, ink dimmed by opacity, glass
+     panes, no colour. Emphasis is white or space. */
+
+  .reel-wrap { max-width: 47.5rem; margin: 0 auto; padding: 0 1.25rem 5rem; }
+
+  .reel-head { padding: 4.5rem 0 2.5rem; }
+  .reel-kicker { font-size: 0.62rem; letter-spacing: 0.3em; text-transform: uppercase; color: rgba(242, 242, 242, 0.45); }
+  .reel-title {
+    margin-top: 1.1rem;
+    font-family: var(--font-display);
+    font-weight: 500;
+    font-size: clamp(2.4rem, 6vw, 4rem);
+    line-height: 0.96;
+    letter-spacing: -0.05em;
+    text-wrap: balance;
+  }
+  .reel-intro { margin-top: 1.2rem; max-width: 46ch; font-size: 0.98rem; line-height: 1.7; color: var(--dim); }
+
+  /* the timecode line, in the house's label style rather than a second face */
+  .reel-run {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.6rem;
+    margin-top: 1.6rem;
+    padding: 0.45rem 0.9rem;
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    font-size: 0.64rem;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: rgba(242, 242, 242, 0.6);
+    font-variant-numeric: tabular-nums;
+  }
+  .reel-run b { font-weight: 500; color: var(--text); }
+
+  /* ---------- panes ---------- */
+  .reel-pane {
+    background-color: var(--glass);
+    border: 1px solid var(--glass-edge);
+    box-shadow: var(--glass-lip);
+    border-radius: 20px;
+    padding: 1.9rem;
+  }
+  .reel-pane + .reel-pane { margin-top: 1rem; }
+
+  /* ---------- count and price ---------- */
+  .reel-top { display: flex; justify-content: space-between; align-items: flex-end; gap: 2rem; flex-wrap: wrap; }
+  .reel-figure b {
+    display: block;
+    font-family: var(--font-display);
+    font-weight: 500;
+    font-size: clamp(3.4rem, 11vw, 5.4rem);
+    line-height: 0.88;
+    letter-spacing: -0.05em;
+    font-variant-numeric: tabular-nums;
+  }
+  .reel-figure span { display: block; margin-top: 0.5rem; font-size: 0.64rem; letter-spacing: 0.24em; text-transform: uppercase; color: rgba(242, 242, 242, 0.6); }
+  .reel-money { text-align: right; }
+  .reel-money .reel-sum { font-size: clamp(2.6rem, 8vw, 4rem); }
+  .reel-badge {
+    display: inline-block;
+    margin-top: 0.9rem;
+    padding: 0.35rem 0.8rem;
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    font-size: 0.6rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: rgba(242, 242, 242, 0.6);
+  }
+
+  /* ---------- the strip ---------- */
+  .strip-wrap { position: relative; margin-top: 2.2rem; }
+
+  .strip {
+    position: relative;
+    display: grid;
+    gap: 3px;
+    height: 5.5rem;
+    padding: 6px;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    background: var(--well);
+  }
+
+  .frame {
+    position: relative;
+    border-radius: 4px;
+    background: rgba(255, 255, 255, 0.04);
+    transition: background 0.18s ease;
+  }
+  /* a chosen frame lights up, and carries the small marker a strip has */
+  .frame.on { background: rgba(242, 242, 242, 0.16); }
+  .frame.on::after {
+    content: "";
+    position: absolute;
+    left: 50%;
+    bottom: 7px;
+    width: 5px;
+    height: 5px;
+    margin-left: -2.5px;
+    border-radius: 999px;
+    background: var(--text);
+  }
+
+  /* the playhead, the one thing allowed to be pure white */
+  .playhead {
+    position: absolute;
+    top: -9px;
+    bottom: -9px;
+    width: 1px;
+    background: #fff;
+    transform: translateX(-0.5px);
+    transition: left 0.18s cubic-bezier(.2, .8, .2, 1);
+    pointer-events: none;
+  }
+  .playhead::before {
+    content: "";
+    position: absolute;
+    top: -1px;
+    left: 50%;
+    margin-left: -5px;
+    border-style: solid;
+    border-width: 7px 5px 0 5px;
+    border-color: #fff transparent transparent transparent;
+  }
+
+  /* the real control, invisible over the strip so drag, touch and keys work */
+  .strip-wrap input[type="range"] {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    opacity: 0;
+    cursor: ew-resize;
+    -webkit-appearance: none;
+    appearance: none;
+    background: none;
+  }
+  .strip-wrap input[type="range"]:focus-visible ~ .strip { outline: 2px solid var(--text); outline-offset: 3px; }
+
+  .ticks {
+    display: grid;
+    gap: 3px;
+    margin-top: 0.7rem;
+    padding: 0 6px;
+    font-size: 0.66rem;
+    letter-spacing: 0.06em;
+    color: rgba(242, 242, 242, 0.45);
+    font-variant-numeric: tabular-nums;
+  }
+  .ticks span { text-align: center; }
+  .ticks span.now { color: var(--text); font-weight: 500; }
+
+  .strip-acts { display: flex; gap: 0.6rem; margin-top: 1.4rem; }
+  .step-btn {
+    min-width: 4.4rem;
+    padding: 0.6rem 1rem;
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.06);
+    color: var(--text);
+    font-family: var(--font-body);
+    font-size: 0.72rem;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    cursor: pointer;
+    font-variant-numeric: tabular-nums;
+    transition: background 0.2s;
+  }
+  .step-btn:hover:not(:disabled) { background: rgba(255, 255, 255, 0.12); }
+  .step-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+
+  /* ---------- best for ---------- */
+  .best { display: flex; gap: 1.4rem; align-items: baseline; flex-wrap: wrap; }
+  .best h2 { font-family: var(--font-display); font-weight: 500; font-size: 1.5rem; letter-spacing: -0.03em; }
+  .best p { flex: 1 1 18rem; font-size: 0.92rem; line-height: 1.65; color: var(--dim); }
+
+  /* ---------- included ---------- */
+  .inc-head { font-size: 0.62rem; letter-spacing: 0.3em; text-transform: uppercase; color: rgba(242, 242, 242, 0.45); }
+  .inc {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0 2rem;
+    margin-top: 1.2rem;
+    list-style: none;
+  }
+  .inc li {
+    display: grid;
+    grid-template-columns: 1.9rem 1fr;
+    gap: 0.8rem;
+    align-items: baseline;
+    padding: 0.85rem 0;
+    border-top: 1px solid var(--line-soft);
+    font-size: 0.94rem;
+  }
+  .inc li b { font-weight: 400; font-size: 0.7rem; letter-spacing: 0.12em; color: rgba(242, 242, 242, 0.45); font-variant-numeric: tabular-nums; }
+
+  /* ---------- selection ---------- */
+  .pick-line { font-family: var(--font-display); font-weight: 500; font-size: clamp(1.3rem, 3.4vw, 1.9rem); line-height: 1.25; letter-spacing: -0.03em; text-wrap: balance; }
+  .pick-line em { font-style: normal; }
+  .pick-note { margin-top: 0.9rem; font-size: 0.92rem; line-height: 1.65; color: var(--dim); }
+  .pick-acts { display: flex; align-items: center; gap: 1.2rem; flex-wrap: wrap; margin-top: 1.6rem; }
+  .pick-acts .btn-send { border-radius: 999px; }
+  /* the quiet link beside the button, and not the button itself */
+  .pick-acts a:not(.btn-send) { font-size: 0.72rem; letter-spacing: 0.16em; text-transform: uppercase; color: var(--dim); text-decoration: none; }
+  .pick-acts a:not(.btn-send):hover { color: var(--text); }
+  .pick-acts .btn-send { text-decoration: none; }
+
+  .fine { margin-top: 1.6rem; font-size: 0.72rem; letter-spacing: 0.04em; color: rgba(242, 242, 242, 0.45); }
+
+  /* ---------- lock in a day ---------- */
+  .lock-form { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.9rem; margin-top: 1.6rem; }
+  .lock-form .lock-wide, .lock-send { grid-column: 1 / -1; }
+  .lock-send { display: flex; align-items: center; gap: 1.2rem; flex-wrap: wrap; margin-top: 0.4rem; }
+  .lock-send .btn-send { border-radius: 999px; }
+  .lock-form input[type="date"] { color-scheme: dark; }
+  .lock-done { margin-top: 1.4rem; font-size: 0.95rem; line-height: 1.7; color: var(--text); }
+
+  .num { font-variant-numeric: tabular-nums; }
+
+  @media (max-width: 40rem) {
+    .lock-form { grid-template-columns: minmax(0, 1fr); }
+    .reel-head { padding-top: 3rem; }
+    .reel-top { display: grid; grid-template-columns: minmax(0, 1fr); gap: 1.6rem; }
+    .reel-money { text-align: left; }
+    .reel-pane { padding: 1.4rem; }
+    .strip { height: 4.5rem; }
+    /* every second number goes, so the row never crowds */
+    .ticks span:nth-child(even) { visibility: hidden; }
+    .inc { grid-template-columns: minmax(0, 1fr); gap: 0; }
+    .step-btn { flex: 1; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .frame, .playhead { transition: none; }
+  }
+</style>
+</head>
+<body>
+
+  <main class="reel-wrap">
+
+    <header class="reel-head">
+      <p class="reel-kicker">Noir au Noir</p>
+      <h1 class="reel-title">One take. Straight to your feed.</h1>
+      <p class="reel-intro">
+        Short reels filmed in a single continuous shot. No heavy edit, just the moment as it
+        happens in your kitchen, your shop or your studio. Pick how many you want this month,
+        from 8 reels.
+      </p>
+      <p class="reel-run">Runtime approx. <b id="runtime">00:02:00:00</b> &middot; 1 visit</p>
+    </header>
+
+    <section class="reel-pane">
+      <div class="reel-top" aria-live="polite">
+        <div class="reel-figure">
+          <b id="count">8</b>
+          <span>Reels</span>
+        </div>
+        <div class="reel-figure reel-money">
+          <b class="reel-sum" id="total">&euro;320</b>
+          <span><span id="rate">&euro;40</span> per reel</span>
+          <span class="reel-badge">Minimum order &euro;300</span>
+        </div>
+      </div>
+
+      <div class="strip-wrap">
+        <div class="strip" id="strip" aria-hidden="true"></div>
+        <div class="playhead" id="playhead" aria-hidden="true"></div>
+        <input type="range" id="slider" min="8" max="20" step="1" value="8" aria-label="Number of reels">
+      </div>
+      <div class="ticks" id="ticks" aria-hidden="true"></div>
+
+      <div class="strip-acts">
+        <button class="step-btn" type="button" id="down">&minus; 1</button>
+        <button class="step-btn" type="button" id="up">+ 1</button>
+      </div>
+    </section>
+
+    <section class="reel-pane best">
+      <h2 id="best-title">Every week</h2>
+      <p id="best-text">Two or more reels a week. Enough to stay visible without thinking about it.</p>
+    </section>
+
+    <section class="reel-pane">
+      <p class="inc-head">What is included</p>
+      <ul class="inc">
+        <li><b>01</b><span>Filmed in one continuous take</span></li>
+        <li><b>02</b><span>Vertical 9:16 for Reels and TikTok</span></li>
+        <li><b>03</b><span><span class="num" id="inc-count">8</span> reels, trimmed and colour graded</span></li>
+        <li><b>04</b><span>All filmed in one planned visit</span></li>
+        <li><b>05</b><span>Client portal to share your reel ideas</span></li>
+        <li><b>06</b><span>Rebook next month at the same rate</span></li>
+      </ul>
+    </section>
+
+    <section class="reel-pane">
+      <p class="pick-line">Your selection: <em class="num" id="pick-count">8</em> reels for <em class="num" id="pick-total">&euro;320</em>.</p>
+      <p class="pick-note">Book your visit on a short call and lock in next month while we are there.</p>
+      <div class="pick-acts">
+        <a class="btn-send" href="https://noiraunoir.com/call/">Book a call</a>
+        <a href="#lock">Or take a date now</a>
+      </div>
+      <p class="fine">Prices in EUR, excl. VAT.</p>
+    </section>
+
+    <!-- Straight to a date, for the ones who do not want a call first.
+         It rides the same relay route as the call back form, so it pings
+         Telegram and lands in the agenda with everything he needs. -->
+    <section class="reel-pane" id="lock">
+      <p class="inc-head">Or take a date now</p>
+      <h2 class="pick-line" style="margin-top:0.9rem">Lock in your filming day.</h2>
+      <p class="pick-note" id="lock-lede">Pick a day that suits you. We confirm it within one working day, and bring the plan for your <span class="num" id="lock-count">8</span> reels with us.</p>
+
+      <form class="lock-form" id="lock-form" novalidate>
+        <label class="field"><span>Your day</span>
+          <input type="date" id="lock-date" required>
+        </label>
+        <label class="field"><span>Your name</span>
+          <input type="text" id="lock-name" maxlength="60" autocomplete="name" placeholder="Who are we filming for?" required>
+        </label>
+        <label class="field"><span>Email</span>
+          <input type="email" id="lock-email" maxlength="120" autocomplete="email" placeholder="So we can confirm it" required>
+        </label>
+        <label class="field"><span>Phone</span>
+          <input type="tel" id="lock-phone" maxlength="30" autocomplete="tel" placeholder="The number we should call" required>
+        </label>
+        <label class="field lock-wide"><span>The place, and anything we should know (optional)</span>
+          <input type="text" id="lock-note" maxlength="200" placeholder="Your kitchen, your shop, your studio">
+        </label>
+
+        <!-- bots fill this, people never see it -->
+        <input type="text" id="lock-website" class="hp-field" tabindex="-1" autocomplete="off" aria-hidden="true">
+
+        <div class="lock-send">
+          <button class="btn-send" type="submit" id="lock-btn">Lock in this date</button>
+          <p class="form-msg" id="lock-msg" role="status"></p>
+        </div>
+      </form>
+    </section>
+
+  </main>
+
+<script>
+/* Everything adjustable lives here. */
+const CONFIG = {
+  pricePerReel: 40,
+  minSpend: 300,
+  max: 20,
+  step: 1,
+  secondsPerReel: 15,
+  noticeDays: 1,      // the soonest day a visit can be asked for
+  horizonDays: 120,   // and the furthest ahead
+  currency: "€",
+  bands: [
+    { upTo: 12, title: "Every week", text: "Two or more reels a week. Enough to stay visible without thinking about it." },
+    { upTo: 16, title: "Most days", text: "Something new on your feed four or five days a week, all filmed in one visit." },
+    { upTo: 20, title: "Every day", text: "A reel almost every day of the month, all filmed in one visit." }
+  ]
+};
+
+/* the first count that clears the minimum spend */
+const MIN = Math.ceil(CONFIG.minSpend / CONFIG.pricePerReel);
+
+const $ = (id) => document.getElementById(id);
+const money = (n) => CONFIG.currency + n.toLocaleString("en-GB");
+const pad = (n) => String(n).padStart(2, "0");
+
+/* 15 seconds a reel, written the way an edit suite writes it */
+function timecode(count) {
+  const seconds = count * CONFIG.secondsPerReel;
+  return "00:" + pad(Math.floor(seconds / 60)) + ":" + pad(seconds % 60) + ":00";
+}
+
+const slider = $("slider");
+slider.min = MIN;
+slider.max = CONFIG.max;
+slider.step = CONFIG.step;
+slider.value = MIN;
+
+const COUNTS = [];
+for (let n = MIN; n <= CONFIG.max; n += CONFIG.step) COUNTS.push(n);
+
+/* one frame per reel on offer, and a number under each */
+const cols = "repeat(" + COUNTS.length + ", minmax(0, 1fr))";
+$("strip").style.gridTemplateColumns = cols;
+$("ticks").style.gridTemplateColumns = cols;
+$("strip").innerHTML = COUNTS.map(() => '<div class="frame"></div>').join("");
+$("ticks").innerHTML = COUNTS.map((n) => '<span class="num">' + n + "</span>").join("");
+
+const frames = [...$("strip").children];
+const ticks = [...$("ticks").children];
+
+function draw() {
+  const count = Number(slider.value);
+  const total = count * CONFIG.pricePerReel;
+  const at = COUNTS.indexOf(count);
+
+  $("count").textContent = count;
+  $("total").textContent = money(total);
+  $("rate").textContent = money(CONFIG.pricePerReel);
+  $("runtime").textContent = timecode(count);
+  $("inc-count").textContent = count;
+  $("pick-count").textContent = count;
+  $("pick-total").textContent = money(total);
+
+  frames.forEach((frame, i) => frame.classList.toggle("on", i <= at));
+  ticks.forEach((tick, i) => tick.classList.toggle("now", i === at));
+
+  // the playhead sits in the middle of the frame it is on
+  $("playhead").style.left = ((at + 0.5) / COUNTS.length * 100) + "%";
+
+  const band = CONFIG.bands.find((b) => count <= b.upTo) || CONFIG.bands[CONFIG.bands.length - 1];
+  $("best-title").textContent = band.title;
+  $("best-text").textContent = band.text;
+
+  $("down").disabled = count <= MIN;
+  $("up").disabled = count >= CONFIG.max;
+
+  if ($("lock-count")) $("lock-count").textContent = count;
+}
+
+const nudge = (by) => {
+  slider.value = Math.min(CONFIG.max, Math.max(MIN, Number(slider.value) + by));
+  draw();
+};
+
+slider.addEventListener("input", draw);
+$("down").addEventListener("click", () => nudge(-CONFIG.step));
+$("up").addEventListener("click", () => nudge(CONFIG.step));
+
+/* ---------- lock in a day ---------- */
+/* The same relay route the call back form uses, so a date asked for here
+   pings Telegram and turns up in the agenda with the selection attached.
+   Nothing is written to the site, and the confirmation goes to his own
+   address, never to one the sender chooses. */
+const RELAY = "https://kresha-idea-box.vollerodaniele.workers.dev";
+
+const form = $("lock-form");
+const dateField = $("lock-date");
+
+/* the soonest day worth offering, so nobody asks for this afternoon */
+const iso = (d) => d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate());
+const soonest = new Date();
+soonest.setDate(soonest.getDate() + CONFIG.noticeDays);
+const furthest = new Date();
+furthest.setDate(furthest.getDate() + CONFIG.horizonDays);
+dateField.min = iso(soonest);
+dateField.max = iso(furthest);
+
+const longDate = (value) => {
+  const d = new Date(value + "T00:00:00");
+  return isNaN(d.getTime()) ? value : d.toLocaleDateString("en-GB", {
+    weekday: "long", day: "numeric", month: "long", year: "numeric"
+  });
+};
+
+form.addEventListener("submit", async (event) => {
+  event.preventDefault();
+
+  const msg = $("lock-msg");
+  const btn = $("lock-btn");
+  const count = Number(slider.value);
+  const date = dateField.value;
+  const name = $("lock-name").value.trim();
+  const email = $("lock-email").value.trim();
+  const phone = $("lock-phone").value.trim();
+  const about = $("lock-note").value.trim();
+
+  if (!date) { msg.textContent = "Pick a day first."; dateField.focus(); return; }
+  if (date < dateField.min) { msg.textContent = "Pick a day from tomorrow onwards."; dateField.focus(); return; }
+  if (!name) { msg.textContent = "Please add your name."; $("lock-name").focus(); return; }
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) { msg.textContent = "Please add an email we can confirm it to."; $("lock-email").focus(); return; }
+  if (!/^[+(\d][\d\s()./-]{5,}$/.test(phone)) { msg.textContent = "Please add a number we can call you on."; $("lock-phone").focus(); return; }
+
+  btn.disabled = true;
+  msg.textContent = "Sending...";
+
+  const note = "One take reels: " + count + " reels for " +
+    money(count * CONFIG.pricePerReel) + ". Asked for " + longDate(date) + "." +
+    (about ? "\nWhere: " + about : "");
+
+  try {
+    const res = await fetch(RELAY + "/call/back", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name, email, phone, note, website: $("lock-website").value })
+    });
+    if (!res.ok) throw new Error("relay " + res.status);
+
+    const done = document.createElement("p");
+    done.className = "lock-done";
+    done.textContent = "Asked for " + longDate(date) +
+      ". We confirm it within one working day, by email and by phone.";
+    form.replaceWith(done);
+    $("lock-lede").textContent = "That day is with us now.";
+  } catch (err) {
+    console.error("lock failed:", err);
+    msg.textContent = "Could not send that right now. Try again in a minute, or write to info@noiraunoir.com.";
+    btn.disabled = false;
+  }
+});
+
+draw();
+</script>
+</body>
+</html>
