@@ -300,6 +300,7 @@
   .shot {
     position: relative;
     aspect-ratio: 9 / 16;
+    align-self: start;
     border: 1px solid var(--glass-edge);
     border-radius: 12px;
     background: var(--well);
@@ -341,6 +342,11 @@
 
   .shot.playing i { opacity: 0; }
   .shot:focus-visible { outline: 2px solid var(--text); outline-offset: 2px; }
+
+  /* A horizontal film is not a tall one with the sides cut off, so it
+     takes two slots and its own shape. The grid is a contact sheet, and
+     a contact sheet is allowed to be ragged. */
+  .shot.wide { aspect-ratio: 16 / 9; grid-column: span 2; }
 
   .shots-note { margin-top: 0.9rem; font-size: 0.8rem; color: rgba(242, 242, 242, 0.45); }
 
@@ -413,7 +419,7 @@
       <p class="inc-head">What is included</p>
       <ul class="inc">
         <li><b>01</b><span>Filmed in one continuous take</span></li>
-        <li><b>02</b><span>Vertical 9:16 for Reels and TikTok</span></li>
+        <li><b>02</b><span>Vertical 9:16, or horizontal 16:9 if you ask</span></li>
         <li><b>03</b><span><span class="num" id="inc-count">8</span> reels, trimmed and colour graded</span></li>
         <li><b>04</b><span>All filmed in one planned visit</span></li>
         <li><b>05</b><span>Client portal to share your reel ideas</span></li>
@@ -498,7 +504,12 @@ const SHOTS = { folder: "examples/", count: 10, ext: ".mp4" };
     // a slot with no file is not a broken tile, it is not a tile, and
     // the section only appears once something in it has actually loaded
     film.addEventListener("error", () => { tile.remove(); alive--; });
-    film.addEventListener("loadedmetadata", () => { pane.hidden = false; });
+    film.addEventListener("loadedmetadata", () => {
+      // the file says which way round it is, so nothing has to be named
+      // or listed: drop a horizontal one in and it lands horizontal
+      if (film.videoWidth > film.videoHeight) tile.classList.add("wide");
+      pane.hidden = false;
+    });
 
     const mark = document.createElement("b");
     mark.textContent = num;
