@@ -496,6 +496,12 @@ const SHOTS = { folder: "examples/", count: 10, ext: ".mp4" };
 
     const film = document.createElement("video");
     film.src = SHOTS.folder + num + SHOTS.ext;
+
+    /* Files land here named 01.mp4 or 1.mp4 depending on what the phone
+       called them, and both are the same slot. The padded name is asked
+       for first and the bare one is the second try, so neither naming
+       has to be corrected by hand. */
+    let tried = false;
     film.muted = true;
     film.loop = true;
     film.playsInline = true;
@@ -503,11 +509,20 @@ const SHOTS = { folder: "examples/", count: 10, ext: ".mp4" };
 
     // a slot with no file is not a broken tile, it is not a tile, and
     // the section only appears once something in it has actually loaded
-    film.addEventListener("error", () => { tile.remove(); alive--; });
+    film.addEventListener("error", () => {
+      if (!tried) { tried = true; film.src = SHOTS.folder + n + SHOTS.ext; film.load(); return; }
+      tile.remove();
+      alive--;
+    });
     film.addEventListener("loadedmetadata", () => {
       // the file says which way round it is, so nothing has to be named
       // or listed: drop a horizontal one in and it lands horizontal
-      if (film.videoWidth > film.videoHeight) tile.classList.add("wide");
+      if (film.videoWidth > film.videoHeight) {
+        tile.classList.add("wide");
+        // its own shape, not a 16:9 guess: a 5:4 film would lose its top
+        // and bottom to a tile that assumed widescreen
+        tile.style.aspectRatio = film.videoWidth + " / " + film.videoHeight;
+      }
       pane.hidden = false;
     });
 
