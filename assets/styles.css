@@ -2419,3 +2419,19 @@ html:not(.locked) .lock { display: none; }
 @media (prefers-reduced-motion: reduce) {
   .lock-go { transition: none; }
 }
+
+/* ============ DATE AND TIME PICKERS IN THE EDITOR ============ */
+/* The browser draws its own calendar and clock. Told the page is dark,
+   it draws them dark too, with an icon that shows on black. Scoped to
+   the editor, so the portals keep exactly what they had. */
+.admin-wrap .field input[type="date"],
+.admin-wrap .field input[type="time"] {
+  color-scheme: dark;
+  cursor: pointer;
+}
+
+.admin-wrap .field input[type="date"]::-webkit-calendar-picker-indicator,
+.admin-wrap .field input[type="time"]::-webkit-calendar-picker-indicator {
+  opacity: 0.7;
+  cursor: pointer;
+}

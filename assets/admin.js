@@ -115,8 +115,8 @@ function render() {
 
   app.appendChild(panel("Next shoot", (body) => {
     body.appendChild(row(
-      textField("Date (YYYY-MM-DD)", plan.nextShoot, "date"),
-      textField("Time", plan.nextShoot, "time")
+      dateField("Date", plan.nextShoot, "date"),
+      timeField("Time", plan.nextShoot, "time")
     ));
     body.appendChild(row(
       textField("Location", plan.nextShoot, "location"),
@@ -178,8 +178,8 @@ function render() {
       date: "", time: "", platform: "Instagram Reel", title: "", caption: "", status: "planned"
     }), (post, body) => {
       body.appendChild(row(
-        textField("Date (YYYY-MM-DD)", post, "date"),
-        textField("Time", post, "time"),
+        dateField("Date", post, "date"),
+        timeField("Time", post, "time"),
         selectField("Where", post, "platform",
           ["Instagram Reel", "Instagram Photo", "Carousel", "Story", "TikTok", "Facebook", "Other"]),
         selectField("Status", post, "status", ["planned", "posted"])
@@ -227,7 +227,7 @@ function render() {
       textField("Period", inv, "period")
     ));
     body.appendChild(row(
-      textField("Issued (YYYY-MM-DD)", inv, "issued"),
+      dateField("Issued", inv, "issued"),
       selectField("Status", inv, "status", ["upcoming", "open", "paid"]),
       textField("Link to PDF (optional)", inv, "url")
     ));
@@ -687,7 +687,7 @@ function kindPanel(isProject) {
 
     body.appendChild(textField("What the job is (one line)", project, "what"));
     body.appendChild(row(
-      textField("Delivered by (YYYY-MM-DD)", project, "deliverBy"),
+      dateField("Delivered by", project, "deliverBy"),
       stageField(project)
     ));
     body.appendChild(linesField("The stages, in order, one per line", project, "stages"));
@@ -845,8 +845,8 @@ function shootPickPanel() {
       focus: ""
     }), (opt, wrap) => {
       wrap.appendChild(row(
-        textField("Date (YYYY-MM-DD)", opt, "date"),
-        textField("Time", opt, "time")
+        dateField("Date", opt, "date"),
+        timeField("Time", opt, "time")
       ));
       wrap.appendChild(row(
         textField("Location", opt, "location"),
@@ -1603,6 +1603,32 @@ function field(label, control) {
   span.textContent = label;
   lab.append(span, control);
   return lab;
+}
+
+/* A calendar to click rather than a format to remember. If what is
+   stored is not something the picker can show, the field stays plain
+   text instead, because a picker handed a value it cannot read shows it
+   as empty and the next edit would wipe it. */
+function dateField(label, obj, key) {
+  return pickerField(label, obj, key, "date", /^\d{4}-\d{2}-\d{2}$/);
+}
+
+function timeField(label, obj, key) {
+  return pickerField(label, obj, key, "time", /^\d{2}:\d{2}$/);
+}
+
+function pickerField(label, obj, key, type, shape) {
+  const now = obj[key] == null ? "" : String(obj[key]);
+  if (now && !shape.test(now)) return textField(label, obj, key);
+
+  const input = document.createElement("input");
+  input.type = type;
+  input.value = now;
+  // Chrome reports a pick as input, Safari only as change
+  const keep = () => { obj[key] = input.value; };
+  input.addEventListener("input", keep);
+  input.addEventListener("change", keep);
+  return field(label, input);
 }
 
 function textField(label, obj, key, multiline) {
