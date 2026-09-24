@@ -43,11 +43,36 @@ function unlockPage() {
 /* Runs while the page is still being parsed, on purpose. Deciding at
    DOMContentLoaded would show the lock for a frame to somebody who
    already has a key. */
+let openedOnTrust = false;
+
 (function () {
   let saved = "";
   try { saved = localStorage.getItem(TOKEN_KEY) || ""; } catch { /* blocked storage stays shut */ }
-  if (saved) unlockPage();
+  if (saved) { openedOnTrust = true; unlockPage(); }
 })();
+
+/* Is this key still any good? A key that has expired or been withdrawn
+   still reads a public repo perfectly well, so the page looks right and
+   only fails at the moment something is saved, which is the worst
+   moment to find out. */
+async function vet(key) {
+  let res;
+  try {
+    res = await fetch(`https://api.github.com/repos/${OWNER}/${REPO}`, {
+      headers: { Authorization: "Bearer " + key, Accept: "application/vnd.github+json" },
+      cache: "no-store"
+    });
+  } catch (err) {
+    console.error("key check failed:", err);
+    return "unknown"; // no line to GitHub is not a bad key
+  }
+
+  if (res.status === 401 || res.status === 403) return "refused";
+  if (!res.ok) return "unknown";
+
+  const info = await res.json();
+  return info.permissions && info.permissions.push ? "good" : "readonly";
+}
 
 /* ============ THE SCREEN ITSELF ============ */
 /* This file is asked for with a timestamp to dodge the ten minute
@@ -76,28 +101,13 @@ function unlockPage() {
     const open = async (key) => {
       msg.textContent = "Checking...";
 
-      let res;
-      try {
-        res = await fetch(`https://api.github.com/repos/${OWNER}/${REPO}`, {
-          headers: { Authorization: "Bearer " + key, Accept: "application/vnd.github+json" },
-          cache: "no-store"
-        });
-      } catch (err) {
-        console.error("lock check failed:", err);
-        refuse("No line to GitHub.");
-        return;
-      }
-
-      if (res.status === 401) { refuse("Not accepted."); return; }
-      if (!res.ok) { refuse("GitHub said no (" + res.status + ")."); return; }
-
-      const info = await res.json();
-      if (!info.permissions || !info.permissions.push) {
-        refuse("That key cannot write.");
-        return;
-      }
+      const verdict = await vet(key);
+      if (verdict === "refused") { refuse("Not accepted."); return; }
+      if (verdict === "readonly") { refuse("That key cannot write."); return; }
+      if (verdict === "unknown") { refuse("No line to GitHub."); return; }
 
       localStorage.setItem(TOKEN_KEY, key);
+      openedOnTrust = false;
       unlockPage();
     };
 
@@ -112,7 +122,23 @@ function unlockPage() {
       if (e.key === "Enter") { e.preventDefault(); btn.click(); }
     });
 
-    if (!pageOpen) input.focus();
+    if (!pageOpen) { input.focus(); return; }
+
+    /* Opened on the key that was already here. It let him in without a
+       wait, which is the point, but it is worth knowing quietly whether
+       it can still write, and shutting the door again if it cannot. */
+    if (openedOnTrust) {
+      vet(localStorage.getItem(TOKEN_KEY) || "").then((verdict) => {
+        if (verdict === "good" || verdict === "unknown") return;
+        try { localStorage.removeItem(TOKEN_KEY); } catch { /* nothing to forget */ }
+        pageOpen = false;
+        document.documentElement.classList.add("locked");
+        msg.textContent = verdict === "readonly"
+          ? "That key can no longer write. Paste a new one."
+          : "That key has stopped working. Paste a new one.";
+        input.focus();
+      });
+    }
   }
 })();
 

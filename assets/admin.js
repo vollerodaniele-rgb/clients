@@ -1820,7 +1820,10 @@ async function save() {
   try {
     const api = `https://api.github.com/repos/${OWNER}/${REPO}/contents/${FILE}`;
     const headers = {
-      "Authorization": "Bearer " + token,
+      // token is the reader, not the key: calling it is the whole point,
+      // and without the brackets GitHub is handed this function's source
+      // code as the bearer token and answers 401 every time
+      "Authorization": "Bearer " + token(),
       "Accept": "application/vnd.github+json"
     };
 
