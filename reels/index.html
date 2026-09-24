@@ -248,7 +248,7 @@
   .lock-send .btn-send { border-radius: 999px; }
   .lock-send a { font-size: 0.72rem; letter-spacing: 0.16em; text-transform: uppercase; color: var(--dim); text-decoration: none; }
   .lock-send a:hover { color: var(--text); }
-  .lock-form input[type="date"] { color-scheme: dark; }
+  .lock-form input[type="date"], .lock-form input[type="time"] { color-scheme: dark; }
   .lock-done { margin-top: 1.4rem; font-size: 0.95rem; line-height: 1.7; color: var(--text); }
 
   .num { font-variant-numeric: tabular-nums; }
@@ -335,10 +335,10 @@
          back form, so it pings Telegram and lands in the agenda. -->
     <section class="reel-pane" id="lock">
       <p class="pick-line">Your selection: <em class="num" id="pick-count">8</em> reels for <em class="num" id="pick-total">&euro;320</em>.</p>
-      <p class="pick-note" id="lock-lede">Pick the day we come and film them. We confirm it within one working day, and bring the plan for your <span class="num" id="lock-count">8</span> reels with us.</p>
+      <p class="pick-note" id="lock-lede">Pick the day we come and film your <span class="num" id="lock-count">8</span> reels, and say when we should ring you to confirm it.</p>
 
       <form class="lock-form" id="lock-form" novalidate>
-        <label class="field"><span>Your day</span>
+        <label class="field"><span>The day you want to be filmed</span>
           <input type="date" id="lock-date" required>
         </label>
         <label class="field"><span>Your name</span>
@@ -349,6 +349,12 @@
         </label>
         <label class="field"><span>Phone</span>
           <input type="tel" id="lock-phone" maxlength="30" autocomplete="tel" placeholder="The number we should call" required>
+        </label>
+        <label class="field"><span>The day we should call you</span>
+          <input type="date" id="call-date" required>
+        </label>
+        <label class="field"><span>And what time</span>
+          <input type="time" id="call-time" step="900" value="10:00" required>
         </label>
         <label class="field lock-wide"><span>The place, and anything we should know (optional)</span>
           <input type="text" id="lock-note" maxlength="200" placeholder="Your kitchen, your shop, your studio">
@@ -475,6 +481,12 @@ furthest.setDate(furthest.getDate() + CONFIG.horizonDays);
 dateField.min = iso(soonest);
 dateField.max = iso(furthest);
 
+/* the call can be today, the filming cannot */
+const callDate = $("call-date");
+const callTime = $("call-time");
+callDate.min = iso(new Date());
+callDate.max = iso(furthest);
+
 const longDate = (value) => {
   const d = new Date(value + "T00:00:00");
   return isNaN(d.getTime()) ? value : d.toLocaleDateString("en-GB", {
@@ -494,17 +506,25 @@ form.addEventListener("submit", async (event) => {
   const phone = $("lock-phone").value.trim();
   const about = $("lock-note").value.trim();
 
-  if (!date) { msg.textContent = "Pick a day first."; dateField.focus(); return; }
-  if (date < dateField.min) { msg.textContent = "Pick a day from tomorrow onwards."; dateField.focus(); return; }
+  const ringDay = callDate.value;
+  const ringAt = callTime.value;
+
+  if (!date) { msg.textContent = "Pick the day you want to be filmed."; dateField.focus(); return; }
+  if (date < dateField.min) { msg.textContent = "Pick a filming day from tomorrow onwards."; dateField.focus(); return; }
   if (!name) { msg.textContent = "Please add your name."; $("lock-name").focus(); return; }
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) { msg.textContent = "Please add an email we can confirm it to."; $("lock-email").focus(); return; }
   if (!/^[+(\d][\d\s()./-]{5,}$/.test(phone)) { msg.textContent = "Please add a number we can call you on."; $("lock-phone").focus(); return; }
+  if (!ringDay) { msg.textContent = "Pick the day we should call you."; callDate.focus(); return; }
+  if (ringDay < callDate.min) { msg.textContent = "Pick a call day from today onwards."; callDate.focus(); return; }
+  if (!ringAt) { msg.textContent = "Pick a time for the call."; callTime.focus(); return; }
 
   btn.disabled = true;
   msg.textContent = "Sending...";
 
   const note = "One take reels: " + count + " reels for " +
-    money(count * CONFIG.pricePerReel) + ". Asked for " + longDate(date) + "." +
+    money(count * CONFIG.pricePerReel) + "." +
+    "\nFilming day asked for: " + longDate(date) +
+    "\nWants a call: " + longDate(ringDay) + " at " + ringAt +
     (about ? "\nWhere: " + about : "");
 
   try {
@@ -517,8 +537,8 @@ form.addEventListener("submit", async (event) => {
 
     const done = document.createElement("p");
     done.className = "lock-done";
-    done.textContent = "Asked for " + longDate(date) +
-      ". We confirm it within one working day, by email and by phone.";
+    done.textContent = "Asked for " + longDate(date) + ". We ring you on " +
+      longDate(ringDay) + " at " + ringAt + " to confirm it.";
     form.replaceWith(done);
     $("lock-lede").textContent = "That day is with us now.";
   } catch (err) {
