@@ -353,8 +353,8 @@
         <label class="field"><span>The day we should call you</span>
           <input type="date" id="call-date" required>
         </label>
-        <label class="field"><span>And what time</span>
-          <input type="time" id="call-time" step="900" value="10:00" required>
+        <label class="field"><span>And what time, between 11:00 and 19:00</span>
+          <input type="time" id="call-time" step="900" value="11:00" min="11:00" max="19:00" required>
         </label>
         <label class="field lock-wide"><span>The place, and anything we should know (optional)</span>
           <input type="text" id="lock-note" maxlength="200" placeholder="Your kitchen, your shop, your studio">
@@ -382,6 +382,8 @@ const CONFIG = {
   max: 20,
   step: 1,
   secondsPerReel: 15,
+  callFrom: "11:00",  // the hours he answers the phone
+  callTo: "19:00",
   noticeDays: 1,      // the soonest day a visit can be asked for
   horizonDays: 120,   // and the furthest ahead
   currency: "€",
@@ -484,6 +486,9 @@ dateField.max = iso(furthest);
 /* the call can be today, the filming cannot */
 const callDate = $("call-date");
 const callTime = $("call-time");
+callTime.min = CONFIG.callFrom;
+callTime.max = CONFIG.callTo;
+callTime.value = CONFIG.callFrom;
 callDate.min = iso(new Date());
 callDate.max = iso(furthest);
 
@@ -517,6 +522,12 @@ form.addEventListener("submit", async (event) => {
   if (!ringDay) { msg.textContent = "Pick the day we should call you."; callDate.focus(); return; }
   if (ringDay < callDate.min) { msg.textContent = "Pick a call day from today onwards."; callDate.focus(); return; }
   if (!ringAt) { msg.textContent = "Pick a time for the call."; callTime.focus(); return; }
+  // the phone is answered between these two, so nothing outside them is offered
+  if (ringAt < CONFIG.callFrom || ringAt > CONFIG.callTo) {
+    msg.textContent = "We take calls between " + CONFIG.callFrom + " and " + CONFIG.callTo + ".";
+    callTime.focus();
+    return;
+  }
 
   btn.disabled = true;
   msg.textContent = "Sending...";
