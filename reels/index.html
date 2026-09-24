@@ -246,6 +246,8 @@
   .lock-form .lock-wide, .lock-send { grid-column: 1 / -1; }
   .lock-send { display: flex; align-items: center; gap: 1.2rem; flex-wrap: wrap; margin-top: 0.4rem; }
   .lock-send .btn-send { border-radius: 999px; }
+  .lock-send a { font-size: 0.72rem; letter-spacing: 0.16em; text-transform: uppercase; color: var(--dim); text-decoration: none; }
+  .lock-send a:hover { color: var(--text); }
   .lock-form input[type="date"] { color-scheme: dark; }
   .lock-done { margin-top: 1.4rem; font-size: 0.95rem; line-height: 1.7; color: var(--text); }
 
@@ -328,23 +330,12 @@
       </ul>
     </section>
 
-    <section class="reel-pane">
-      <p class="pick-line">Your selection: <em class="num" id="pick-count">8</em> reels for <em class="num" id="pick-total">&euro;320</em>.</p>
-      <p class="pick-note">Book your visit on a short call and lock in next month while we are there.</p>
-      <div class="pick-acts">
-        <a class="btn-send" href="https://noiraunoir.com/call/">Book a call</a>
-        <a href="#lock">Or take a date now</a>
-      </div>
-      <p class="fine">Prices in EUR, excl. VAT.</p>
-    </section>
-
-    <!-- Straight to a date, for the ones who do not want a call first.
-         It rides the same relay route as the call back form, so it pings
-         Telegram and lands in the agenda with everything he needs. -->
+    <!-- The selection and the day it happens are one thing, so they are
+         one pane. Asking for a day rides the same relay route as the call
+         back form, so it pings Telegram and lands in the agenda. -->
     <section class="reel-pane" id="lock">
-      <p class="inc-head">Or take a date now</p>
-      <h2 class="pick-line" style="margin-top:0.9rem">Lock in your filming day.</h2>
-      <p class="pick-note" id="lock-lede">Pick a day that suits you. We confirm it within one working day, and bring the plan for your <span class="num" id="lock-count">8</span> reels with us.</p>
+      <p class="pick-line">Your selection: <em class="num" id="pick-count">8</em> reels for <em class="num" id="pick-total">&euro;320</em>.</p>
+      <p class="pick-note" id="lock-lede">Pick the day we come and film them. We confirm it within one working day, and bring the plan for your <span class="num" id="lock-count">8</span> reels with us.</p>
 
       <form class="lock-form" id="lock-form" novalidate>
         <label class="field"><span>Your day</span>
@@ -368,9 +359,11 @@
 
         <div class="lock-send">
           <button class="btn-send" type="submit" id="lock-btn">Lock in this date</button>
+          <a href="https://noiraunoir.com/call/">Rather talk first?</a>
           <p class="form-msg" id="lock-msg" role="status"></p>
         </div>
       </form>
+      <p class="fine">Prices in EUR, excl. VAT.</p>
     </section>
 
   </main>
