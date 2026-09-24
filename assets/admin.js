@@ -237,16 +237,12 @@ function render() {
 
   app.appendChild(requestsPanel());
 
+  /* Only the line itself now. The question and the address under it
+     were removed from the portal, and a field that changes nothing on
+     the page is worse than no field. Whatever was typed in them stays
+     in the data file, harmless, in case they ever come back. */
   app.appendChild(panel("Contact footer", (body) => {
-    body.appendChild(row(
-      textField("Footer line", plan.contact, "line"),
-      textField("Email", plan.contact, "email")
-    ));
-    body.appendChild(textField(
-      isProject
-        ? "Question above the email (blank uses: Questions about the day or the film?)"
-        : "Question above the email (blank uses: Questions about planning or content?)",
-      plan.contact, "note"));
+    body.appendChild(textField("Footer line", plan.contact, "line"));
   }, plan.contact.line || ""));
 }
 

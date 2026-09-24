@@ -1296,20 +1296,18 @@ function renderInvoices(invoices) {
   }
 }
 
-function renderFooter(contact, isProject) {
+function renderFooter(contact) {
   if (!contact) return;
   $("contact-line").textContent = contact.line || "NOIR AU NOIR";
 
-  // "planning and content" is retainer language. A wedding client is
-  // not planning anything, they are waiting for a film.
-  const question = contact.note || (isProject
-    ? "Questions about the day or the film?"
-    : "Questions about planning or content?");
+  /* The line under it, asking whether they had questions and giving an
+     address, is gone. A client who has this page already knows how to
+     reach us, and it read like a sign-off on a newsletter.
 
-  const p = document.querySelector(".footer .muted");
-  p.innerHTML = contact.email
-    ? `${esc(question)} <a href="mailto:${esc(contact.email)}">${esc(contact.email)}</a>`
-    : `${esc(question)} One message away.`;
+     Emptied rather than left alone, because a page cached from before
+     this change still carries the old sentence in its markup. */
+  const line = document.querySelector(".footer .muted");
+  if (line) line.remove();
 }
 
 function esc(s) {
