@@ -223,5 +223,11 @@
       }
     ]
   },
-  "deliveries": []
+  "deliveries": [
+    {
+      "month": "2026-09",
+      "label": "September 2026",
+      "note": ""
+    }
+  ]
 }
