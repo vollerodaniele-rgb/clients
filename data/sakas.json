@@ -231,7 +231,14 @@
       "platform": "Instagram Reel",
       "title": "",
       "caption": "",
-      "status": "planned"
+      "status": "planned",
+      "videos": [
+        {
+          "month": "2026-09",
+          "name": "knife 1.mp4"
+        }
+      ],
+      "thumb": "pZVtjyUN"
     }
   ],
   "project": {
