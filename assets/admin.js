@@ -530,25 +530,97 @@ function fileArea(d) {
     if (!d.month) { msg.textContent = "Pick a month before adding files."; return; }
     if (!token()) { msg.textContent = "Save your access key first."; return; }
 
+    /* Checked before a single byte is sent. The same name and the same
+       size is the same delivery, whichever month it went into, so it is
+       skipped rather than sent again. The same name at a new size is a
+       new export of it, which replaces the old one in this month. A
+       renamed copy is not caught: that would mean reading every file
+       through before sending it. */
+    msg.textContent = "Checking what is already delivered...";
+    const known = await deliveredSoFar();
+    const here = known.get(d.month) || new Map();
+    known.set(d.month, here);
+
+    const called = (month) => {
+      const entry = (plan.deliveries || []).find((x) => x.month === month);
+      return (entry && entry.label) || month;
+    };
+
+    let sent = 0;
+    let replaced = 0;
+    const skipped = [];
+    let failed = "";
+
     for (let i = 0; i < files.length; i++) {
       const file = files[i];
+
+      if (here.get(file.name) === file.size) {
+        skipped.push(file.name + " (already in this month)");
+        continue;
+      }
+      const elsewhere = [...known].find(([month, names]) =>
+        month !== d.month && names.get(file.name) === file.size);
+      if (elsewhere) {
+        skipped.push(file.name + " (already in " + called(elsewhere[0]) + ")");
+        continue;
+      }
+
+      const replacing = here.has(file.name);
       const label = `${file.name} (${i + 1} of ${files.length})`;
       try {
         await uploadDelivery(d.month, file, (pct) => {
           msg.textContent = `Sending ${label} ${pct}%`;
         });
-        msg.textContent = `Sent ${label}`;
+        sent++;
+        if (replacing) replaced++;
+        // the same file picked twice in one go is sent once
+        here.set(file.name, file.size);
       } catch (err) {
-        msg.textContent = `${file.name} did not send: ${err.message}`;
+        failed = `${file.name} did not send: ${err.message}`;
         break;
       }
     }
+
+    const said = [];
+    if (sent) said.push(`Sent ${sent}` + (replaced ? `, of which ${replaced} replaced an older export` : "") + ".");
+    if (skipped.length) said.push(`Skipped ${skipped.length}, already delivered: ${skipped.join(", ")}.`);
+    if (failed) said.push(failed);
+    msg.textContent = said.join(" ") || "Nothing to send.";
+
+    // the post pickers read the delivered files once, so they learn again
+    filmsKnown = null;
     draw();
   });
 
   wrap.append(pick, msg);
   draw();
   return wrap;
+}
+
+/* Everything already delivered to this client, month by month, as
+   name to size. Read fresh each time, since a file may have gone up from
+   another browser since the page opened. */
+async function deliveredSoFar() {
+  const months = [...new Set((plan.deliveries || []).map((x) => x.month).filter(Boolean))];
+  const known = new Map();
+
+  await Promise.all(months.map(async (month) => {
+    try {
+      const res = await fetch(
+        `${RELAY_URL}/delivery?client=${encodeURIComponent(CLIENT)}&month=${encodeURIComponent(month)}`,
+        { cache: "no-store" }
+      );
+      if (!res.ok) return;
+      const names = new Map();
+      for (const f of (await res.json()).files || []) names.set(f.name, f.size);
+      known.set(month, names);
+    } catch (err) {
+      // a month that cannot be read is not checked, never a reason to stop
+      console.error("could not read " + month + ":", err);
+    }
+  }));
+
+  return known;
 }
 
 /* XHR rather than fetch, only because it reports upload progress and a
