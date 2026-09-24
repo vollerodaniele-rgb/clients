@@ -286,6 +286,68 @@
     .step-btn { flex: 1; min-height: 2.75rem; font-size: 0.78rem; }
   }
 
+  /* ============ TEN OF THEM ============ */
+  /* A fixed grid: ten slots, five and five on a desktop, whatever the
+     files are. Nothing plays by itself, because ten moving tiles is a
+     shop window, not a page. */
+  .shots {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 0.6rem;
+    margin-top: 1.2rem;
+  }
+
+  .shot {
+    position: relative;
+    aspect-ratio: 9 / 16;
+    border: 1px solid var(--glass-edge);
+    border-radius: 12px;
+    background: var(--well);
+    overflow: hidden;
+    cursor: pointer;
+    padding: 0;
+  }
+
+  .shot video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+
+  /* the number, so a tile reads as one of ten even before it loads */
+  .shot b {
+    position: absolute;
+    left: 0.5rem;
+    top: 0.4rem;
+    font-size: 0.62rem;
+    font-weight: 600;
+    letter-spacing: 0.14em;
+    color: rgba(242, 242, 242, 0.7);
+    text-shadow: 0 1px 6px rgba(0, 0, 0, 0.7);
+  }
+
+  .shot i {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    font-style: normal;
+    font-size: 1.1rem;
+    color: var(--text);
+    text-shadow: 0 2px 10px rgba(0, 0, 0, 0.8);
+    transition: opacity 0.15s;
+  }
+
+  .shot.playing i { opacity: 0; }
+  .shot:focus-visible { outline: 2px solid var(--text); outline-offset: 2px; }
+
+  .shots-note { margin-top: 0.9rem; font-size: 0.8rem; color: rgba(242, 242, 242, 0.45); }
+
+  @media (max-width: 56rem) { .shots { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+  /* two on a phone: ten tiles three abreast is a contact sheet, not a reel */
+  @media (max-width: 34rem) { .shots { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.5rem; } }
+
   @media (prefers-reduced-motion: reduce) {
     .frame, .playhead { transition: none; }
   }
@@ -301,7 +363,7 @@
       <p class="reel-intro">
         Short reels filmed in a single continuous shot. No heavy edit, just the moment as it
         happens in your kitchen, your shop or your studio. Pick how many you want this month,
-        from 8 to 12.
+        from 8 to 15.
       </p>
       <p class="reel-run">Runtime approx. <b id="runtime">00:02:00:00</b> &middot; 1 visit</p>
     </header>
@@ -322,7 +384,7 @@
       <div class="strip-wrap">
         <div class="strip" id="strip" aria-hidden="true"></div>
         <div class="playhead" id="playhead" aria-hidden="true"></div>
-        <input type="range" id="slider" min="8" max="12" step="1" value="8" aria-label="Number of reels">
+        <input type="range" id="slider" min="8" max="15" step="1" value="8" aria-label="Number of reels">
       </div>
       <div class="ticks" id="ticks" aria-hidden="true"></div>
 
@@ -335,6 +397,16 @@
     <section class="reel-pane best">
       <h2 id="best-title">Every week</h2>
       <p id="best-text">Two or more reels a week. Enough to stay visible without thinking about it.</p>
+    </section>
+
+    <!-- Ten slots, filled by whatever sits in reels/examples as 01.mp4
+         through 10.mp4. A slot whose file is missing takes itself out,
+         and the whole section hides when none of them load, so the page
+         is never a wall of broken tiles. -->
+    <section class="reel-pane" id="shots-pane" hidden>
+      <p class="inc-head">Ten of them</p>
+      <div class="shots" id="shots"></div>
+      <p class="shots-note">Tap one to play it. They are silent on purpose, the feed is too.</p>
     </section>
 
     <section class="reel-pane">
@@ -394,11 +466,67 @@
   </main>
 
 <script>
+/* ============ TEN OF THEM ============ */
+/* The files decide what shows. Drop 01.mp4 to 10.mp4 into reels/examples
+   and they appear in that order; a number with no file quietly drops
+   out. Nothing preloads more than its first frame and nothing plays
+   until it is asked to, so the page costs the same as before. */
+const SHOTS = { folder: "examples/", count: 10, ext: ".mp4" };
+
+(function () {
+  const wrap = document.getElementById("shots");
+  if (!wrap) return;
+
+  const pane = document.getElementById("shots-pane");
+  let alive = 0;
+
+  for (let n = 1; n <= SHOTS.count; n++) {
+    const num = String(n).padStart(2, "0");
+
+    const tile = document.createElement("button");
+    tile.type = "button";
+    tile.className = "shot";
+    tile.setAttribute("aria-label", "Play example " + n);
+
+    const film = document.createElement("video");
+    film.src = SHOTS.folder + num + SHOTS.ext;
+    film.muted = true;
+    film.loop = true;
+    film.playsInline = true;
+    film.preload = "metadata";
+
+    // a slot with no file is not a broken tile, it is not a tile, and
+    // the section only appears once something in it has actually loaded
+    film.addEventListener("error", () => { tile.remove(); alive--; });
+    film.addEventListener("loadedmetadata", () => { pane.hidden = false; });
+
+    const mark = document.createElement("b");
+    mark.textContent = num;
+    const play = document.createElement("i");
+    play.textContent = "▶";
+
+    tile.addEventListener("click", () => {
+      const running = !film.paused;
+      // one at a time: ten of them going at once is noise, even silent
+      for (const other of wrap.querySelectorAll("video")) {
+        other.pause();
+        other.parentElement.classList.remove("playing");
+      }
+      if (running) return;
+      film.play().then(() => tile.classList.add("playing")).catch(() => {});
+    });
+
+    tile.append(film, mark, play);
+    wrap.appendChild(tile);
+    alive++;
+  }
+})();
+
 /* Everything adjustable lives here. */
 const CONFIG = {
   pricePerReel: 40,
   minSpend: 300,
-  max: 12,
+  max: 15,
   step: 1,
   secondsPerReel: 15,
   daysOffered: 10,    // how many free days to show at once
@@ -408,7 +536,8 @@ const CONFIG = {
   currency: "€",
   bands: [
     { upTo: 9, title: "Every week", text: "Two a week. Enough to stay visible without thinking about it." },
-    { upTo: 12, title: "Every few days", text: "Three a week, all filmed in one visit. The most one visit carries." }
+    { upTo: 12, title: "Every few days", text: "Three a week, filmed in one visit." },
+    { upTo: 15, title: "Most days", text: "Something new nearly every other day. The most one visit carries." }
   ]
 };
 
