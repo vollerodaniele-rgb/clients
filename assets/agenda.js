@@ -28,7 +28,10 @@ onReady(() => {
     drawInvites();
     drawHours();
     drawSlotEditor();
+    drawCodes();
   });
+  const makeCodeBtn = $("code-make");
+  if (makeCodeBtn) makeCodeBtn.addEventListener("click", makeCode);
   // partners are their own sheet, so they wait for their own tab
   whenSheet("partners", drawPartners);
   const make = $("ref-make");
@@ -1357,4 +1360,116 @@ async function drawSlotEditor() {
       msg.textContent = "Did not save: " + err.message;
     }
   });
+}
+
+
+/* ============ OFFER CODES ============ */
+/* Short codes worth free reels on the reels page, for a limited number
+   of days. The relay keeps them and checks them, so the page itself
+   never knows a code until somebody types it. */
+
+function codeDay(iso) {
+  return new Date(iso + "T12:00:00").toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short" });
+}
+
+async function drawCodes() {
+  const wrap = $("code-list");
+  if (!wrap) return;
+  if (!token()) {
+    wrap.innerHTML = '<p class="muted" style="font-size:0.9rem">Save your access key to see your codes.</p>';
+    return;
+  }
+
+  let codes;
+  try {
+    const res = await fetch(`${AGENDA_RELAY}/codes`, { headers: { "X-Studio-Key": token() }, cache: "no-store" });
+    if (!res.ok) throw new Error(String(res.status));
+    codes = (await res.json()).codes || [];
+  } catch (err) {
+    wrap.innerHTML = '<p class="muted" style="font-size:0.9rem">Could not read your codes (' + escHtml(err.message) + ").</p>";
+    return;
+  }
+
+  if (!codes.length) {
+    wrap.innerHTML = '<p class="muted" style="font-size:0.9rem">No codes yet.</p>';
+    return;
+  }
+
+  wrap.innerHTML = "";
+  for (const c of codes) {
+    const row = document.createElement("div");
+    row.className = "item";
+    row.style.cssText = "display:flex;align-items:center;gap:0.8rem;flex-wrap:wrap";
+
+    const text = document.createElement("div");
+    text.style.flex = "1";
+    text.innerHTML = `
+      <p style="font-size:0.95rem;letter-spacing:0.06em"><b>${escHtml(c.code)}</b></p>
+      <p class="muted" style="font-size:0.8rem;margin-top:0.2rem">
+        ${c.freeReels} reel${c.freeReels === 1 ? "" : "s"} free &middot;
+        ${c.live ? "until " + escHtml(codeDay(c.until)) : "ran out " + escHtml(codeDay(c.until))} &middot;
+        used ${c.used} time${c.used === 1 ? "" : "s"}
+      </p>`;
+    if (!c.live) text.style.opacity = "0.55";
+    row.appendChild(text);
+
+    const copyBtn = (label, value) => {
+      const b = document.createElement("button");
+      b.className = "btn-mini";
+      b.textContent = label;
+      b.addEventListener("click", async () => {
+        const done = await copyText(value);
+        b.textContent = done ? "Copied" : "Select it";
+        setTimeout(() => { b.textContent = label; }, 1800);
+      });
+      return b;
+    };
+
+    if (c.live) {
+      row.appendChild(copyBtn("Copy code", c.code));
+      // the page opens with the code already applied
+      row.appendChild(copyBtn("Copy link", location.origin + "/reels/?code=" + encodeURIComponent(c.code)));
+    }
+
+    row.appendChild(dangerButton("Remove", async () => {
+      const res = await fetch(`${AGENDA_RELAY}/code/remove`, {
+        method: "POST",
+        headers: { "X-Studio-Key": token(), "Content-Type": "application/json" },
+        body: JSON.stringify({ code: c.code })
+      });
+      if (!res.ok) { say("code-msg", "Could not remove " + c.code + " (" + res.status + ")."); return; }
+      say("code-msg", "");
+      drawCodes();
+    }));
+
+    wrap.appendChild(row);
+  }
+}
+
+async function makeCode() {
+  if (!token()) { say("code-msg", "Save your access key first."); return; }
+  const btn = $("code-make");
+  btn.disabled = true;
+  say("code-msg", "Making it...");
+
+  try {
+    const res = await fetch(`${AGENDA_RELAY}/code/new`, {
+      method: "POST",
+      headers: { "X-Studio-Key": token(), "Content-Type": "application/json" },
+      body: JSON.stringify({
+        freeReels: Number($("code-free").value) || 1,
+        days: Number($("code-days").value) || 7,
+        code: $("code-own").value.trim()
+      })
+    });
+    const body = await res.json();
+    if (!res.ok) throw new Error(body.error || String(res.status));
+    say("code-msg", body.code + " is ready, good until " + codeDay(body.until) + ".");
+    $("code-own").value = "";
+    drawCodes();
+  } catch (err) {
+    say("code-msg", "Could not make it: " + err.message);
+  } finally {
+    btn.disabled = false;
+  }
 }

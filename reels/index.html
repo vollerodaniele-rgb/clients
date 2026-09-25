@@ -111,6 +111,43 @@
     color: rgba(242, 242, 242, 0.6);
   }
 
+  /* ---------- a launch price, and a code ---------- */
+  /* the price it will be, struck through, beside the price it is now */
+  .reel-was { margin-right: 0.45rem; color: rgba(242, 242, 242, 0.4); text-decoration-thickness: 1px; }
+  /* one line, "€50 €40 per reel", not three: the figure's rule that
+     puts every span on its own line must not reach inside this one */
+  .reel-money .reel-rate span, .reel-money .reel-rate s { display: inline; margin: 0; font-size: inherit; letter-spacing: inherit; }
+  .reel-money .reel-rate s[hidden] { display: none; }
+  /* big enough to read the old price at a glance, it is the point */
+  .reel-money .reel-rate { font-size: 0.8rem; }
+  .reel-money .reel-rate .reel-was { margin-right: 0.5rem; }
+  .reel-money .reel-rate #rate { color: var(--text); }
+  /* the one badge that is not quiet: it is the reason to book now */
+  .reel-badge.hot { color: var(--text); border-color: rgba(242, 242, 242, 0.4); background: rgba(255, 255, 255, 0.06); }
+  .reel-badge + .reel-badge { margin-left: 0.4rem; }
+  .reel-free {
+    display: inline-block; margin-top: 0.6rem; padding: 0.3rem 0.7rem;
+    border-radius: 999px; background: var(--text); color: #000;
+    font-size: 0.6rem; font-weight: 600; letter-spacing: 0.18em; text-transform: uppercase;
+  }
+
+  .code-row { margin-top: 1rem; }
+  .code-open {
+    background: none; border: 0; padding: 0; cursor: pointer;
+    font-family: var(--font-body); font-size: 0.85rem; color: var(--dim);
+    text-decoration: underline; text-underline-offset: 3px;
+  }
+  .code-open:hover { color: var(--text); }
+  .code-box { display: flex; gap: 0.5rem; margin-top: 0.7rem; max-width: 22rem; }
+  .code-box input {
+    flex: 1; min-width: 0; padding: 0.7rem 0.9rem;
+    font-family: var(--font-body); font-size: 0.95rem; letter-spacing: 0.08em; text-transform: uppercase;
+    color: var(--text); background: var(--well); border: 1px solid var(--glass-edge); border-radius: 999px;
+  }
+  .code-box input:focus { outline: none; border-color: rgba(255, 255, 255, 0.34); }
+  .code-msg { margin-top: 0.6rem; font-size: 0.85rem; color: var(--dim); min-height: 1.2rem; }
+  .code-msg b { color: var(--text); font-weight: 500; }
+
   /* ---------- the strip ---------- */
   .strip-wrap { position: relative; margin-top: 2.2rem; }
 
@@ -406,7 +443,7 @@
       <p class="reel-intro">
         Short reels filmed in a single continuous shot. No heavy edit, just the moment as it
         happens in your kitchen, your shop or your studio. Pick how many you want this month,
-        from 8 to 15.
+        from <span id="intro-min">8</span> to <span id="intro-max">13</span>.
       </p>
       <p class="reel-run">Runtime approx. <b id="runtime">00:02:00:00</b> &middot; 1 visit</p>
       <p class="reel-offer" id="reel-offer" hidden></p>
@@ -417,10 +454,12 @@
         <div class="reel-figure">
           <b id="count">8</b>
           <span>Reels</span>
+          <span class="reel-free" id="free-tag" hidden></span>
         </div>
         <div class="reel-figure reel-money">
           <b class="reel-sum" id="total">&euro;320</b>
-          <span><span id="rate">&euro;40</span> per reel</span>
+          <span class="reel-rate"><s class="reel-was" id="was" hidden></s><span id="rate">&euro;40</span> per reel</span>
+          <span class="reel-badge hot" id="launch-badge" hidden></span>
           <span class="reel-badge">Minimum order &euro;300</span>
         </div>
       </div>
@@ -428,7 +467,7 @@
       <div class="strip-wrap">
         <div class="strip" id="strip" aria-hidden="true"></div>
         <div class="playhead" id="playhead" aria-hidden="true"></div>
-        <input type="range" id="slider" min="8" max="15" step="1" value="8" aria-label="Number of reels">
+        <input type="range" id="slider" min="8" max="13" step="1" value="8" aria-label="Number of reels">
       </div>
       <div class="ticks" id="ticks" aria-hidden="true"></div>
 
@@ -474,7 +513,19 @@
          one pane. Asking for a day rides the same relay route as the call
          back form, so it pings Telegram and lands in the agenda. -->
     <section class="reel-pane" id="lock">
-      <p class="pick-line">Your selection: <em class="num" id="pick-count">8</em> reels for <em class="num" id="pick-total">&euro;320</em>.</p>
+      <p class="pick-line">Your selection: <em class="num" id="pick-count">8</em> reels<span id="pick-free"></span> for <em class="num" id="pick-total">&euro;320</em>.</p>
+
+      <!-- A code worth free reels for a few days. Checked by the relay,
+           never here, so it cannot be read out of this page. -->
+      <div class="code-row">
+        <button type="button" class="code-open" id="code-open">Have a code?</button>
+        <div class="code-box" id="code-box" hidden>
+          <input type="text" id="code-input" maxlength="20" autocomplete="off" autocapitalize="characters"
+            spellcheck="false" placeholder="REEL-XXXXXX" aria-label="Your code">
+          <button type="button" class="step-btn" id="code-apply">Apply</button>
+        </div>
+        <p class="code-msg" id="code-msg" role="status"></p>
+      </div>
       <p class="pick-note" id="lock-lede">Pick the day we come and film your <span class="num" id="lock-count">8</span> reels, and say when we should ring you to confirm it.</p>
 
       <form class="lock-form" id="lock-form" novalidate>
@@ -799,9 +850,13 @@ const SHOTS = { folder: "examples/", count: 8, ext: ".mp4", gap: 8, row: 270 };
 
 /* Everything adjustable lives here. */
 const CONFIG = {
-  pricePerReel: 40,
+  /* The price, and a launch price below it until a date. On the day
+     after, the page goes to the full price by itself: the struck
+     through figure is only honest if it really becomes the price. */
+  pricePerReel: 50,
+  launch: { price: 40, until: "2026-10-31" },
   minSpend: 300,
-  max: 15,
+  max: 13,
   step: 1,
   secondsPerReel: 15,
   daysOffered: 10,    // how many free days to show at once
@@ -812,13 +867,17 @@ const CONFIG = {
   currency: "€",
   bands: [
     { upTo: 9, title: "Every week", text: "Two a week. Enough to stay visible without thinking about it." },
-    { upTo: 12, title: "Every few days", text: "Three a week, filmed in one visit." },
-    { upTo: 15, title: "Most days", text: "Something new nearly every other day. The most one visit carries." }
+    { upTo: 13, title: "Every few days", text: "Three a week, filmed in one visit. The most one visit carries." }
   ]
 };
 
+/* today in Gent, so the launch price ends at midnight there */
+const TODAY = new Date().toLocaleDateString("sv-SE", { timeZone: "Europe/Brussels" });
+const LAUNCH = CONFIG.launch && CONFIG.launch.until && TODAY <= CONFIG.launch.until ? CONFIG.launch : null;
+const PRICE = LAUNCH ? LAUNCH.price : CONFIG.pricePerReel;
+
 /* the first count that clears the minimum spend */
-const MIN = Math.ceil(CONFIG.minSpend / CONFIG.pricePerReel);
+const MIN = Math.ceil(CONFIG.minSpend / PRICE);
 
 const $ = (id) => document.getElementById(id);
 const money = (n) => CONFIG.currency + n.toLocaleString("en-GB");
@@ -832,6 +891,9 @@ function timecode(count) {
 
 const slider = $("slider");
 slider.min = MIN;
+// the intro names the range, so it moves with the price
+$("intro-min").textContent = MIN;
+$("intro-max").textContent = CONFIG.max;
 slider.max = CONFIG.max;
 slider.step = CONFIG.step;
 slider.value = MIN;
@@ -849,18 +911,25 @@ $("ticks").innerHTML = COUNTS.map((n) => '<span class="num">' + n + "</span>").j
 const frames = [...$("strip").children];
 const ticks = [...$("ticks").children];
 
+/* a code, once the relay has said it is good */
+let offer = null;
+
 function draw() {
   const count = Number(slider.value);
-  const total = count * CONFIG.pricePerReel;
+  const total = count * PRICE;
   const at = COUNTS.indexOf(count);
+  const free = offer ? offer.freeReels : 0;
 
   $("count").textContent = count;
   $("total").textContent = money(total);
-  $("rate").textContent = money(CONFIG.pricePerReel);
-  $("runtime").textContent = timecode(count);
-  $("inc-count").textContent = count;
+  $("rate").textContent = money(PRICE);
+  $("runtime").textContent = timecode(count + free);
+  $("inc-count").textContent = count + free;
   $("pick-count").textContent = count;
   $("pick-total").textContent = money(total);
+  $("pick-free").textContent = free ? " + " + free + " free" : "";
+  $("free-tag").textContent = free ? "+ " + free + " free" : "";
+  $("free-tag").hidden = !free;
 
   frames.forEach((frame, i) => frame.classList.toggle("on", i <= at));
   ticks.forEach((tick, i) => tick.classList.toggle("now", i === at));
@@ -893,6 +962,79 @@ $("up").addEventListener("click", () => nudge(CONFIG.step));
    never give the same half hour to two people. The filming day travels
    with it as a note, because shoot days are not slots in the system. */
 const RELAY = "https://kresha-idea-box.vollerodaniele.workers.dev";
+
+/* ============ THE LAUNCH PRICE ============ */
+(function () {
+  if (!LAUNCH) return;
+  const was = document.getElementById("was");
+  was.textContent = CONFIG.currency + CONFIG.pricePerReel;
+  was.hidden = false;
+
+  const ends = new Date(LAUNCH.until + "T12:00:00").toLocaleDateString("en-GB", { day: "numeric", month: "long" });
+  const badge = document.getElementById("launch-badge");
+  badge.textContent = "Launch price until " + ends;
+  badge.hidden = false;
+})();
+
+/* ============ A CODE ============ */
+/* Typed in, or carried in the address as ?code=, so a code sent in a
+   message arrives already applied. The relay decides whether it is
+   good; this page only shows what it said. */
+function offerDay(iso) {
+  return new Date(iso + "T12:00:00").toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long" });
+}
+
+function daysLeft(iso) {
+  const today = new Date(new Date().toLocaleDateString("sv-SE", { timeZone: "Europe/Brussels" }) + "T12:00:00");
+  return Math.round((new Date(iso + "T12:00:00") - today) / 86400000);
+}
+
+async function applyCode(raw, quiet) {
+  const msg = document.getElementById("code-msg");
+  const code = String(raw || "").trim().toUpperCase();
+  if (!code) { msg.textContent = "Type the code you were sent."; return; }
+
+  msg.textContent = "Checking...";
+  try {
+    const res = await fetch(RELAY + "/code?c=" + encodeURIComponent(code), { cache: "no-store" });
+    if (!res.ok) {
+      offer = null;
+      draw();
+      msg.textContent = quiet ? "" : "That code is not valid, or it has run out.";
+      return;
+    }
+    offer = await res.json();
+  } catch (err) {
+    console.error("code check failed:", err);
+    msg.textContent = "Could not check the code just now. Try again in a moment.";
+    return;
+  }
+
+  const left = daysLeft(offer.until);
+  const when = left <= 0 ? "Ends tonight." : left === 1 ? "Ends tomorrow." : "Ends in " + left + " days, on " + offerDay(offer.until) + ".";
+  msg.innerHTML = "<b>" + offer.freeReels + " reel" + (offer.freeReels === 1 ? "" : "s") + " free</b> with " +
+    offer.code.replace(/[<>&]/g, "") + ". " + when;
+  document.getElementById("code-input").value = offer.code;
+  draw();
+}
+
+(function () {
+  const open = document.getElementById("code-open");
+  const box = document.getElementById("code-box");
+  const input = document.getElementById("code-input");
+
+  open.addEventListener("click", () => { box.hidden = false; open.hidden = true; input.focus(); });
+  document.getElementById("code-apply").addEventListener("click", () => applyCode(input.value));
+  input.addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); applyCode(input.value); } });
+
+  const carried = new URLSearchParams(location.search).get("code");
+  if (carried) {
+    box.hidden = false;
+    open.hidden = true;
+    input.value = carried;
+    applyCode(carried);
+  }
+})();
 
 /* ============ WHO SENT THEM ============ */
 /* A partner can send this page the way they send their own:
@@ -1117,11 +1259,12 @@ form.addEventListener("submit", async (event) => {
   msg.textContent = picked ? "Booking..." : "Sending...";
 
   const note = "One take reels: " + count + " reels for " +
-    money(count * CONFIG.pricePerReel) + "." +
+    money(count * PRICE) + (LAUNCH ? " (launch price)" : "") + "." +
+    (offer ? "\nPlus " + offer.freeReels + " free with code " + offer.code + "." : "") +
     "\nFilming day asked for: " + longDate(date) +
     (about ? "\nWhere: " + about : "");
 
-  const body = { name, email, phone, note, website: $("lock-website").value, ref: sentBy() };
+  const body = { name, email, phone, note, website: $("lock-website").value, ref: sentBy(), code: offer ? offer.code : "" };
   if (picked) { body.date = picked.date; body.time = picked.time; }
 
   try {

@@ -365,6 +365,29 @@
       <div id="agenda-slots" style="margin-top:1.8rem"></div>
     </div>
 
+    <!-- Codes worth free reels on the reels page, for a few days. -->
+    <div class="panel">
+      <h2>Offer codes</h2>
+      <p class="how" style="margin-bottom:1rem">
+        A code worth free reels on the reels page, for a few days only. Send the code, or the
+        link that opens the page with it already applied. The booking arrives with the code on it.
+      </p>
+      <div class="row">
+        <label class="field" style="max-width:7rem"><span>Free reels</span>
+          <input id="code-free" type="number" min="1" max="5" value="1">
+        </label>
+        <label class="field" style="max-width:7rem"><span>Valid for days</span>
+          <input id="code-days" type="number" min="1" max="60" value="7">
+        </label>
+        <label class="field" style="flex:1;min-width:10rem"><span>Your own code (optional)</span>
+          <input id="code-own" type="text" maxlength="20" placeholder="leave empty for a random one">
+        </label>
+        <button class="btn-mini solid" id="code-make" style="align-self:flex-end">Make a code</button>
+      </div>
+      <p class="form-msg" id="code-msg" style="margin-top:0.7rem"></p>
+      <div id="code-list" style="margin-top:1rem"></div>
+    </div>
+
     </section>
 
     <section id="sheet-partners" hidden>
