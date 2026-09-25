@@ -372,14 +372,20 @@
       <h2>Partners</h2>
       <p class="how" style="margin-bottom:1rem">
         A photographer gets their own page with their name on it, to send to their clients.
-        You see how many opened it and who booked a call, which is what any fee is based on.
+        Whoever brings a client earns 20% of what that client pays, and whoever brought
+        that partner in earns 10% of it, for the client's first 12 months. Only payments
+        marked paid on the Money sheet count.
       </p>
+      <div class="totals" id="ref-totals" style="margin-bottom:1.4rem"></div>
       <div class="row">
         <label class="field" style="flex:1;min-width:10rem"><span>Their name</span>
           <input id="ref-name" type="text" maxlength="60" placeholder="Marie">
         </label>
         <label class="field" style="flex:1;min-width:11rem"><span>What their client gets (optional)</span>
           <input id="ref-discount" type="text" maxlength="40" placeholder="the first month is &euro;250 off">
+        </label>
+        <label class="field" style="flex:1;min-width:10rem"><span>Brought in by</span>
+          <select id="ref-by"><option value="">Nobody, they came to me</option></select>
         </label>
         <button class="btn-mini solid" id="ref-make" style="align-self:flex-end">Make their page</button>
       </div>

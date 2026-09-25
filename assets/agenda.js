@@ -36,9 +36,125 @@ onReady(() => {
 });
 
 /* ============ REFERRAL PARTNERS ============ */
-/* A page per photographer. What matters here is not the page, it is
-   knowing who actually sent somebody, because that is what a fee is
-   paid on. So each row shows opens and, more importantly, bookings. */
+/* A page per photographer, and now the money that comes of it.
+
+   Two levels and no more. Whoever brought a client gets PARTNER_SHARE
+   of what that client pays; whoever brought that partner in gets
+   RECRUITER_SHARE of it too. Together that is the most a referred
+   client can ever cost, because there is no third level for anything
+   to hide in. Only money marked paid counts, and only for the first
+   PARTNER_MONTHS of each client, counted from its first payment.
+
+   The payments live in the private repo, which only this page can
+   read, so the sums are done here and each partner's board is handed
+   to the relay afterwards. Nothing a partner sees is worked out by
+   anyone but you. */
+
+const PARTNER_SHARE = 0.20;
+const RECRUITER_SHARE = 0.10;
+const PARTNER_MONTHS = 12;
+
+let partnersKnown = [];
+
+function monthsLater(iso, months) {
+  const d = new Date(iso + "T00:00:00");
+  d.setMonth(d.getMonth() + months);
+  return d.toISOString().slice(0, 10);
+}
+
+/* Every partner's figures from the payments and the two relations. */
+function partnerFigures(partners, book) {
+  const byId = new Map(partners.map((p) => [p.id, p]));
+  const broughtBy = new Map();
+  for (const p of partners) for (const c of p.clients || []) broughtBy.set(c, p.id);
+
+  const now = new Date();
+  const thisMonth = now.getFullYear() + "-" + String(now.getMonth() + 1).padStart(2, "0");
+
+  const fig = new Map(partners.map((p) => [p.id, {
+    earned: 0, thisMonth: 0, paidOut: 0, clients: new Map(), recruits: new Map()
+  }]));
+
+  const paid = (book.entries || []).filter((e) =>
+    e.status === "paid" && broughtBy.has(String(e.client || "").toLowerCase()));
+
+  // the window of each client opens at its first payment
+  const first = new Map();
+  for (const e of paid) {
+    const c = String(e.client).toLowerCase();
+    if (!first.has(c) || e.date < first.get(c)) first.set(c, e.date);
+  }
+
+  for (const e of paid) {
+    const c = String(e.client).toLowerCase();
+    if (e.date >= monthsLater(first.get(c), PARTNER_MONTHS)) continue;
+
+    const amount = Number(e.amount) || 0;
+    const direct = broughtBy.get(c);
+    const mine = fig.get(direct);
+    const share = amount * PARTNER_SHARE;
+    mine.earned += share;
+    if (String(e.date).startsWith(thisMonth)) mine.thisMonth += share;
+    mine.clients.set(c, (mine.clients.get(c) || 0) + share);
+
+    const up = (byId.get(direct) || {}).by;
+    if (up && fig.has(up)) {
+      const theirs = fig.get(up);
+      const cut = amount * RECRUITER_SHARE;
+      theirs.earned += cut;
+      if (String(e.date).startsWith(thisMonth)) theirs.thisMonth += cut;
+      theirs.recruits.set(direct, (theirs.recruits.get(direct) || 0) + cut);
+    }
+  }
+
+  for (const out of book.payouts || []) {
+    if (fig.has(out.partner)) fig.get(out.partner).paidOut += Number(out.amount) || 0;
+  }
+
+  for (const [, f] of fig) f.owed = f.earned - f.paidOut;
+  return fig;
+}
+
+/* What each partner's own board shows, in the shape the relay keeps. */
+function boardsFrom(partners, fig) {
+  const byId = new Map(partners.map((p) => [p.id, p]));
+  const boards = {};
+  for (const p of partners) {
+    const f = fig.get(p.id);
+    boards[p.id] = {
+      earned: f.earned, paidOut: f.paidOut, owed: f.owed, thisMonth: f.thisMonth,
+      clients: [...f.clients].map(([c, earned]) => ({ name: c.toUpperCase(), earned })),
+      recruits: [...f.recruits].map(([id, earned]) => ({ name: (byId.get(id) || {}).name || id, earned })),
+      share: PARTNER_SHARE * 100, recruitShare: RECRUITER_SHARE * 100, months: PARTNER_MONTHS
+    };
+  }
+  return boards;
+}
+
+async function readPartners() {
+  const res = await fetch(`${AGENDA_RELAY}/refs`, {
+    headers: { "X-Studio-Key": token() }, cache: "no-store"
+  });
+  if (!res.ok) throw new Error(String(res.status));
+  partnersKnown = (await res.json()).partners || [];
+  return partnersKnown;
+}
+
+/* Hands every board to the relay. Called when the sheet is drawn and
+   after any payment is saved, so a partner never reads stale money. */
+async function syncPartnerBoards(partners, fig) {
+  if (!token()) return;
+  if (!partners) partners = await readPartners();
+  if (!partners.length) return;
+  if (!fig) fig = partnerFigures(partners, await ensureMoney());
+
+  const res = await fetch(`${AGENDA_RELAY}/ref/boards`, {
+    method: "POST",
+    headers: { "X-Studio-Key": token(), "Content-Type": "application/json" },
+    body: JSON.stringify({ boards: boardsFrom(partners, fig) })
+  });
+  if (!res.ok) throw new Error("boards " + res.status);
+}
 
 async function drawPartners() {
   const wrap = $("ref-list");
@@ -49,27 +165,79 @@ async function drawPartners() {
     return;
   }
 
+  let partners, book, clientNames;
   try {
-    const res = await fetch(`${AGENDA_RELAY}/refs`, {
-      headers: { "X-Studio-Key": token() }, cache: "no-store"
-    });
-    if (!res.ok) throw new Error(String(res.status));
-    const { partners } = await res.json();
-
-    if (!partners.length) {
-      wrap.innerHTML = '<p class="muted" style="font-size:0.9rem">No partners yet.</p>';
-      return;
-    }
-
-    wrap.innerHTML = "";
-    for (const p of partners) wrap.appendChild(partnerRow(p));
+    [partners, book, clientNames] = await Promise.all([
+      readPartners(),
+      ensureMoney().catch(() => ({ entries: [] })),
+      listClientNames().catch(() => [])
+    ]);
   } catch (err) {
     wrap.innerHTML = '<p class="muted" style="font-size:0.9rem">Could not read your partners (' +
       escHtml(err.message) + ").</p>";
+    return;
   }
+
+  drawRecruiterChoice(partners);
+
+  if (!partners.length) {
+    wrap.innerHTML = '<p class="muted" style="font-size:0.9rem">No partners yet.</p>';
+    drawPartnerTotals(null);
+    return;
+  }
+
+  const fig = partnerFigures(partners, book);
+  drawPartnerTotals(fig);
+
+  wrap.innerHTML = "";
+  for (const p of partners) wrap.appendChild(partnerRow(p, partners, fig.get(p.id), clientNames));
+
+  syncPartnerBoards(partners, fig).catch((err) => {
+    console.error("board sync failed:", err);
+    say("ref-msg", "The partners' own boards could not be updated just now.");
+  });
 }
 
-function partnerRow(p) {
+/* The main overview: what you owe partners, what you paid them, and
+   what the programme has cost this month. */
+function drawPartnerTotals(fig) {
+  const box = $("ref-totals");
+  if (!box) return;
+  if (!fig) { box.innerHTML = ""; return; }
+
+  let owed = 0, paidOut = 0, month = 0;
+  for (const [, f] of fig) { owed += f.owed; paidOut += f.paidOut; month += f.thisMonth; }
+
+  box.innerHTML = `
+    <div class="total"><div class="num">${euro(owed)}</div><div class="lbl">Owed to partners</div></div>
+    <div class="total quiet"><div class="num">${euro(paidOut)}</div><div class="lbl">Paid out so far</div></div>
+    <div class="total quiet"><div class="num">${euro(month)}</div><div class="lbl">Earned by them this month</div></div>
+  `;
+}
+
+/* A new partner can be brought in by one who already exists. */
+function drawRecruiterChoice(partners) {
+  const sel = $("ref-by");
+  if (!sel) return;
+  const was = sel.value;
+  sel.innerHTML = '<option value="">Nobody, they came to me</option>' +
+    partners.map((p) => `<option value="${escHtml(p.id)}">${escHtml(p.name || p.id)}</option>`).join("");
+  sel.value = was;
+}
+
+async function setPartner(id, change) {
+  const res = await fetch(`${AGENDA_RELAY}/ref/set`, {
+    method: "POST",
+    headers: { "X-Studio-Key": token(), "Content-Type": "application/json" },
+    body: JSON.stringify({ id, ...change })
+  });
+  let body = {};
+  try { body = await res.json(); } catch { /* keep the status */ }
+  if (!res.ok) throw new Error(body.error || String(res.status));
+  return body;
+}
+
+function partnerRow(p, partners, f, clientNames) {
   const row = document.createElement("div");
   row.className = "item";
   const link = location.origin + "/r/#" + p.id;
@@ -77,10 +245,16 @@ function partnerRow(p) {
   const head = document.createElement("div");
   head.style.cssText = "display:flex;align-items:flex-start;gap:1rem;flex-wrap:wrap";
 
+  const recruiter = partners.find((x) => x.id === p.by);
+
   const text = document.createElement("div");
   text.style.flex = "1";
   text.innerHTML = `
-    <p style="font-size:0.95rem"><b>${escHtml(p.name)}</b></p>
+    <p style="font-size:0.95rem"><b>${escHtml(p.name)}</b>${recruiter ? `<span class="muted" style="font-size:0.78rem"> &middot; brought in by ${escHtml(recruiter.name)}</span>` : ""}</p>
+    <p style="font-size:0.85rem;margin-top:0.3rem">
+      <b>${euro(f.owed)}</b> owed
+      <span class="muted">&middot; ${euro(f.earned)} earned &middot; ${euro(f.paidOut)} paid out</span>
+    </p>
     <p class="muted" style="font-size:0.78rem;margin-top:0.2rem">
       ${p.opens} open${p.opens === 1 ? "" : "s"}${p.lastOpen ? ", last " + escHtml(sinceThen(p.lastOpen)) : ""}
       ${p.discount ? " &middot; " + escHtml(p.discount) : ""}
@@ -94,36 +268,36 @@ function partnerRow(p) {
   `;
   head.appendChild(text);
 
-  const copy = document.createElement("button");
-  copy.className = "btn-mini";
-  copy.textContent = "Copy link";
-  copy.addEventListener("click", async () => {
-    const done = await copyText(link);
-    copy.textContent = done ? "Copied" : "Select it";
-    setTimeout(() => { copy.textContent = "Copy link"; }, 1800);
-  });
-  head.appendChild(copy);
+  const copyButton = (label, get) => {
+    const b = document.createElement("button");
+    b.className = "btn-mini";
+    b.textContent = label;
+    b.addEventListener("click", async () => {
+      let url;
+      try { url = await get(); } catch (err) { say("ref-msg", "Could not get that link: " + err.message); return; }
+      const done = await copyText(url);
+      b.textContent = done ? "Copied" : "Select it";
+      setTimeout(() => { b.textContent = label; }, 1800);
+    });
+    return b;
+  };
 
+  head.appendChild(copyButton("Copy link", async () => link));
   /* The same partner, sending the reels page instead. The booking made
      there carries their id exactly as one made from their own page. */
-  const reelsLink = location.origin + "/reels/#" + p.id;
-  const copyReels = document.createElement("button");
-  copyReels.className = "btn-mini";
-  copyReels.textContent = "Copy reels link";
-  copyReels.addEventListener("click", async () => {
-    const done = await copyText(reelsLink);
-    copyReels.textContent = done ? "Copied" : "Select it";
-    setTimeout(() => { copyReels.textContent = "Copy reels link"; }, 1800);
-  });
-  head.appendChild(copyReels);
-
-  const view = document.createElement("a");
-  view.className = "btn-mini";
-  view.href = link;
-  view.target = "_blank";
-  view.rel = "noopener";
-  view.textContent = "View";
-  head.appendChild(view);
+  head.appendChild(copyButton("Copy reels link", async () => location.origin + "/reels/#" + p.id));
+  /* Their own board, behind a long random key rather than their name,
+     since it shows money. Send it to them and nobody else. */
+  head.appendChild(copyButton("Copy their board", async () => {
+    const res = await fetch(`${AGENDA_RELAY}/ref/key`, {
+      method: "POST",
+      headers: { "X-Studio-Key": token(), "Content-Type": "application/json" },
+      body: JSON.stringify({ id: p.id })
+    });
+    const body = await res.json();
+    if (!res.ok) throw new Error(body.error || String(res.status));
+    return location.origin + "/partner/#" + body.key;
+  }));
 
   /* Redrawing regardless of the answer made a refusal look like a
      deletion: the row came back and nothing said why. */
@@ -152,6 +326,136 @@ function partnerRow(p) {
   }));
 
   row.appendChild(head);
+
+  /* ---- the two relations the money follows ---- */
+  const links = document.createElement("div");
+  links.className = "row";
+  links.style.marginTop = "0.8rem";
+
+  const by = document.createElement("select");
+  by.innerHTML = '<option value="">Nobody</option>' + partners
+    .filter((x) => x.id !== p.id)
+    .map((x) => `<option value="${escHtml(x.id)}">${escHtml(x.name || x.id)}</option>`).join("");
+  by.value = p.by || "";
+  by.addEventListener("change", async () => {
+    try {
+      await setPartner(p.id, { by: by.value });
+      say("ref-msg", "");
+      drawPartners();
+    } catch (err) {
+      say("ref-msg", "Could not change that: " + err.message);
+      by.value = p.by || "";
+    }
+  });
+  const byField = document.createElement("label");
+  byField.className = "field";
+  byField.style.cssText = "flex:1;min-width:10rem";
+  byField.innerHTML = "<span>Brought in by</span>";
+  byField.appendChild(by);
+
+  const clientsBox = document.createElement("div");
+  clientsBox.className = "field";
+  clientsBox.style.cssText = "flex:2;min-width:14rem";
+  const clientsLabel = document.createElement("span");
+  clientsLabel.textContent = "Clients they brought";
+  clientsBox.appendChild(clientsLabel);
+
+  const chips = document.createElement("div");
+  chips.style.cssText = "display:flex;flex-wrap:wrap;gap:0.4rem;align-items:center";
+  const mine = p.clients || [];
+  for (const c of mine) {
+    const chip = document.createElement("button");
+    chip.type = "button";
+    chip.className = "btn-mini";
+    chip.title = "Take this client off " + (p.name || p.id);
+    chip.textContent = c.toUpperCase() + " \u00d7";
+    chip.addEventListener("click", async () => {
+      try {
+        await setPartner(p.id, { clients: mine.filter((x) => x !== c) });
+        drawPartners();
+      } catch (err) { say("ref-msg", "Could not change that: " + err.message); }
+    });
+    chips.appendChild(chip);
+  }
+
+  const free = clientNames.filter((c) => !mine.includes(c));
+  if (free.length) {
+    const add = document.createElement("select");
+    add.innerHTML = '<option value="">+ add a client</option>' +
+      free.map((c) => `<option value="${escHtml(c)}">${escHtml(c.toUpperCase())}</option>`).join("");
+    add.style.maxWidth = "12rem";
+    add.addEventListener("change", async () => {
+      if (!add.value) return;
+      // a client can only earn for one partner; the relay moves it
+      const owner = partners.find((x) => x.id !== p.id && (x.clients || []).includes(add.value));
+      if (owner && !confirm(add.value.toUpperCase() + " is counted for " + owner.name + " now. Move it to " + p.name + "?")) {
+        add.value = "";
+        return;
+      }
+      try {
+        await setPartner(p.id, { clients: [...mine, add.value] });
+        drawPartners();
+      } catch (err) { say("ref-msg", "Could not change that: " + err.message); }
+    });
+    chips.appendChild(add);
+  } else if (!mine.length) {
+    const none = document.createElement("span");
+    none.className = "muted";
+    none.style.fontSize = "0.8rem";
+    none.textContent = "No clients yet";
+    chips.appendChild(none);
+  }
+  clientsBox.appendChild(chips);
+
+  links.append(byField, clientsBox);
+  row.appendChild(links);
+
+  /* ---- paying them ---- */
+  const pay = document.createElement("div");
+  pay.className = "row";
+  pay.style.cssText = "margin-top:0.6rem;align-items:flex-end";
+
+  const amount = document.createElement("input");
+  amount.type = "number";
+  amount.min = "0";
+  amount.step = "0.01";
+  amount.placeholder = f.owed > 0 ? String(Math.round(f.owed * 100) / 100) : "0";
+  const amountField = document.createElement("label");
+  amountField.className = "field";
+  amountField.style.cssText = "max-width:9rem";
+  amountField.innerHTML = "<span>Paid them</span>";
+  amountField.appendChild(amount);
+
+  const record = document.createElement("button");
+  record.className = "btn-mini";
+  record.textContent = "Record payout";
+  record.addEventListener("click", async () => {
+    const value = Number(amount.value || amount.placeholder);
+    if (!(value > 0)) { say("ref-msg", "Put in what you paid " + (p.name || p.id) + "."); return; }
+    record.disabled = true;
+    try {
+      await ensureMoney();
+      if (!Array.isArray(money.payouts)) money.payouts = [];
+      const today = new Date();
+      money.payouts.push({
+        date: today.getFullYear() + "-" + String(today.getMonth() + 1).padStart(2, "0") + "-" + String(today.getDate()).padStart(2, "0"),
+        partner: p.id,
+        amount: Math.round(value * 100) / 100
+      });
+      // saving runs the board sync as well
+      const ok = await saveMoney("Paid out " + value + " to " + (p.name || p.id));
+      if (!ok) throw new Error("the money file did not save");
+      say("ref-msg", "Recorded " + euro(value) + " paid to " + (p.name || p.id) + ".");
+      drawPartners();
+    } catch (err) {
+      say("ref-msg", "Could not record it: " + err.message);
+    } finally {
+      record.disabled = false;
+    }
+  });
+
+  pay.append(amountField, record);
+  row.appendChild(pay);
   return row;
 }
 
@@ -169,14 +473,18 @@ async function makePartner() {
     const res = await fetch(`${AGENDA_RELAY}/ref/new`, {
       method: "POST",
       headers: { "X-Studio-Key": token(), "Content-Type": "application/json" },
-      body: JSON.stringify({ name, discount: $("ref-discount").value.trim() })
+      body: JSON.stringify({
+        name,
+        discount: $("ref-discount").value.trim(),
+        by: $("ref-by") ? $("ref-by").value : ""
+      })
     });
     const body = await res.json();
     if (!res.ok) throw new Error(body.error || String(res.status));
-
     msg.textContent = name + " has a page. Copy the link below and send it to them.";
     $("ref-name").value = "";
     $("ref-discount").value = "";
+    if ($("ref-by")) $("ref-by").value = "";
     drawPartners();
   } catch (err) {
     msg.textContent = "Could not make it: " + err.message;

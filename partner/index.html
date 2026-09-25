@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Your board | Noir au Noir</title>
+  <!-- A partner's money. Never in a search, never previewed by anything. -->
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="referrer" content="no-referrer">
+  <link rel="stylesheet" href="../assets/styles.css?v=2026-09-25-3">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>&#127916;</text></svg>">
+  <style>
+    .pb-wrap { max-width: 38rem; margin: 0 auto; padding: clamp(3rem, 10vh, 6rem) 1.25rem 4rem; }
+    .pb-kicker { font-size: 0.7rem; font-weight: 600; letter-spacing: 0.4em; color: var(--dim); }
+    .pb-hello {
+      font-family: var(--font-display); font-weight: 500; letter-spacing: -0.03em;
+      font-size: clamp(2rem, 7vw, 2.8rem); line-height: 1.1; margin-top: 1rem;
+    }
+
+    .pb-pane {
+      margin-top: 1.4rem; padding: 1.6rem 1.5rem;
+      border: 1px solid var(--glass-edge); border-radius: 20px;
+      background: var(--glass); box-shadow: var(--glass-lip);
+      backdrop-filter: var(--glass-blur); -webkit-backdrop-filter: var(--glass-blur);
+    }
+
+    .pb-owed {
+      font-family: var(--font-display); font-weight: 500; letter-spacing: -0.03em;
+      font-size: clamp(3rem, 14vw, 4.6rem); line-height: 1; font-variant-numeric: tabular-nums;
+    }
+    .pb-label { margin-top: 0.5rem; font-size: 0.66rem; letter-spacing: 0.22em; text-transform: uppercase; color: var(--dim); }
+
+    .pb-tiles { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.8rem; margin-top: 1.5rem; }
+    .pb-tile b { display: block; font-size: 1.15rem; font-weight: 500; font-variant-numeric: tabular-nums; }
+
+    .pb-head { font-size: 0.66rem; letter-spacing: 0.26em; text-transform: uppercase; color: rgba(242, 242, 242, 0.45); }
+    .pb-row {
+      display: flex; justify-content: space-between; gap: 1rem; align-items: baseline;
+      padding: 0.75rem 0; border-top: 1px solid var(--line-soft); font-size: 0.95rem;
+    }
+    .pb-row:first-of-type { margin-top: 0.8rem; }
+    .pb-row span { font-variant-numeric: tabular-nums; color: var(--dim); }
+
+    .pb-link { display: flex; gap: 0.6rem; align-items: center; padding: 0.75rem 0; border-top: 1px solid var(--line-soft); }
+    .pb-link:first-of-type { margin-top: 0.8rem; }
+    .pb-link div { flex: 1; min-width: 0; }
+    .pb-link b { display: block; font-weight: 500; font-size: 0.92rem; }
+    .pb-link code { display: block; font-size: 0.78rem; color: var(--dim); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .pb-copy {
+      font-family: var(--font-body); font-size: 0.7rem; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase;
+      padding: 0.55rem 1rem; min-height: 2.5rem; border-radius: 999px; cursor: pointer;
+      color: var(--text); background: rgba(255, 255, 255, 0.06); border: 1px solid rgba(255, 255, 255, 0.16);
+    }
+    .pb-copy:hover { background: rgba(255, 255, 255, 0.12); }
+
+    .pb-small { margin-top: 1.4rem; font-size: 0.8rem; line-height: 1.6; color: rgba(242, 242, 242, 0.45); }
+    .pb-empty { margin-top: 0.8rem; font-size: 0.9rem; color: var(--dim); }
+
+    @media (max-width: 30rem) {
+      .pb-tiles { grid-template-columns: minmax(0, 1fr); }
+    }
+  </style>
+</head>
+<body>
+  <main class="pb-wrap">
+    <p class="pb-kicker">NOIR AU NOIR</p>
+    <h1 class="pb-hello" id="hello">&nbsp;</h1>
+
+    <div id="board" hidden>
+      <section class="pb-pane">
+        <div class="pb-owed" id="owed">&nbsp;</div>
+        <p class="pb-label">Waiting to be paid to you</p>
+        <div class="pb-tiles">
+          <div class="pb-tile"><b id="earned">&nbsp;</b><p class="pb-label">Earned so far</p></div>
+          <div class="pb-tile"><b id="paid">&nbsp;</b><p class="pb-label">Paid to you</p></div>
+          <div class="pb-tile"><b id="month">&nbsp;</b><p class="pb-label">This month</p></div>
+        </div>
+      </section>
+
+      <section class="pb-pane">
+        <p class="pb-head">Clients you brought</p>
+        <div id="clients"></div>
+      </section>
+
+      <section class="pb-pane" id="recruits-pane" hidden>
+        <p class="pb-head">Partners you brought in</p>
+        <div id="recruits"></div>
+      </section>
+
+      <section class="pb-pane">
+        <p class="pb-head">Your links</p>
+        <div id="links"></div>
+        <p class="pb-small" id="reach"></p>
+      </section>
+
+      <p class="pb-small" id="rules"></p>
+    </div>
+
+    <p class="pb-empty" id="gone" hidden>
+      This link does not open a board. Ask Noir au Noir for yours.
+    </p>
+  </main>
+
+<script>
+/* A partner's board
+   ------------------------------------------------------------
+   Opened with the key in the address, after the #, which a browser
+   never sends anywhere. The relay answers with this partner's name and
+   figures and nothing about anybody else. The figures are worked out
+   by the studio from payments actually received and handed to the
+   relay, so this page only ever shows, it never calculates.
+   ------------------------------------------------------------ */
+
+const RELAY = "https://kresha-idea-box.vollerodaniele.workers.dev";
+const KEY = location.hash.replace(/^#/, "").trim();
+const $ = (id) => document.getElementById(id);
+
+const euro = (n) => (Number(n) || 0).toLocaleString("nl-BE", {
+  style: "currency", currency: "EUR", minimumFractionDigits: 0, maximumFractionDigits: 2
+});
+
+function rows(wrap, list, none) {
+  wrap.innerHTML = "";
+  if (!list || !list.length) {
+    const p = document.createElement("p");
+    p.className = "pb-empty";
+    p.textContent = none;
+    wrap.appendChild(p);
+    return;
+  }
+  for (const item of list) {
+    const row = document.createElement("div");
+    row.className = "pb-row";
+    const name = document.createElement("b");
+    name.style.fontWeight = "500";
+    name.textContent = item.name;
+    const amount = document.createElement("span");
+    amount.textContent = euro(item.earned);
+    row.append(name, amount);
+    wrap.appendChild(row);
+  }
+}
+
+function linkRow(title, url) {
+  const row = document.createElement("div");
+  row.className = "pb-link";
+
+  const text = document.createElement("div");
+  const b = document.createElement("b");
+  b.textContent = title;
+  const code = document.createElement("code");
+  code.textContent = url.replace(/^https:\/\//, "");
+  text.append(b, code);
+
+  const copy = document.createElement("button");
+  copy.type = "button";
+  copy.className = "pb-copy";
+  copy.textContent = "Copy";
+  copy.addEventListener("click", async () => {
+    let done = false;
+    try { await navigator.clipboard.writeText(url); done = true; } catch { /* shown below */ }
+    copy.textContent = done ? "Copied" : "Hold to copy";
+    if (!done) code.style.whiteSpace = "normal";
+    setTimeout(() => { copy.textContent = "Copy"; }, 1800);
+  });
+
+  row.append(text, copy);
+  return row;
+}
+
+async function load() {
+  if (!KEY) { $("gone").hidden = false; return; }
+
+  let data;
+  try {
+    const res = await fetch(`${RELAY}/ref/board?key=${encodeURIComponent(KEY)}`, { cache: "no-store" });
+    if (!res.ok) { $("gone").hidden = false; return; }
+    data = await res.json();
+  } catch (err) {
+    console.error("board failed:", err);
+    $("gone").textContent = "Could not reach the board just now. Try again in a minute.";
+    $("gone").hidden = false;
+    return;
+  }
+
+  const b = data.board || { earned: 0, paidOut: 0, owed: 0, thisMonth: 0, clients: [], recruits: [] };
+
+  $("hello").textContent = "Hello, " + (data.name || "partner") + ".";
+  document.title = data.name ? data.name + " | Noir au Noir" : document.title;
+
+  $("owed").textContent = euro(b.owed);
+  $("earned").textContent = euro(b.earned);
+  $("paid").textContent = euro(b.paidOut);
+  $("month").textContent = euro(b.thisMonth);
+
+  rows($("clients"), b.clients, "Nobody yet. The first one you send shows up here.");
+  if (b.recruits && b.recruits.length) {
+    rows($("recruits"), b.recruits, "");
+    $("recruits-pane").hidden = false;
+  }
+
+  const origin = location.origin;
+  const links = $("links");
+  links.append(
+    linkRow("Your page", origin + "/r/#" + data.id),
+    linkRow("One take reels", origin + "/reels/#" + data.id)
+  );
+
+  const opens = Number(data.opens) || 0;
+  const calls = Number(data.calls) || 0;
+  $("reach").textContent =
+    opens + (opens === 1 ? " person has" : " people have") + " opened your links, and " +
+    calls + (calls === 1 ? " has" : " have") + " asked us for a call.";
+
+  if (b.share) {
+    const updated = b.updated
+      ? " Last updated " + new Date(b.updated).toLocaleDateString("en-GB", { day: "numeric", month: "long" }) + "."
+      : "";
+    $("rules").textContent =
+      "You earn " + b.share + "% of what each client you send pays us, for their first " + b.months +
+      " months. For partners you bring in, you earn " + b.recruitShare +
+      "% of what their clients pay. Only money we have actually received counts." + updated;
+  }
+
+  $("board").hidden = false;
+}
+
+load();
+</script>
+</body>
+</html>

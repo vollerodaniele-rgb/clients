@@ -21,7 +21,10 @@ const TOKEN_KEY = "clients-admin-token";
 const RELAY = "https://kresha-idea-box.vollerodaniele.workers.dev";
 
 // folders that are part of the site rather than a client
-const RESERVED = ["admin", "assets", "data", "_template", "p", "proposals", "_proposal", "i", "boxes", "_box", "uploads"];
+// the pages that are not clients: a client given one of these names would
+// overwrite the page itself
+const RESERVED = ["admin", "assets", "data", "_template", "p", "proposals", "_proposal", "i", "boxes", "_box", "uploads",
+  "call", "reels", "r", "t", "partner"];
 
 const $ = (id) => document.getElementById(id);
 const token = () => localStorage.getItem(TOKEN_KEY) || "";
@@ -934,6 +937,31 @@ const MONEY_FILE = "money.json";
 
 let money = { entries: [] };
 let moneySha = null;
+let moneyLoaded = false;
+
+/* The partners sheet needs the payments too, and it may be opened before
+   the money sheet ever was. Reads the file once, without drawing it. */
+async function ensureMoney() {
+  if (moneyLoaded) return money;
+  if (!token()) throw new Error("no key");
+
+  const res = await fetch(
+    `https://api.github.com/repos/${OWNER}/${MONEY_REPO}/contents/${MONEY_FILE}`,
+    { headers: { Authorization: "Bearer " + token(), Accept: "application/vnd.github+json" }, cache: "no-store" }
+  );
+  if (res.status === 404) {
+    money = { entries: [] };
+    moneySha = null;
+  } else {
+    if (!res.ok) throw new Error(String(res.status));
+    const file = await res.json();
+    moneySha = file.sha;
+    money = JSON.parse(decodeURIComponent(escape(atob(file.content.replace(/\n/g, "")))));
+    if (!Array.isArray(money.entries)) money.entries = [];
+  }
+  moneyLoaded = true;
+  return money;
+}
 
 onReady(() => {
   const today = new Date();
@@ -973,6 +1001,7 @@ async function loadMoney() {
     moneySha = file.sha;
     money = JSON.parse(decodeURIComponent(escape(atob(file.content.replace(/\n/g, "")))));
     if (!Array.isArray(money.entries)) money.entries = [];
+    moneyLoaded = true;
     msg.textContent = "";
     drawMoney();
   } catch (err) {
@@ -1102,8 +1131,12 @@ async function saveMoney(message) {
 
     if (!res.ok) throw new Error(String(res.status));
     moneySha = (await res.json()).content.sha;
+    moneyLoaded = true;
     msg.textContent = "Saved.";
     drawMoney();
+    /* A payment marked paid is money a partner earned a share of, so
+       their board is brought up to date straight away, quietly. */
+    if (typeof syncPartnerBoards === "function") syncPartnerBoards().catch(() => {});
     return true;
   } catch (err) {
     console.error("money save failed:", err);
