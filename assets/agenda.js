@@ -104,6 +104,19 @@ function partnerRow(p) {
   });
   head.appendChild(copy);
 
+  /* The same partner, sending the reels page instead. The booking made
+     there carries their id exactly as one made from their own page. */
+  const reelsLink = location.origin + "/reels/#" + p.id;
+  const copyReels = document.createElement("button");
+  copyReels.className = "btn-mini";
+  copyReels.textContent = "Copy reels link";
+  copyReels.addEventListener("click", async () => {
+    const done = await copyText(reelsLink);
+    copyReels.textContent = done ? "Copied" : "Select it";
+    setTimeout(() => { copyReels.textContent = "Copy reels link"; }, 1800);
+  });
+  head.appendChild(copyReels);
+
   const view = document.createElement("a");
   view.className = "btn-mini";
   view.href = link;

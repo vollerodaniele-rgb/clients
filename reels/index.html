@@ -64,6 +64,17 @@
   }
   .reel-run b { font-weight: 500; color: var(--text); }
 
+  /* A partner's name, above the headline, because being sent by
+     somebody you already trust is worth more than anything under it. */
+  .reel-sent {
+    margin-top: 1.1rem;
+    font-size: 0.95rem;
+    line-height: 1.5;
+    color: var(--text);
+  }
+  .reel-sent span { display: block; color: var(--dim); font-size: 0.86rem; margin-top: 0.15rem; }
+  .reel-offer { margin-top: 1rem; font-size: 0.9rem; color: var(--text); }
+
   /* ---------- panes ---------- */
   .reel-pane {
     background-color: var(--glass);
@@ -389,6 +400,8 @@
 
     <header class="reel-head">
       <p class="reel-kicker">Noir au Noir</p>
+      <!-- filled only when a partner's link brought them here -->
+      <p class="reel-sent" id="reel-sent" hidden></p>
       <h1 class="reel-title">One take. Straight to your feed.</h1>
       <p class="reel-intro">
         Short reels filmed in a single continuous shot. No heavy edit, just the moment as it
@@ -396,6 +409,7 @@
         from 8 to 15.
       </p>
       <p class="reel-run">Runtime approx. <b id="runtime">00:02:00:00</b> &middot; 1 visit</p>
+      <p class="reel-offer" id="reel-offer" hidden></p>
     </header>
 
     <section class="reel-pane">
@@ -880,6 +894,74 @@ $("up").addEventListener("click", () => nudge(CONFIG.step));
    with it as a note, because shoot days are not slots in the system. */
 const RELAY = "https://kresha-idea-box.vollerodaniele.workers.dev";
 
+/* ============ WHO SENT THEM ============ */
+/* A partner can send this page the way they send their own:
+   noiraunoir.com/reels/#their-id. Their name goes on it, the open is
+   counted, and a booking made here carries the id, so the fee lands
+   with the right person.
+
+   Kept in the same place the partner page and the booking page keep it,
+   and honoured for the same two hours, so somebody who hops between
+   the three is still credited once and correctly. Only stored after the
+   relay has confirmed the partner exists, so a stray #anything in the
+   address never credits anybody. */
+const REF_MEMORY = "noir-ref";
+
+function sentBy() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(REF_MEMORY) || "null");
+    if (!saved || !saved.id) return "";
+    // the fee is real money, so a stale attribution is worse than none
+    if (Date.now() - Number(saved.at) > 2 * 60 * 60 * 1000) return "";
+    return saved.id;
+  } catch {
+    return "";
+  }
+}
+
+(async function () {
+  const id = location.hash.replace(/^#/, "").trim().toLowerCase();
+  if (!/^[a-z0-9][a-z0-9-]{1,39}$/.test(id)) return;
+
+  let partner;
+  try {
+    const res = await fetch(`${RELAY}/ref?id=${encodeURIComponent(id)}`, { cache: "no-store" });
+    if (!res.ok) return;
+    partner = await res.json();
+  } catch (err) {
+    console.error("partner lookup failed:", err);
+    return;
+  }
+
+  try {
+    localStorage.setItem(REF_MEMORY, JSON.stringify({ id, at: Date.now() }));
+  } catch { /* a blocked storage only costs the attribution */ }
+
+  const sent = document.getElementById("reel-sent");
+  if (partner.name && sent) {
+    sent.textContent = partner.name + " sent you this.";
+    if (partner.note) {
+      const second = document.createElement("span");
+      second.textContent = partner.note;
+      sent.appendChild(second);
+    }
+    sent.hidden = false;
+  }
+
+  const offer = document.getElementById("reel-offer");
+  if (partner.discount && offer) {
+    offer.textContent = "Because " + (partner.name || "they") + " sent you, " + partner.discount + ".";
+    offer.hidden = false;
+  }
+
+  // counted after the page is up, so it never delays anything
+  fetch(`${RELAY}/ref/seen`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ id })
+  }).catch(() => { /* a missed count is not worth a broken page */ });
+})();
+
 const form = $("lock-form");
 const dateField = $("lock-date");
 
@@ -1039,7 +1121,7 @@ form.addEventListener("submit", async (event) => {
     "\nFilming day asked for: " + longDate(date) +
     (about ? "\nWhere: " + about : "");
 
-  const body = { name, email, phone, note, website: $("lock-website").value };
+  const body = { name, email, phone, note, website: $("lock-website").value, ref: sentBy() };
   if (picked) { body.date = picked.date; body.time = picked.time; }
 
   try {
