@@ -101,6 +101,26 @@ function render() {
 
   app.appendChild(kindPanel(isProject));
 
+  /* One take reels: their page is only their reels, so this is only
+     what feeds it. Upload into a month and the reel is on their page,
+     plus the day of the next visit and the footer. Everything else in
+     the plan stays untouched, in case the client is moved to another
+     kind later. */
+  if (plan.kind === "reels") {
+    app.appendChild(deliveriesPanel());
+    app.appendChild(panel("Next visit", (body) => {
+      body.appendChild(row(
+        dateField("Date", plan.nextShoot, "date"),
+        timeField("Time", plan.nextShoot, "time")
+      ));
+      body.appendChild(textField("Where", plan.nextShoot, "location"));
+    }, plan.nextShoot.date || "not planned"));
+    app.appendChild(panel("Contact footer", (body) => {
+      body.appendChild(textField("Footer line", plan.contact, "line"));
+    }, plan.contact.line || ""));
+    return;
+  }
+
   app.appendChild(panel("Intro texts", (body) => {
     body.appendChild(textField("Tagline (under the big title)", plan, "tagline", true));
     body.appendChild(textField("Deal intro line", plan, "dealNotes", true));
@@ -674,14 +694,14 @@ function kindPanel(isProject) {
     const note = document.createElement("p");
     note.className = "muted";
     note.style.cssText = "font-size:0.9rem;margin-bottom:1rem";
-    note.textContent = "A monthly deal shows months and a posting plan. A one off job shows " +
-      "where the work has got to and when it lands, and hides the monthly parts on both the " +
-      "portal and this page.";
+    note.textContent = "A monthly deal shows months and a posting plan. One take reels shows " +
+      "only their reels, to watch and download, month by month. A one off job shows where the " +
+      "work has got to and when it lands. Each hides what does not apply, on the portal and here.";
     body.appendChild(note);
 
     // changing this changes which panels exist, so it redraws
     body.appendChild(switchField("This is a", plan, "kind",
-      [["", "Monthly deal"], ["project", "One off job"]], render));
+      [["", "Monthly deal"], ["reels", "One take reels"], ["project", "One off job"]], render));
 
     if (!isProject) return;
 
@@ -698,7 +718,7 @@ function kindPanel(isProject) {
     hint.textContent = "Rename these to whatever you call them. The client sees the one you " +
       "are on marked, everything before it filled in, everything after it grey.";
     body.appendChild(hint);
-  }, isProject ? stageSummary(project) : "monthly");
+  }, isProject ? stageSummary(project) : plan.kind === "reels" ? "one take reels" : "monthly");
 }
 
 function stageSummary(project) {

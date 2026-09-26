@@ -1264,7 +1264,11 @@ form.addEventListener("submit", async (event) => {
     "\nFilming day asked for: " + longDate(date) +
     (about ? "\nWhere: " + about : "");
 
-  const body = { name, email, phone, note, website: $("lock-website").value, ref: sentBy(), code: offer ? offer.code : "" };
+  const body = {
+    name, email, phone, note, website: $("lock-website").value, ref: sentBy(), code: offer ? offer.code : "",
+    // the package itself, so it can become a client without retyping
+    reels: { count, day: date, place: about, price: PRICE }
+  };
   if (picked) { body.date = picked.date; body.time = picked.time; }
 
   try {

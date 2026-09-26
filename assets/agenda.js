@@ -570,6 +570,7 @@ function askRow(ask) {
     drawAsks();
   });
   head.appendChild(tick);
+  if (ask.reels) head.appendChild(clientButton({ name: ask.name, email: ask.email, phone: ask.phone, reels: ask.reels }));
 
   const drop = document.createElement("button");
   drop.className = "btn-mini";
@@ -925,7 +926,9 @@ async function bookedCalls() {
       where: b.email,
       phone: b.phone || "",
       note: b.note || "",
-      id: b.id
+      id: b.id,
+      email: b.email || "",
+      reels: b.reels || null
     }));
   } catch {
     return [];
@@ -1024,6 +1027,7 @@ function agendaRow(e, past) {
   } else if (!past) {
     head.appendChild(cancelCallButton(e, row));
   }
+  if (e.kind === "call" && e.reels) head.appendChild(clientButton({ name: e.who, email: e.email, phone: e.phone, reels: e.reels }));
 
   row.appendChild(head);
   return row;
@@ -1471,5 +1475,60 @@ async function makeCode() {
     say("code-msg", "Could not make it: " + err.message);
   } finally {
     btn.disabled = false;
+  }
+}
+
+
+/* ============ FROM A REELS BOOKING TO A CLIENT ============ */
+/* Somebody who picked one take reels on the reels page arrives with
+   the package on their booking. Once the call has turned them into a
+   client, this fills in the whole new-client form from it, as a One
+   take client, and leaves Create to you. */
+
+function clientButton(person) {
+  const b = document.createElement("button");
+  b.className = "btn-mini solid";
+  b.textContent = "Make them a client";
+  b.addEventListener("click", () => startClientFrom(person));
+  return b;
+}
+
+function startClientFrom(person) {
+  const r = person.reels || {};
+  showSheet("clients");
+
+  const toggle = $("add-client-toggle");
+  const bodyEl = $("add-client-body");
+  if (toggle && bodyEl && bodyEl.hidden) toggle.click();
+
+  // the kind first, since changing it redraws the rest of the form
+  const kind = $("new-kind");
+  if (kind) {
+    kind.value = "reels";
+    kind.dispatchEvent(new Event("change"));
+  }
+
+  const put = (id, value) => {
+    const el = $(id);
+    if (!el || value == null || value === "") return;
+    el.value = value;
+    el.dataset.touched = "1";
+    el.dispatchEvent(new Event("input", { bubbles: true }));
+  };
+
+  // the business if they named a place, otherwise the person
+  put("new-name", r.place || person.name);
+  put("new-email", person.email);
+  put("new-contact", person.name);
+  put("new-phone", person.phone);
+  put("new-where", r.place);
+  put("date-0", r.day);
+  put("tile-n0", String((r.count || 0) + (r.free || 0)));
+  put("tile-l0", r.free ? "Reels, " + r.free + " free" : "Reels");
+
+  const msg = $("create-msg") || $("new-preview");
+  if (bodyEl) bodyEl.scrollIntoView({ block: "start" });
+  if (msg && msg.id === "create-msg") {
+    msg.textContent = "Filled in from " + (person.name || "the booking") + "'s reels booking. Check it, then Create.";
   }
 }

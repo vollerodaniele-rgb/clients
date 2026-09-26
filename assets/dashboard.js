@@ -578,6 +578,18 @@ function blankPlan(displayName, kind) {
     contact: { line: displayName.toUpperCase() + " x NOIR AU NOIR", email: "info@noiraunoir.com", note: "" }
   };
 
+  /* One take reels: the page shows nothing but the reels, month by
+     month, read from the deliveries. So a new one starts with the month
+     it will be filmed in already listed, ready to upload into. */
+  if (kind === "reels") {
+    plan.kind = "reels";
+    const d = new Date();
+    plan.deliveries = [{
+      month: d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0"),
+      label: "", note: ""
+    }];
+  }
+
   // a one off starts with the stages already in place, so the portal
   // says something the moment it exists
   if (kind === "project") {
@@ -614,6 +626,12 @@ const CREATE_DEFAULTS = {
   project: {
     tagline: "Everything about the job in one place: the day, what we film, where the edit has got to and when it lands.",
     tiles: [["1", "Finished film"], ["4", "Short reels"], ["150", "Photographs"]]
+  },
+  // one take reels: their page is only the reels, so the tiles are kept
+  // for the record in the plan rather than shown
+  reels: {
+    tagline: "One take reels, filmed in a single visit.",
+    tiles: [["8", "Reels"], ["1", "Visit"], ["15 sec", "Per reel"]]
   }
 };
 
@@ -706,7 +724,9 @@ function plannedPortal(displayName, kind) {
   plan.tagline = val("new-tagline");
   plan.dealNotes = kind === "project"
     ? "What we agreed for the job."
-    : "What we deliver every month. Adjust anytime, this page always shows the current agreement.";
+    : kind === "reels"
+      ? "One take reels."
+      : "What we deliver every month. Adjust anytime, this page always shows the current agreement.";
 
   plan.deal = [0, 1, 2]
     .map((i) => ({ num: val("tile-n" + i), label: val("tile-l" + i) }))
@@ -720,6 +740,16 @@ function plannedPortal(displayName, kind) {
   const options = [0, 1, 2]
     .map((i) => ({ date: val("date-" + i), time: val("time-" + i), location: where, focus }))
     .filter((o) => o.date);
+
+  /* A one take client asked for their filming day on the reels page, and
+     their page has no picker, so the day becomes the visit itself and
+     its month the one their reels will be delivered in. */
+  if (kind === "reels" && options.length) {
+    plan.nextShoot.date = options[0].date;
+    plan.nextShoot.time = options[0].time;
+    if (plan.deliveries && plan.deliveries[0]) plan.deliveries[0].month = options[0].date.slice(0, 7);
+    return plan;
+  }
 
   if (options.length) {
     plan.shootPick = {

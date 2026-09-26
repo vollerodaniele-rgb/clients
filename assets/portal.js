@@ -62,6 +62,13 @@ async function loadPlan() {
     $("tagline").after(note);
   }
 
+  // one take reels: no tabs, no plan, just the reels to watch and take
+  if (data.kind === "reels") {
+    setupReelsOnly(data);
+    renderFooter(data.contact);
+    return;
+  }
+
   const isProject = data.kind === "project";
 
   renderDeal(data.deal || []);
@@ -1348,4 +1355,266 @@ function esc(s) {
   const div = document.createElement("div");
   div.textContent = s == null ? "" : String(s);
   return div.innerHTML;
+}
+
+
+/* ============ ONE TAKE REELS ============ */
+/* The whole page, for a client who bought a batch of one take reels.
+   No posting plan, no months, no tabs: their reels, month by month,
+   in a row you swipe through, each with a download under it.
+
+   The films are read straight from the delivery store, so a reel is
+   here the moment it is uploaded, with nothing to publish. */
+
+const REEL_VIDEO = /\.(mp4|mov|m4v|webm)$/i;
+const REEL_PICTURE = /\.(jpe?g|png|webp|heic|heif)$/i;
+
+function reelMonthName(month) {
+  const [y, m] = String(month).split("-");
+  const d = new Date(Number(y), Number(m) - 1, 1);
+  return isNaN(d.getTime()) ? month : d.toLocaleDateString("en-GB", { month: "long", year: "numeric" });
+}
+
+async function setupReelsOnly(data) {
+  document.body.classList.add("reels-only");
+
+  const shell = document.querySelector(".pt-shell");
+  if (!shell) return;
+  // the tabbed pages are not for this client at all
+  for (const view of shell.querySelectorAll(".pt-view")) view.hidden = true;
+
+  const page = document.createElement("div");
+  page.className = "ro";
+  page.innerHTML = `
+    <div class="pt-intro">
+      <div>
+        <p class="pt-eyebrow">Your reels</p>
+        <h1 class="pt-display">Filmed in one take. Ready to post.</h1>
+        <p class="pt-lede">Swipe through them, tap one for sound, and download the ones you want. They stay here.</p>
+      </div>
+    </div>
+    <div id="ro-months"><p class="muted">Loading your reels...</p></div>`;
+  shell.appendChild(page);
+
+  const wrap = page.querySelector("#ro-months");
+  const months = [...new Set((data.deliveries || []).map((d) => d.month).filter(Boolean))]
+    .sort().reverse();
+
+  const found = await Promise.all(months.map(async (month) => {
+    try {
+      const res = await fetch(
+        `${CONFIG.submitUrl}/delivery?client=${encodeURIComponent(CLIENT)}&month=${encodeURIComponent(month)}`,
+        { cache: "no-store" });
+      if (!res.ok) return { month, files: [] };
+      const files = ((await res.json()).files || [])
+        .filter((f) => REEL_VIDEO.test(f.name) || REEL_PICTURE.test(f.name));
+      return { month, files };
+    } catch (err) {
+      console.error("reels for " + month + " failed:", err);
+      return { month, files: [] };
+    }
+  }));
+
+  const filled = found.filter((m) => m.files.length);
+  wrap.innerHTML = "";
+
+  if (!filled.length) {
+    const next = data.nextShoot && data.nextShoot.date
+      ? " We film on " + new Date(data.nextShoot.date + "T00:00:00").toLocaleDateString("en-GB",
+          { weekday: "long", day: "numeric", month: "long" }) + "."
+      : "";
+    wrap.innerHTML = `<section class="pt-pane ro-empty"><p>Your reels land here as soon as they are edited.${esc(next)}</p></section>`;
+    return;
+  }
+
+  for (const m of filled) wrap.appendChild(reelMonth(m, data));
+  tuneReels();
+  addEventListener("scroll", tuneReelsSoon, { passive: true });
+  addEventListener("resize", tuneReelsSoon);
+  document.addEventListener("visibilitychange", () => { if (!document.hidden) tuneReels(); });
+}
+
+function reelMonth(m, data) {
+  const entry = (data.deliveries || []).find((d) => d.month === m.month) || {};
+  const films = m.files.filter((f) => REEL_VIDEO.test(f.name)).length;
+
+  const section = document.createElement("section");
+  section.className = "pt-pane ro-month";
+  section.innerHTML = `
+    <div class="ro-head">
+      <h2 class="pt-h2">${esc(entry.label || reelMonthName(m.month))}</h2>
+      <span class="pt-meta">${films ? films + " reel" + (films === 1 ? "" : "s") : m.files.length + " file" + (m.files.length === 1 ? "" : "s")}</span>
+    </div>
+    ${entry.note ? `<p class="pt-small">${esc(entry.note)}</p>` : ""}`;
+
+  const rail = document.createElement("div");
+  rail.className = "ro-rail";
+
+  m.files.forEach((f, i) => {
+    const url = fileUrl({ month: m.month, name: f.name });
+    const item = document.createElement("div");
+    item.className = "ro-item";
+
+    const frame = document.createElement("div");
+    frame.className = "ro-frame";
+
+    if (REEL_VIDEO.test(f.name)) {
+      const film = document.createElement("video");
+      film.src = url;
+      film.muted = true;
+      film.loop = true;
+      film.playsInline = true;
+      film.preload = "metadata";
+      // a wide film gets a wide frame rather than losing its sides
+      film.addEventListener("loadedmetadata", () => {
+        if (film.videoWidth > film.videoHeight) frame.classList.add("wide");
+      });
+
+      const sound = document.createElement("button");
+      sound.type = "button";
+      sound.className = "ro-sound";
+      sound.textContent = "Tap for sound";
+
+      /* A tap turns the sound on for this one and off for all the
+         others; a second tap pauses it. Every film starts silent,
+         because a browser will not start one any other way. */
+      frame.addEventListener("click", () => {
+        if (film.muted) {
+          for (const other of document.querySelectorAll(".ro-frame video")) {
+            other.muted = true;
+            other.closest(".ro-frame").classList.remove("loud");
+          }
+          film.muted = false;
+          frame.classList.add("loud");
+          sound.textContent = "Sound on";
+          film.play().catch(() => {});
+        } else if (film.paused) {
+          film.play().catch(() => {});
+        } else {
+          film.pause();
+          frame.dataset.held = "1";
+        }
+      });
+
+      frame.append(film, sound);
+    } else {
+      const pic = document.createElement("img");
+      pic.src = url;
+      pic.alt = f.name;
+      pic.loading = "lazy";
+      frame.appendChild(pic);
+    }
+
+    const num = document.createElement("b");
+    num.className = "ro-num";
+    num.textContent = String(i + 1).padStart(2, "0");
+    frame.appendChild(num);
+
+    const dl = document.createElement("a");
+    dl.className = "ro-dl";
+    dl.href = url;
+    dl.setAttribute("download", f.name);
+    dl.textContent = "Download";
+
+    item.append(frame, dl);
+    rail.appendChild(item);
+  });
+
+  const nav = document.createElement("div");
+  nav.className = "ro-nav";
+  const back = document.createElement("button");
+  back.type = "button";
+  back.className = "btn-month";
+  back.setAttribute("aria-label", "Previous reel");
+  back.innerHTML = "&larr;";
+  const next = document.createElement("button");
+  next.type = "button";
+  next.className = "btn-month";
+  next.setAttribute("aria-label", "Next reel");
+  next.innerHTML = "&rarr;";
+  nav.append(back, next);
+
+  const step = (dir) => {
+    const mid = rail.getBoundingClientRect().left + rail.clientWidth / 2;
+    const items = [...rail.children];
+    const centre = (el) => { const b = el.getBoundingClientRect(); return b.left + b.width / 2; };
+    const found = dir > 0 ? items.find((el) => centre(el) > mid + 8)
+      : [...items].reverse().find((el) => centre(el) < mid - 8);
+    if (found) reelGlide(rail, rail.scrollLeft + centre(found) - mid);
+  };
+  back.addEventListener("click", () => step(-1));
+  next.addEventListener("click", () => step(1));
+
+  const edges = () => {
+    back.disabled = rail.scrollLeft < 8;
+    next.disabled = rail.scrollLeft > rail.scrollWidth - rail.clientWidth - 8;
+  };
+  rail.addEventListener("scroll", () => { edges(); tuneReelsSoon(); }, { passive: true });
+  setTimeout(edges, 0);
+
+  section.append(rail, nav);
+  return section;
+}
+
+/* Animated by hand: a smooth scrollTo on a snapping row does nothing at
+   all in some browsers, and never runs in a background tab. */
+function reelGlide(rail, to) {
+  const from = rail.scrollLeft;
+  const span = to - from;
+  if (!span) return;
+  if (matchMedia("(prefers-reduced-motion: reduce)").matches) { rail.scrollLeft = to; return; }
+
+  rail.style.scrollSnapType = "none";
+  const began = performance.now();
+  const done = () => { clearTimeout(land); rail.style.scrollSnapType = ""; tuneReelsSoon(); };
+  const land = setTimeout(() => { rail.scrollLeft = to; done(); }, 420);
+  const frame = (now) => {
+    const part = Math.min(1, (now - began) / 320);
+    const eased = part < 0.5 ? 2 * part * part : 1 - Math.pow(-2 * part + 2, 2) / 2;
+    rail.scrollLeft = from + span * eased;
+    if (part < 1) requestAnimationFrame(frame); else done();
+  };
+  requestAnimationFrame(frame);
+}
+
+/* In each row, the reel nearest the middle plays, silently unless it was
+   tapped; everything else stops. A row off the screen plays nothing. */
+function tuneReels() {
+  const still = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  for (const rail of document.querySelectorAll(".ro-rail")) {
+    const box = rail.getBoundingClientRect();
+    const onScreen = box.bottom > 60 && box.top < innerHeight - 60;
+    const mid = box.left + rail.clientWidth / 2;
+
+    let wanted = null;
+    let nearest = Infinity;
+    for (const frame of rail.querySelectorAll(".ro-frame")) {
+      const b = frame.getBoundingClientRect();
+      const off = Math.abs(b.left + b.width / 2 - mid);
+      if (off < nearest) { nearest = off; wanted = frame; }
+    }
+
+    for (const frame of rail.querySelectorAll(".ro-frame")) {
+      const film = frame.querySelector("video");
+      if (!film) continue;
+      const run = !still && onScreen && frame === wanted;
+      if (run && film.paused && frame.dataset.held !== "1") {
+        film.play().catch(() => {});
+      } else if (!run && !film.paused) {
+        film.pause();
+        film.muted = true;
+        frame.classList.remove("loud");
+        const sound = frame.querySelector(".ro-sound");
+        if (sound) sound.textContent = "Tap for sound";
+        delete frame.dataset.held;
+      }
+    }
+  }
+}
+
+let reelsWaiting = false;
+function tuneReelsSoon() {
+  if (reelsWaiting) return;
+  reelsWaiting = true;
+  setTimeout(() => { reelsWaiting = false; tuneReels(); }, 120);
 }
