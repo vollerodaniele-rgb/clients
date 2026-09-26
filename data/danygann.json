@@ -1,0 +1,47 @@
+{
+  "name": "DANYGANN",
+  "tagline": "One take reels, filmed in a single visit.",
+  "dealNotes": "One take reels.",
+  "deal": [
+    {
+      "num": "8",
+      "label": "Reels"
+    },
+    {
+      "num": "1",
+      "label": "Visit"
+    },
+    {
+      "num": "15 sec",
+      "label": "Per reel"
+    }
+  ],
+  "nextShoot": {
+    "date": "",
+    "time": "",
+    "location": "",
+    "focus": "",
+    "checklist": []
+  },
+  "filmPlan": {
+    "month": "",
+    "items": []
+  },
+  "months": [],
+  "documents": [],
+  "invoices": [],
+  "posts": [],
+  "contact": {
+    "line": "DANYGANN x NOIR AU NOIR",
+    "email": "info@noiraunoir.com",
+    "note": ""
+  },
+  "kind": "reels",
+  "deliveries": [
+    {
+      "month": "2026-09",
+      "label": "",
+      "note": ""
+    }
+  ]
+}

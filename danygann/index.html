@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Content Portal</title>
+  <meta name="robots" content="noindex, nofollow">
+  <!-- Change the ?v= on both assets whenever styles.css or portal.js
+       changes. Pages caches this page and its files separately for ten
+       minutes, and without a new address a fresh page can meet a stale
+       stylesheet and render bare. -->
+  <link rel="stylesheet" href="../assets/styles.css?v=2026-09-26">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎬</text></svg>">
+</head>
+<body class="portal">
+
+  <!-- The versioned addresses above keep this page with its own script.
+       The script still checks for each part before drawing it, so an old
+       cached page without them does not break. -->
+
+  <header class="pt-top">
+    <div class="pt-bar">
+      <p class="pt-brand"><b id="client-name">&nbsp;</b></p>
+      <nav class="pt-tabs" role="tablist" aria-label="Portal">
+        <button type="button" class="pt-tab" role="tab" data-view="month" aria-controls="v-month">Month<i class="pt-dot" id="needs-dot" hidden></i></button>
+        <button type="button" class="pt-tab" role="tab" data-view="posts" aria-controls="v-posts">Posts</button>
+        <button type="button" class="pt-tab" role="tab" data-view="files" aria-controls="v-files">Files</button>
+        <button type="button" class="pt-tab" role="tab" data-view="billing" aria-controls="v-billing">Billing</button>
+        <button type="button" class="pt-tab" role="tab" data-view="ideas" aria-controls="v-ideas">Ideas</button>
+      </nav>
+    </div>
+  </header>
+
+  <main class="pt-shell">
+
+    <!-- ============ MONTH ============ -->
+    <div class="pt-view" id="v-month" role="tabpanel">
+      <div class="pt-intro">
+        <div>
+          <p class="pt-eyebrow" id="month-kicker">Your month</p>
+          <h1 class="pt-display" id="month-title">&nbsp;</h1>
+          <p class="pt-lede" id="tagline">Loading...</p>
+        </div>
+        <div class="pt-pills" id="month-pills"></div>
+      </div>
+
+      <div class="pt-stack">
+        <section id="shoot" class="pt-pane pt-needs">
+          <p class="pt-eyebrow" id="shoot-kicker">Next shoot</p>
+          <h2 class="pt-h2" id="shoot-title">Your shoot day</h2>
+          <div class="shoot-card" id="shoot-card"><p class="muted">Loading...</p></div>
+        </section>
+
+        <!-- two panes of about the same height side by side, so neither
+             leaves a gap under it -->
+        <div class="pt-row even">
+          <section class="pt-pane" id="progress-card">
+            <div class="pt-head"><p class="pt-eyebrow">Progress</p><span class="pt-meta" id="progress-meta"></span></div>
+            <div id="progress-body"><p class="muted">Loading...</p></div>
+          </section>
+
+          <section id="deal" class="pt-pane">
+            <div class="pt-head section-head"><h2 class="pt-eyebrow">Our agreement</h2></div>
+            <div class="tiles" id="deal-tiles"></div>
+            <p class="pt-small" id="deal-notes"></p>
+          </section>
+        </div>
+
+        <section id="filmplan" class="pt-pane">
+          <div class="pt-head"><p class="pt-eyebrow" id="filmplan-title">What we film this month</p></div>
+          <ol class="plan-list" id="plan-list"></ol>
+        </section>
+
+        <section class="pt-pane pt-result" id="results" hidden></section>
+      </div>
+    </div>
+
+    <!-- ============ POSTS ============ -->
+    <div class="pt-view" id="v-posts" role="tabpanel">
+      <div class="pt-intro">
+        <div>
+          <p class="pt-eyebrow">Posting plan</p>
+          <h1 class="pt-display">What goes out, and how it did.</h1>
+          <p class="pt-lede" id="posts-lede">Tap a day to jump to its post. Tap a caption to copy it.</p>
+        </div>
+      </div>
+
+      <section class="pt-pane" id="calendar">
+        <div class="pt-cal-head">
+          <div class="month-nav">
+            <button type="button" class="btn-month" id="prev-month" aria-label="Previous month">&larr;</button>
+            <h2 class="pt-month" id="cal-title" aria-live="polite">&nbsp;</h2>
+            <button type="button" class="btn-month" id="next-month" aria-label="Next month">&rarr;</button>
+            <button type="button" class="btn-month" id="today-month">This month</button>
+          </div>
+          <div class="pt-totals" id="month-totals" hidden></div>
+        </div>
+        <div class="cal" id="cal"></div>
+      </section>
+
+      <div class="post-list" id="post-list"></div>
+    </div>
+
+    <!-- ============ FILES ============ -->
+    <div class="pt-view" id="v-files" role="tabpanel">
+      <div class="pt-intro">
+        <div>
+          <p class="pt-eyebrow">Files</p>
+          <h1 class="pt-display">Everything we deliver lands here.</h1>
+          <p class="pt-lede">Finished work to download, plus contracts and briefs. Nothing expires.</p>
+        </div>
+      </div>
+      <section id="documents" class="pt-pane">
+        <div class="doc-grid" id="doc-grid"></div>
+      </section>
+    </div>
+
+    <!-- ============ BILLING ============ -->
+    <div class="pt-view" id="v-billing" role="tabpanel">
+      <div class="pt-intro">
+        <div>
+          <p class="pt-eyebrow">Billing</p>
+          <h1 class="pt-display">Your invoices, in one place.</h1>
+          <p class="pt-lede">PDFs are shared privately. This page tracks where each one stands.</p>
+        </div>
+      </div>
+      <section id="billing" class="pt-pane">
+        <div class="table-wrap">
+          <table class="invoice-table">
+            <thead><tr><th>Invoice</th><th>Period</th><th>Issued</th><th>Status</th><th></th></tr></thead>
+            <tbody id="invoice-rows"></tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+
+    <!-- ============ IDEAS ============ -->
+    <div class="pt-view" id="v-ideas" role="tabpanel">
+      <div class="pt-intro">
+        <div>
+          <p class="pt-eyebrow">Ideas</p>
+          <h1 class="pt-display">Seen something you want filmed?</h1>
+          <p class="pt-lede">A dish, an event, a promo. Drop it here and it goes straight into our planning.</p>
+        </div>
+      </div>
+      <section id="requests">
+        <form id="request-form" class="request-form" hidden>
+          <label class="field">
+            <span>Your idea</span>
+            <textarea id="request-text" rows="3" maxlength="1000" required
+              placeholder="Example: we launch a new menu on the 15th, can we tease it in a reel?"></textarea>
+          </label>
+          <div class="request-form-row">
+            <label class="field">
+              <span>Your name (optional)</span>
+              <input id="request-name" type="text" maxlength="60" placeholder="Who is asking?">
+            </label>
+            <button type="submit" class="btn-send" id="request-submit">Send</button>
+          </div>
+          <input type="text" id="request-website" name="website" class="hp-field" tabindex="-1" autocomplete="off" aria-hidden="true">
+          <p class="form-msg" id="request-msg" role="status"></p>
+        </form>
+
+        <div class="request-grid" id="request-grid">
+          <p class="muted" id="request-status">Loading ideas...</p>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <footer class="footer">
+    <p id="contact-line">NOIR AU NOIR</p>
+  </footer>
+
+  <script src="../assets/portal.js?v=2026-09-26"></script>
+</body>
+</html>
