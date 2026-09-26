@@ -527,15 +527,68 @@ function fileArea(d) {
   msg.className = "form-msg";
   msg.style.cssText = "font-size:0.85rem;margin-top:0.4rem";
 
+  /* Telling them it is ready. Nothing does it by itself: a batch goes up
+     one file at a time, and "your reels are ready" after the third of
+     eight would be worse than silence. */
+  const tellRow = document.createElement("div");
+  tellRow.style.cssText = "display:flex;align-items:center;gap:0.7rem;flex-wrap:wrap;margin-top:0.7rem";
+  const tell = document.createElement("button");
+  tell.type = "button";
+  tell.className = "btn-mini solid";
+  tell.textContent = plan.kind === "reels" ? "Tell them their reels are ready" : "Tell them it is ready";
+  const told = document.createElement("span");
+  told.className = "muted";
+  told.style.fontSize = "0.82rem";
+  tellRow.append(tell, told);
+  tellRow.hidden = true;
+
+  const toldLine = (t) => {
+    if (!t || !t.at) { told.textContent = "Not told yet."; return; }
+    const when = new Date(t.at).toLocaleDateString("en-GB", { day: "numeric", month: "long" });
+    told.textContent = "Told them on " + when + (t.count ? " (" + t.count + ")" : "") + ".";
+    tell.className = "btn-mini";
+    tell.textContent = "Tell them again";
+  };
+
+  tell.addEventListener("click", async () => {
+    if (!d.month) return;
+    tell.disabled = true;
+    told.textContent = "Sending...";
+    try {
+      const who = await readContact();
+      if (!who || !who.email) { told.textContent = "No address on file for this client, so nothing was sent."; return; }
+      const res = await fetch(`${RELAY_URL}/ready`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          key: token(), client: CLIENT, month: d.month,
+          email: who.email, name: who.person || who.name || ""
+        })
+      });
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok) { told.textContent = "It did not send: " + (body.error || res.status) + "."; return; }
+      toldLine({ at: body.at, count: body.count });
+      told.textContent += " Sent to " + who.email + ".";
+    } catch (err) {
+      console.error("ready mail failed:", err);
+      told.textContent = "It did not send.";
+    } finally {
+      tell.disabled = false;
+    }
+  });
+
   const draw = async () => {
-    if (!d.month) { list.textContent = "Pick a month first."; return; }
+    if (!d.month) { list.textContent = "Pick a month first."; tellRow.hidden = true; return; }
     list.textContent = "Reading what is there...";
     try {
       const res = await fetch(
         `${RELAY_URL}/delivery?client=${encodeURIComponent(CLIENT)}&month=${encodeURIComponent(d.month)}`,
         { cache: "no-store" }
       );
-      const { files } = await res.json();
+      const data = await res.json();
+      const files = data.files || [];
+      tellRow.hidden = !files.length;
+      toldLine(data.told);
       list.innerHTML = files.length
         ? files.map((f) => `<div>${escHtml(f.name)} <span class="muted">${readableSize(f.size)}</span></div>`).join("")
         : '<span class="muted">Nothing in this month yet.</span>';
@@ -612,9 +665,22 @@ function fileArea(d) {
     draw();
   });
 
-  wrap.append(pick, msg);
+  wrap.append(pick, msg, tellRow);
   draw();
   return wrap;
+}
+
+/* This client's address and name, from the private repo, which only a
+   page holding the key can read. */
+async function readContact() {
+  const res = await fetch(
+    `https://api.github.com/repos/${OWNER}/studio-private/contents/contacts.json`,
+    { headers: { Authorization: "Bearer " + token(), Accept: "application/vnd.github+json" }, cache: "no-store" }
+  );
+  if (!res.ok) return null;
+  const file = await res.json();
+  const contacts = JSON.parse(decodeURIComponent(escape(atob(file.content.replace(/\n/g, "")))));
+  return contacts[CLIENT] || null;
 }
 
 /* Everything already delivered to this client, month by month, as
