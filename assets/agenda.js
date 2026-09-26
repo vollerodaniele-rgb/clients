@@ -21,6 +21,13 @@ function say(id, what) {
 }
 
 onReady(() => {
+  /* The Telegram button for a reels booking opens this page with
+     #confirm=... in the address. It waits for the lock, and a second
+     button pressed while the page is open only changes the hash. */
+  if (typeof whenUnlocked === "function") whenUnlocked(confirmFromLink);
+  else confirmFromLink();
+  addEventListener("hashchange", confirmFromLink);
+
   whenSheet("agenda", () => {
     loadAgenda();
     drawMainLink();
@@ -570,7 +577,11 @@ function askRow(ask) {
     drawAsks();
   });
   head.appendChild(tick);
-  if (ask.reels) head.appendChild(clientButton({ name: ask.name, email: ask.email, phone: ask.phone, reels: ask.reels }));
+  if (ask.reels) {
+    head.appendChild(ask.client
+      ? madeLink(ask.client)
+      : clientButton({ name: ask.name, email: ask.email, phone: ask.phone, reels: ask.reels }));
+  }
 
   const drop = document.createElement("button");
   drop.className = "btn-mini";
@@ -928,7 +939,8 @@ async function bookedCalls() {
       note: b.note || "",
       id: b.id,
       email: b.email || "",
-      reels: b.reels || null
+      reels: b.reels || null,
+      client: b.client || ""
     }));
   } catch {
     return [];
@@ -1027,7 +1039,11 @@ function agendaRow(e, past) {
   } else if (!past) {
     head.appendChild(cancelCallButton(e, row));
   }
-  if (e.kind === "call" && e.reels) head.appendChild(clientButton({ name: e.who, email: e.email, phone: e.phone, reels: e.reels }));
+  if (e.kind === "call" && e.reels) {
+    head.appendChild(e.client
+      ? madeLink(e.client)
+      : clientButton({ name: e.who, email: e.email, phone: e.phone, reels: e.reels }));
+  }
 
   row.appendChild(head);
   return row;
@@ -1502,6 +1518,7 @@ function startClientFrom(person) {
   if (toggle && bodyEl && bodyEl.hidden) toggle.click();
 
   // the kind first, since changing it redraws the rest of the form
+  // (the time too, when the confirm screen chose one)
   const kind = $("new-kind");
   if (kind) {
     kind.value = "reels";
@@ -1525,10 +1542,204 @@ function startClientFrom(person) {
   put("date-0", r.day);
   put("tile-n0", String((r.count || 0) + (r.free || 0)));
   put("tile-l0", r.free ? "Reels, " + r.free + " free" : "Reels");
+  put("time-0", r.time);
 
   const msg = $("create-msg") || $("new-preview");
   if (bodyEl) bodyEl.scrollIntoView({ block: "start" });
   if (msg && msg.id === "create-msg") {
     msg.textContent = "Filled in from " + (person.name || "the booking") + "'s reels booking. Check it, then Create.";
   }
+}
+
+
+/* ============ CONFIRM A REELS BOOKING ============ */
+/* Somebody asked for a filming day on the reels page. The Telegram ping
+   carries a Confirm button that lands here: one screen with who they
+   are, what they picked and the day, and one press that makes their
+   One take portal, sends them the welcome with its address, sends a
+   calendar confirmation for the day, and marks the booking done so the
+   same booking can never make a second portal. */
+
+function madeLink(slug) {
+  const a = document.createElement("a");
+  a.className = "btn-mini";
+  a.href = "../" + encodeURIComponent(slug) + "/";
+  a.target = "_blank";
+  a.rel = "noopener";
+  a.textContent = "Portal made";
+  return a;
+}
+
+async function confirmFromLink() {
+  const m = location.hash.match(/^#confirm=(book|ask):(.+)$/);
+  if (!m) return;
+  const kind = m[1];
+  const id = decodeURIComponent(m[2]);
+
+  let pane = $("confirm-pane");
+  if (!pane) {
+    pane = document.createElement("div");
+    pane.id = "confirm-pane";
+    pane.className = "panel";
+    pane.style.cssText = "border-color:rgba(242,242,242,0.4)";
+    const tabs = $("sheet-tabs");
+    tabs.parentNode.insertBefore(pane, tabs);
+  }
+  pane.innerHTML = '<h2>Confirm a reels booking</h2><p class="muted" style="font-size:0.9rem">Reading the booking...</p>';
+  pane.scrollIntoView({ block: "start" });
+
+  if (!token()) {
+    pane.innerHTML = '<h2>Confirm a reels booking</h2><p class="muted">Unlock the dashboard first.</p>';
+    return;
+  }
+
+  let record;
+  try {
+    const res = await fetch(`${AGENDA_RELAY}/call/list`, { headers: { "X-Studio-Key": token() }, cache: "no-store" });
+    if (!res.ok) throw new Error(String(res.status));
+    const data = await res.json();
+    const list = kind === "book" ? data.booked || [] : data.asks || [];
+    record = list.find((r) => r.id === id);
+  } catch (err) {
+    pane.innerHTML = '<h2>Confirm a reels booking</h2><p class="muted">Could not read the booking (' + escHtml(err.message) + ").</p>";
+    return;
+  }
+
+  const close = () => {
+    pane.remove();
+    history.replaceState(null, "", location.pathname + location.search);
+  };
+
+  if (!record || !record.reels) {
+    pane.innerHTML = '<h2>Confirm a reels booking</h2><p class="muted">That booking is not there any more.</p>';
+    const ok = document.createElement("button");
+    ok.className = "btn-mini";
+    ok.textContent = "Close";
+    ok.addEventListener("click", close);
+    pane.appendChild(ok);
+    return;
+  }
+
+  const r = record.reels;
+
+  if (record.client) {
+    pane.innerHTML = `<h2>Already confirmed</h2>
+      <p style="margin-top:0.4rem">${escHtml(record.name)}'s portal is at
+      <a href="../${escHtml(record.client)}/" target="_blank" rel="noopener">noiraunoir.com/${escHtml(record.client)}/</a>.</p>`;
+    const ok = document.createElement("button");
+    ok.className = "btn-mini";
+    ok.style.marginTop = "0.8rem";
+    ok.textContent = "Close";
+    ok.addEventListener("click", close);
+    pane.appendChild(ok);
+    return;
+  }
+
+  pane.innerHTML = `
+    <h2>Confirm a reels booking</h2>
+    <p style="font-size:0.95rem;margin-top:0.2rem"><b>${escHtml(record.name)}</b>
+      <span class="muted">&middot; ${escHtml(record.email || "")} &middot; ${escHtml(record.phone || "")}</span></p>
+    <p style="font-size:0.95rem;margin-top:0.3rem"><b>${r.count} reels${r.free ? " + " + r.free + " free" : ""}</b>
+      <span class="muted">${r.price ? "&middot; &euro;" + escHtml(String(r.price)) + " a reel" : ""}
+      ${record.code ? "&middot; code " + escHtml(record.code.code) : ""}
+      ${record.ref ? "&middot; sent by " + escHtml(record.ref) : ""}</span></p>
+    <div class="row" style="margin-top:1rem">
+      <label class="field" style="flex:1;min-width:11rem"><span>Client name</span>
+        <input id="cf-name" type="text" maxlength="60"></label>
+      <label class="field" style="min-width:10rem"><span>Filming day</span>
+        <input id="cf-day" type="date"></label>
+      <label class="field" style="min-width:7rem"><span>Time</span>
+        <input id="cf-time" type="time"></label>
+    </div>
+    <div class="row" style="margin-top:0.9rem;align-items:center">
+      <button class="btn-mini solid" id="cf-go">Confirm and make their portal</button>
+      <button class="btn-mini" id="cf-later">Not now</button>
+    </div>
+    <p class="form-msg" id="cf-msg" style="margin-top:0.7rem"></p>`;
+
+  $("cf-name").value = r.place || record.name || "";
+  $("cf-day").value = r.day || "";
+  $("cf-time").value = "10:00";
+  $("cf-later").addEventListener("click", close);
+
+  $("cf-go").addEventListener("click", async () => {
+    const say = (t) => { $("cf-msg").textContent = t; };
+    const name = $("cf-name").value.trim();
+    const day = $("cf-day").value;
+    const time = $("cf-time").value;
+    if (!name) return say("Give the client a name.");
+    if (!day) return say("Pick the filming day.");
+
+    const go = $("cf-go");
+    go.disabled = true;
+    say("Making their portal...");
+
+    // the same form Create uses, filled, so nothing is done twice
+    startClientFrom({
+      name: record.name, email: record.email, phone: record.phone,
+      reels: { ...r, day, time, place: name }
+    });
+    pane.scrollIntoView({ block: "start" });
+
+    const slug = await createClient();
+    if (!slug) {
+      go.disabled = false;
+      return say(($("create-msg") && $("create-msg").textContent) || "The portal could not be made.");
+    }
+
+    // remembered on the booking, so it can never make a second portal
+    try {
+      await fetch(`${AGENDA_RELAY}/call/made`, {
+        method: "POST",
+        headers: { "X-Studio-Key": token(), "Content-Type": "application/json" },
+        body: JSON.stringify({ kind, id, slug })
+      });
+    } catch (err) { console.error("could not mark the booking:", err); }
+
+    const when = new Date(day + "T00:00:00").toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long" });
+    pane.innerHTML = `<h2>Confirmed</h2>
+      <p style="margin-top:0.4rem">${escHtml(name)} is a client, filming ${escHtml(when)} at ${escHtml(time)}.
+      Their page will be at <a href="../${escHtml(slug)}/" target="_blank" rel="noopener">noiraunoir.com/${escHtml(slug)}/</a>
+      in about a minute, and ${record.email ? "they get a welcome mail with the address once it is live." : "there was no email, so tell them yourself."}</p>
+      <p class="muted" style="font-size:0.85rem;margin-top:0.5rem" id="cf-invite"></p>
+      <p class="muted" style="font-size:0.85rem;margin-top:0.3rem">Upload their reels in its editor, under Deliveries.</p>`;
+
+    /* Their day, in their calendar. The relay reads the new portal from
+       GitHub's raw files, which trail a fresh commit by a few seconds
+       and may briefly say there is no such portal, so it is tried again
+       a few times before giving up. In the background, so the screen
+       above does not wait for it. */
+    if (record.email) {
+      const line = $("cf-invite");
+      line.textContent = "Sending them a calendar confirmation for the day...";
+      (async () => {
+        for (const wait of [3000, 10000, 20000, 40000]) {
+          await new Promise((done) => setTimeout(done, wait));
+          try {
+            const res = await fetch(`${AGENDA_RELAY}/shoot-confirmed`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                key: token(), client: slug, email: record.email, name: record.name,
+                date: day, time, location: r.place || "", focus: r.count + " one take reels"
+              })
+            });
+            if (res.ok) { line.textContent = "A calendar confirmation for the day is on its way to them."; return; }
+            if (res.status !== 404) { line.textContent = "The calendar confirmation did not send (" + res.status + ")."; return; }
+          } catch { /* try again */ }
+        }
+        line.textContent = "The calendar confirmation did not send. Confirm the day again from their editor.";
+      })();
+    }
+
+    const ok = document.createElement("button");
+    ok.className = "btn-mini";
+    ok.style.marginTop = "0.8rem";
+    ok.textContent = "Close";
+    ok.addEventListener("click", close);
+    pane.appendChild(ok);
+    history.replaceState(null, "", location.pathname + location.search);
+    loadAgenda();
+    drawAsks();
+  });
 }

@@ -504,15 +504,15 @@ async function createClient() {
   const displayName = $("new-name").value.trim();
   const slug = slugify($("new-slug").value || displayName);
 
-  if (!token()) { msg.textContent = "Save your access key first."; return; }
-  if (!displayName) { msg.textContent = "Give the client a name."; return; }
+  if (!token()) { msg.textContent = "Save your access key first."; return null; }
+  if (!displayName) { msg.textContent = "Give the client a name."; return null; }
   if (!/^[a-z0-9][a-z0-9-]{0,29}$/.test(slug)) {
     msg.textContent = "That address will not work. Use letters and numbers, for example fema.";
-    return;
+    return null;
   }
   if (RESERVED.includes(slug)) {
     msg.textContent = `"${slug}" is used by the site itself. Pick another address.`;
-    return;
+    return null;
   }
 
   btn.disabled = true;
@@ -523,7 +523,7 @@ async function createClient() {
     if (existing.includes(slug)) {
       msg.textContent = `There is already a client at /${slug}/.`;
       btn.disabled = false;
-      return;
+      return null;
     }
 
     const pages = await Promise.all(TEMPLATE_FILES.map(async (f) => {
@@ -552,12 +552,18 @@ async function createClient() {
       await rememberContact(slug, displayName, email);
       // greet the person, not the company: "Welcome, Cafe." reads badly
       const person = ($("new-contact") && $("new-contact").value.trim()) || displayName;
-      await welcomeWhenLive(slug, person, email, msg);
+      /* Not waited for: it waits for the page to go live, a minute or
+         three, and whoever made the client should not wait with it. It
+         reports on the same line when it is done. */
+      welcomeWhenLive(slug, person, email, msg).catch((err) => console.error("welcome failed:", err));
     }
+    // the address, so a caller can carry on with the new client
+    return slug;
   } catch (err) {
     console.error("create client failed:", err);
     msg.textContent = "Could not create it: " + err.message +
       (/40[13]/.test(err.message) ? " (the key needs Contents read and write)" : "");
+    return null;
   } finally {
     btn.disabled = false;
   }
