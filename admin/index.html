@@ -19,7 +19,7 @@
       here.parentNode.insertBefore(css, here);
       // lock.js after dashboard.js, which is where the key name and the
       // unlock switch live, and before sheets.js, which is what it holds
-      ["dashboard.js", "lock.js", "proposals.js", "boxes.js", "transfers.js", "agenda.js", "people.js", "links.js", "sheets.js"].forEach(function (file) {
+      ["dashboard.js", "lock.js", "proposals.js", "boxes.js", "transfers.js", "agenda.js", "people.js", "map.js", "links.js", "sheets.js"].forEach(function (file) {
         var js = document.createElement("script");
         js.src = "../assets/" + file + "?t=" + stamp;
         js.async = false;
@@ -102,6 +102,21 @@
       .link-row { flex-wrap: wrap; }
       .link-what { flex-basis: 100%; }
     }
+
+    /* The Map sheet: the real map in a frame, and the pieces of a place */
+    .map-frame {
+      height: 26rem; margin: 0.4rem 0 1.2rem; overflow: hidden; background: #000;
+      border: 1px solid var(--line); border-radius: var(--radius);
+    }
+    .map-frame iframe { width: 100%; height: 100%; border: 0; display: block; }
+    @media (max-width: 40rem) { .map-frame { height: 20rem; } }
+    .map-pieces { display: flex; gap: 0.8rem; flex-wrap: wrap; margin: 0.4rem 0 0.9rem; }
+    .map-piece { display: grid; gap: 0.4rem; width: 7rem; }
+    .pv { width: 7rem; height: 7rem; border-radius: 10px; overflow: hidden; background: #0b0b0d; border: 1px solid var(--line); }
+    .pv.small { width: 3.2rem; height: 3.2rem; flex: 0 0 auto; border-radius: 8px; }
+    .pv img, .pv video { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .pv-btns { display: flex; gap: 0.3rem; align-items: center; flex-wrap: wrap; }
+    .pv-btns .btn-mini { padding: 0.3rem 0.6rem; font-size: 0.64rem; }
 
     .sheet-tab.on {
       background: var(--text);
@@ -406,6 +421,65 @@
       </div>
       <p class="muted" id="people-count" style="font-size:0.8rem;margin-top:0.8rem"></p>
       <div id="people-list" style="margin-top:0.6rem"></div>
+    </div>
+    </section>
+
+    <section id="sheet-map" hidden>
+    <div class="panel">
+      <h2>Map</h2>
+      <p class="how" style="margin-bottom:1rem">
+        Every place you filmed, on <a href="../world/" target="_blank" rel="noopener" style="color:var(--text)">noiraunoir.com/world</a>.
+        Click the map where it was, or find it by name. Scroll or pinch to zoom in close.
+      </p>
+      <div class="row">
+        <label class="field" style="flex:1;min-width:12rem"><span>Find a place</span>
+          <input id="map-find" type="search" placeholder="Korenmarkt, Gent" autocomplete="off">
+        </label>
+        <button class="btn-mini" id="map-find-go" type="button">Find</button>
+      </div>
+      <p class="muted" id="map-find-msg" style="font-size:0.78rem;margin-top:0.5rem;min-height:1em"></p>
+      <div class="map-frame"><iframe id="map-frame" title="The map"></iframe></div>
+
+      <p class="muted" id="map-empty" style="font-size:0.9rem">Click the map to put a new pin, or a pin to change it.</p>
+      <div id="map-form" hidden>
+        <p class="link-head" id="map-form-head">A new place</p>
+        <p class="muted" id="map-at" style="font-size:0.8rem;margin-bottom:0.8rem"></p>
+        <div class="row">
+          <label class="field" style="flex:1;min-width:10rem"><span>Town or city</span>
+            <input id="map-place" type="text" maxlength="60" placeholder="Gent">
+          </label>
+          <label class="field" style="flex:1;min-width:10rem"><span>Country</span>
+            <input id="map-country" type="text" maxlength="60" placeholder="Belgium">
+          </label>
+        </div>
+        <label class="field" style="margin-top:0.8rem"><span>Title</span>
+          <input id="map-title" type="text" maxlength="80" placeholder="Sakas">
+        </label>
+        <label class="field" style="margin-top:0.8rem"><span>What you made</span>
+          <textarea id="map-what" rows="3" maxlength="400" placeholder="Monthly reels for a restaurant: the kitchen at work."></textarea>
+        </label>
+        <p class="link-head">Films and photos</p>
+        <div class="map-pieces" id="map-pieces"></div>
+        <div class="row" style="align-items:center">
+          <label class="btn-mini" style="cursor:pointer">Add files
+            <input id="map-files" type="file" multiple accept="image/jpeg,image/png,image/webp,video/mp4,video/quicktime,video/webm" hidden>
+          </label>
+          <input id="map-link" type="text" placeholder="or paste a link" autocomplete="off"
+            style="flex:1;min-width:10rem;padding:0.45rem 0.8rem;border-radius:999px;border:1px solid var(--line);background:transparent;color:var(--text);font:inherit;font-size:0.85rem">
+          <button class="btn-mini" id="map-link-add" type="button">Add link</button>
+        </div>
+        <p class="muted" style="font-size:0.76rem;margin-top:0.6rem">
+          This page is public and plays on phones: a short web export, under 20MB, loads best.
+        </p>
+        <p class="form-msg" id="map-msg" style="margin-top:0.7rem"></p>
+        <div class="row" style="margin-top:0.8rem">
+          <button class="btn-mini solid" id="map-save" type="button">Save pin</button>
+          <button class="btn-mini" id="map-cancel" type="button">Cancel</button>
+        </div>
+      </div>
+
+      <p class="link-head" id="map-count" style="margin-top:1.6rem"></p>
+      <div id="map-list"></div>
     </div>
     </section>
 

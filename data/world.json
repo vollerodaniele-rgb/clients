@@ -1,0 +1,93 @@
+{
+  "places": [
+    {
+      "place": "Gent",
+      "country": "Belgium",
+      "lat": 51.0543,
+      "lon": 3.7174,
+      "title": "Sakas",
+      "what": "Monthly reels for a restaurant in Gent: the ageing fridges, the knives, the kitchen at work. One of them reached 112,000 people.",
+      "pieces": [
+        {
+          "kind": "film",
+          "src": "/reels/examples/1.mp4",
+          "tall": true
+        },
+        {
+          "kind": "film",
+          "src": "/reels/examples/4.mp4"
+        },
+        {
+          "kind": "photo",
+          "src": "https://kresha-idea-box.vollerodaniele.workers.dev/thumb?client=sakas&post=7O5cNYv_"
+        },
+        {
+          "kind": "film",
+          "src": "/reels/examples/2.mp4",
+          "tall": true
+        }
+      ]
+    },
+    {
+      "place": "Antwerp",
+      "country": "Belgium",
+      "lat": 51.2194,
+      "lon": 4.4025,
+      "example": true,
+      "title": "A tailor's atelier",
+      "what": "Example pin, to show the idea. A real shoot goes here: where, for whom, and what was made.",
+      "pieces": [
+        {
+          "kind": "film",
+          "src": "/reels/examples/3.mp4"
+        }
+      ]
+    },
+    {
+      "place": "Paris",
+      "country": "France",
+      "lat": 48.8566,
+      "lon": 2.3522,
+      "example": true,
+      "title": "A showroom during fashion week",
+      "what": "Example pin, to show the idea.",
+      "pieces": [
+        {
+          "kind": "film",
+          "src": "/reels/examples/5.mp4",
+          "tall": true
+        }
+      ]
+    },
+    {
+      "place": "Milan",
+      "country": "Italy",
+      "lat": 45.4642,
+      "lon": 9.19,
+      "example": true,
+      "title": "A perfume launch",
+      "what": "Example pin, to show the idea.",
+      "pieces": [
+        {
+          "kind": "photo",
+          "src": "https://kresha-idea-box.vollerodaniele.workers.dev/thumb?client=sakas&post=dmmvHpWz"
+        }
+      ]
+    },
+    {
+      "place": "Mitrovica",
+      "country": "Kosovo",
+      "lat": 42.8914,
+      "lon": 20.866,
+      "example": true,
+      "title": "A music film",
+      "what": "Example pin, to show the idea.",
+      "pieces": [
+        {
+          "kind": "film",
+          "src": "/reels/examples/4.mp4"
+        }
+      ]
+    }
+  ]
+}

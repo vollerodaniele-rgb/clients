@@ -24,6 +24,7 @@ const SHEETS = [
   { id: "proposals", name: "Proposals" },
   { id: "agenda", name: "Agenda" },
   { id: "people", name: "Contacts" },
+  { id: "map", name: "Map" },
   { id: "partners", name: "Partners" },
   { id: "files", name: "Files" },
   { id: "boxes", name: "Boxes" },
