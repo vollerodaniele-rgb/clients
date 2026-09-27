@@ -1,0 +1,573 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Noir au Noir</title>
+<!-- A draft of the official site, like /world/. Not linked from anywhere
+     and kept out of search. Reads the same places as the map. -->
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#000000">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>&#127916;</text></svg>">
+<style>
+  @font-face { font-family: "Satoshi"; src: url("../assets/fonts/satoshi-400.woff2") format("woff2"); font-weight: 400; font-display: swap; }
+  @font-face { font-family: "Satoshi"; src: url("../assets/fonts/satoshi-500.woff2") format("woff2"); font-weight: 500; font-display: swap; }
+  @font-face { font-family: "Satoshi"; src: url("../assets/fonts/satoshi-700.woff2") format("woff2"); font-weight: 700; font-display: swap; }
+
+  :root {
+    --bg: #000;
+    --ink: #F2F2F2;
+    --dim: rgba(242, 242, 242, 0.66);
+    --quiet: rgba(242, 242, 242, 0.45);
+    --glass: rgba(20, 20, 24, 0.52);
+    --edge: rgba(255, 255, 255, 0.14);
+    --lip: rgba(255, 255, 255, 0.22);
+    --blur: blur(26px) saturate(170%);
+    --font: "Satoshi", -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif;
+    --c: 20px; /* one flap's width, set by the script to fit the screen */
+    color-scheme: dark;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  [hidden] { display: none !important; }
+  html, body { height: 100%; background: var(--bg); color: var(--ink); font-family: var(--font); overflow: hidden; }
+
+  body::before {
+    content: ""; position: fixed; inset: 0; pointer-events: none; z-index: 0;
+    background:
+      radial-gradient(60rem 40rem at 88% -10%, rgba(255, 255, 255, 0.08), transparent 62%),
+      radial-gradient(50rem 36rem at -8% 110%, rgba(255, 255, 255, 0.06), transparent 62%);
+  }
+
+  /* ============ THE NAME ============ */
+  .name {
+    position: fixed; z-index: 5; left: 50%; transform: translateX(-50%);
+    top: calc(env(safe-area-inset-top, 0px) + clamp(1.2rem, 4vh, 2.4rem));
+    font-size: clamp(0.72rem, 1.4vw, 0.9rem); font-weight: 700; letter-spacing: 0.6em;
+    padding-left: 0.6em; white-space: nowrap;
+  }
+  .sub {
+    position: fixed; z-index: 5; left: 50%; transform: translateX(-50%);
+    top: calc(env(safe-area-inset-top, 0px) + clamp(2.6rem, 7.4vh, 4.3rem));
+    font-size: 0.72rem; letter-spacing: 0.08em; color: var(--quiet); white-space: nowrap;
+  }
+
+  /* ============ THE BOARD ============ */
+  .stage {
+    position: fixed; z-index: 1; left: 0; right: 0;
+    top: calc(env(safe-area-inset-top, 0px) + clamp(4.6rem, 12vh, 7rem));
+    bottom: calc(env(safe-area-inset-bottom, 0px) + clamp(4.6rem, 12vh, 6.5rem));
+    display: grid; place-items: center; padding: 0 16px;
+  }
+  .board {
+    width: min(100%, 1180px);
+    padding: clamp(14px, 2.4vw, 28px);
+    border: 1px solid var(--edge); border-top-color: var(--lip); border-radius: 22px;
+    background: var(--glass); backdrop-filter: var(--blur); -webkit-backdrop-filter: var(--blur);
+    box-shadow: 0 30px 80px -30px rgba(0, 0, 0, 0.95), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  }
+  .head, .row { display: grid; column-gap: calc(var(--c) * 1.1); align-items: center; }
+  .head {
+    margin-bottom: calc(var(--c) * 0.5);
+    font-size: 0.62rem; font-weight: 700; letter-spacing: 0.24em; color: var(--quiet);
+  }
+  .clock {
+    text-align: right; margin-bottom: calc(var(--c) * 0.4);
+    font-size: 0.62rem; font-weight: 700; letter-spacing: 0.2em; color: var(--dim); font-variant-numeric: tabular-nums;
+  }
+  .row {
+    width: 100%; padding: calc(var(--c) * 0.22) 0; cursor: pointer;
+    background: none; border: 0; border-top: 1px solid rgba(255, 255, 255, 0.06);
+    color: inherit; font: inherit; text-align: left;
+  }
+  .row:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; border-radius: 4px; }
+  .cells { display: flex; gap: 2px; }
+
+  /* One flap: a dark tile split across the middle, like the real thing */
+  .flap {
+    position: relative; flex: 0 0 auto; width: var(--c); height: calc(var(--c) * 1.5);
+    border-radius: 3px; background: #101012; overflow: hidden;
+    display: grid; place-items: center;
+    font-size: calc(var(--c) * 0.92); font-weight: 700; line-height: 1; color: var(--ink);
+    transition: transform 55ms;
+  }
+  .flap::after { content: ""; position: absolute; left: 0; right: 0; top: 50%; height: 1px; background: #000; }
+  .flap.turn { transform: scaleY(0.5); }
+  @media (hover: hover) { .row:hover .flap { background: #19191c; } }
+
+  /* the last row is whoever is looking */
+  .row.you .flap { background: var(--ink); color: #000; }
+  .row.you .flap::after { background: rgba(0, 0, 0, 0.22); }
+  .row.you .status { animation: board 1.3s steps(2) infinite; }
+  @keyframes board { 50% { opacity: 0.35; } }
+
+  .pages { display: flex; gap: 6px; justify-content: center; margin-top: calc(var(--c) * 0.6); min-height: 6px; }
+  .pages i { width: 6px; height: 6px; border-radius: 50%; background: rgba(242, 242, 242, 0.2); }
+  .pages i.on { background: var(--ink); }
+
+  /* ============ THE WAY IN ============ */
+  .foot {
+    position: fixed; z-index: 5; left: 50%; transform: translateX(-50%);
+    bottom: calc(env(safe-area-inset-bottom, 0px) + clamp(1rem, 3.5vh, 2rem));
+  }
+  .book {
+    display: block; padding: 0.8rem 1.4rem; border-radius: 999px; text-decoration: none; white-space: nowrap;
+    font-size: 0.7rem; font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase;
+    color: #000; background: var(--ink);
+  }
+  .sound-toggle {
+    position: fixed; z-index: 5; width: 40px; height: 40px; border-radius: 50%; cursor: pointer;
+    right: calc(env(safe-area-inset-right, 0px) + 16px);
+    bottom: calc(env(safe-area-inset-bottom, 0px) + clamp(1rem, 3.5vh, 2rem));
+    display: grid; place-items: center; color: var(--quiet);
+    background: var(--glass); backdrop-filter: var(--blur); -webkit-backdrop-filter: var(--blur);
+    border: 1px solid var(--edge); border-top-color: var(--lip);
+  }
+  .sound-toggle.on { color: var(--ink); }
+  .sound-toggle svg { width: 17px; height: 17px; stroke: currentColor; stroke-width: 1.6; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+  .sound-toggle .wave { display: none; }
+  .sound-toggle.on .wave { display: inline; }
+  .sound-toggle.on .mute { display: none; }
+
+  /* ============ ONE PLACE, OPENED ============ */
+  .veil { position: fixed; inset: 0; z-index: 8; background: rgba(0, 0, 0, 0.45); }
+  .card {
+    position: fixed; z-index: 9; left: 50%; top: 50%; transform: translate(-50%, -50%);
+    width: min(92vw, 480px); max-height: 88svh; overflow: auto;
+    border: 1px solid var(--edge); border-top-color: var(--lip); border-radius: 22px;
+    background: var(--glass); backdrop-filter: var(--blur); -webkit-backdrop-filter: var(--blur);
+    box-shadow: 0 30px 80px -30px rgba(0, 0, 0, 0.95), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+    padding: 14px 14px 20px;
+  }
+  @media (max-width: 40rem) {
+    .card { left: 0; right: 0; top: auto; bottom: 0; transform: none; width: auto; border-radius: 22px 22px 0 0;
+      padding-bottom: calc(20px + env(safe-area-inset-bottom, 0px)); }
+  }
+  .screen { position: relative; border-radius: 14px; overflow: hidden; background: #0b0b0d; }
+  .screen video, .screen img { width: 100%; max-height: 58svh; object-fit: contain; display: block; background: #000; }
+  .sound {
+    position: absolute; right: 10px; bottom: 10px; padding: 0.45rem 0.8rem; border-radius: 999px; cursor: pointer;
+    font: 700 0.6rem var(--font); letter-spacing: 0.14em; text-transform: uppercase;
+    color: var(--ink); background: rgba(0, 0, 0, 0.5); border: 1px solid rgba(255, 255, 255, 0.2);
+  }
+  .sound.on { background: var(--ink); color: #000; }
+  .strip { display: flex; gap: 8px; margin-top: 10px; overflow-x: auto; scrollbar-width: none; }
+  .strip button {
+    flex: 0 0 auto; width: 52px; height: 52px; border-radius: 10px; overflow: hidden; padding: 0; cursor: pointer;
+    border: 1px solid var(--edge); background: #0b0b0d; opacity: 0.55;
+  }
+  .strip button.on { opacity: 1; border-color: var(--ink); }
+  .strip video, .strip img { width: 100%; height: 100%; object-fit: cover; pointer-events: none; }
+  .where { margin-top: 16px; padding-inline: 4px; font-size: 0.66rem; font-weight: 700; letter-spacing: 0.24em; text-transform: uppercase; color: var(--quiet); }
+  .title { margin-top: 6px; padding-inline: 4px; font-size: 1.5rem; font-weight: 500; letter-spacing: -0.02em; line-height: 1.15; }
+  .what { margin-top: 8px; padding-inline: 4px; font-size: 0.95rem; line-height: 1.6; color: var(--dim); white-space: pre-line; }
+  .tag { display: inline-block; margin-left: 8px; padding: 2px 8px; border-radius: 999px; border: 1px solid var(--edge);
+    font-size: 0.58rem; letter-spacing: 0.14em; vertical-align: middle; color: var(--quiet); }
+  .close {
+    position: absolute; right: 22px; top: 22px; z-index: 2; width: 36px; height: 36px; border-radius: 50%; cursor: pointer;
+    color: var(--ink); background: rgba(0, 0, 0, 0.5); border: 1px solid rgba(255, 255, 255, 0.2); font: 400 1.1rem/1 var(--font);
+  }
+
+  @media (prefers-reduced-motion: reduce) { .flap { transition: none; } .row.you .status { animation: none; } }
+</style>
+</head>
+<body>
+
+  <p class="name">NOIR AU NOIR</p>
+  <p class="sub">Departures</p>
+
+  <main class="stage">
+    <section class="board" aria-label="Every place we filmed">
+      <!-- in Brussels time, where the studio is -->
+      <p class="clock" id="clock" aria-hidden="true"></p>
+      <div class="head" id="head"></div>
+      <div id="rows"></div>
+      <div class="pages" id="pages" aria-hidden="true"></div>
+    </section>
+  </main>
+
+  <div class="foot"><a class="book" href="../call/">Book a call</a></div>
+
+  <button class="sound-toggle" id="sound-toggle" type="button" aria-label="Sound" aria-pressed="false">
+    <svg viewBox="0 0 18 18"><path d="M3 7h3l4-3v10l-4-3H3z"/><path class="wave" d="M12.5 6.5a3.5 3.5 0 0 1 0 5M14.5 4.5a6.5 6.5 0 0 1 0 9"/><path class="mute" d="M13 7l4 4M17 7l-4 4"/></svg>
+  </button>
+
+  <div class="veil" id="veil" hidden></div>
+  <section class="card" id="card" role="dialog" aria-modal="true" aria-labelledby="card-title" hidden>
+    <button class="close" id="close" type="button" aria-label="Close">&times;</button>
+    <div class="screen" id="screen"></div>
+    <div class="strip" id="strip"></div>
+    <p class="where" id="card-where"></p>
+    <h2 class="title" id="card-title"></h2>
+    <p class="what" id="card-what"></p>
+  </section>
+
+<script>
+/* ============ THE PLACES ============ */
+/* The same data/world.json the map reads, written by the admin's Map
+   sheet. Newest first where a month is known, the examples last, and
+   the visitor always on the bottom line. */
+const $ = (id) => document.getElementById(id);
+let PLACES = [];
+
+const MONTHS = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
+function monthOf(when) {
+  const m = /^(\d{4})-(\d{2})/.exec(when || "");
+  return m ? MONTHS[+m[2] - 1] + " " + m[1].slice(2) : "";
+}
+
+/* ============ THE COLUMNS ============ */
+/* A computer gets the whole board. A phone keeps the two columns that
+   say the most, since four would make every letter too small to read. */
+const WIDE = [
+  { key: "when", label: "WHEN", chars: 6 },
+  { key: "place", label: "PLACE", chars: 11 },
+  { key: "title", label: "CLIENT", chars: 14 },
+  { key: "status", label: "STATUS", chars: 8 }
+];
+const NARROW = [
+  { key: "place", label: "PLACE", chars: 10 },
+  { key: "title", label: "CLIENT", chars: 11 }
+];
+// until a place has a month, the board leaves that column out and gives
+// the room to the client's name
+const WIDE_NO_WHEN = [
+  { key: "place", label: "PLACE", chars: 12 },
+  { key: "title", label: "CLIENT", chars: 18 },
+  { key: "status", label: "STATUS", chars: 8 }
+];
+let cols = WIDE;
+
+/* ============ THE FLAPS ============ */
+/* Every flap turns forward through the same drum of characters until
+   it reaches its letter, the way the real boards do, so a change of
+   page ripples across the board rather than blinking. */
+const DRUM = " ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789:-.'&/";
+const still = matchMedia("(prefers-reduced-motion: reduce)").matches;
+let turning = [];
+
+function plain(text) {
+  return String(text || "").toUpperCase().normalize("NFD").replace(/[̀-ͯ]/g, "")
+    .replace(/[^ A-Z0-9:\-.'&/]/g, " ");
+}
+
+// too long for its column: cut at the last whole word, the way a
+// board operator would abbreviate, and only mid-word when one word is all there is
+function fit(text, n) {
+  let t = plain(text).replace(/\s+/g, " ").trim();
+  if (t.length > n) {
+    const cut = t.slice(0, n + 1).lastIndexOf(" ");
+    t = cut > n / 3 ? t.slice(0, cut) : t.slice(0, n);
+  }
+  return t.padEnd(n, " ");
+}
+
+function turnTo(flap, ch, delay) {
+  const target = Math.max(0, DRUM.indexOf(ch));
+  if (still) { flap.textContent = DRUM[target]; flap._i = target; return; }
+  let i = flap._i || 0;
+  if (i === target) return;
+  const step = () => {
+    i = (i + 1) % DRUM.length;
+    flap._i = i;
+    flap.classList.add("turn");
+    turning.push(setTimeout(() => { flap.textContent = DRUM[i]; flap.classList.remove("turn"); clack(); }, 28));
+    if (i !== target) turning.push(setTimeout(step, 36));
+  };
+  turning.push(setTimeout(step, delay));
+}
+
+/* ============ THE SOUND ============ */
+/* Off until asked for. When on, each turning flap makes a short dry
+   click, made here rather than loaded, and never more than one every
+   few milliseconds, so a full board sounds like a board and not noise. */
+let audio = null;
+let lastClack = 0;
+let noise = null;
+
+function clack() {
+  if (!audio) return;
+  const now = audio.currentTime;
+  if (now - lastClack < 0.012) return;
+  lastClack = now;
+  const src = audio.createBufferSource();
+  src.buffer = noise;
+  const filter = audio.createBiquadFilter();
+  filter.type = "bandpass";
+  filter.frequency.value = 1800 + Math.random() * 1600;
+  filter.Q.value = 1.2;
+  const gain = audio.createGain();
+  gain.gain.setValueAtTime(0.18, now);
+  gain.gain.exponentialRampToValueAtTime(0.001, now + 0.025);
+  src.connect(filter).connect(gain).connect(audio.destination);
+  src.start(now);
+  src.stop(now + 0.03);
+}
+
+$("sound-toggle").addEventListener("click", () => {
+  const btn = $("sound-toggle");
+  if (audio) {
+    audio.close();
+    audio = null;
+  } else {
+    audio = new (window.AudioContext || window.webkitAudioContext)();
+    noise = audio.createBuffer(1, Math.round(audio.sampleRate * 0.03), audio.sampleRate);
+    const d = noise.getChannelData(0);
+    for (let i = 0; i < d.length; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / d.length, 3);
+    drawPage(true); // so there is something to hear straight away
+  }
+  btn.classList.toggle("on", !!audio);
+  btn.setAttribute("aria-pressed", audio ? "true" : "false");
+});
+
+/* ============ THE PAGES ============ */
+/* As many rows as the screen holds, the visitor's row always last. With
+   more places than that, the board turns to the next page on its own. */
+let perPage = 5;
+let page = 0;
+let rowEls = [];
+let turner = 0;
+
+function rowsFor(p) {
+  if (p === "you") return { when: "--:--", place: innerWidth < 640 ? "BOARDING" : "YOUR CITY", title: "YOU", status: "BOARDING" };
+  return { when: monthOf(p.when), place: p.place, title: p.title, status: p.example ? "EXAMPLE" : "FILMED" };
+}
+
+function measure() {
+  cols = innerWidth < 640 ? NARROW : PLACES.some((p) => p.when) ? WIDE : WIDE_NO_WHEN;
+  const board = document.querySelector(".board");
+  const pad = parseFloat(getComputedStyle(board).paddingLeft) * 2;
+  const inner = board.clientWidth - pad;
+  const chars = cols.reduce((n, c) => n + c.chars, 0);
+  // each flap, its 2px gap, and a column gap of 1.1 flaps between columns
+  const c = Math.min(30, Math.floor((inner - chars * 2) / (chars + (cols.length - 1) * 1.1)));
+  document.documentElement.style.setProperty("--c", c + "px");
+
+  const room = document.querySelector(".stage").clientHeight - pad - c * 3.4;
+  const rowH = c * 1.5 + c * 0.44 + 1;
+  perPage = Math.max(2, Math.floor(room / rowH) - 1);
+  // one page needs no blank rows under it; several keep the board one height
+  lines = PLACES.length <= perPage ? PLACES.length + 1 : perPage + 1;
+}
+let lines = 1;
+
+function build() {
+  const template = cols.map((c) => c.chars + "fr").join(" ");
+  const head = $("head");
+  head.style.gridTemplateColumns = template;
+  head.innerHTML = "";
+  cols.forEach((c, i) => {
+    const s = document.createElement("span");
+    s.textContent = c.label;
+    head.appendChild(s);
+  });
+  tick();
+
+  const rows = $("rows");
+  rows.innerHTML = "";
+  rowEls = [];
+  for (let r = 0; r < lines; r++) {
+    const row = document.createElement("button");
+    row.type = "button";
+    row.className = "row";
+    row.style.gridTemplateColumns = template;
+    row._flaps = cols.map((c) => {
+      const cells = document.createElement("span");
+      cells.className = "cells" + (c.key === "status" ? " status" : "");
+      cells.setAttribute("aria-hidden", "true");
+      const flaps = [];
+      for (let i = 0; i < c.chars; i++) {
+        const f = document.createElement("span");
+        f.className = "flap";
+        f.textContent = " ";
+        f._i = 0;
+        cells.appendChild(f);
+        flaps.push(f);
+      }
+      row.appendChild(cells);
+      return flaps;
+    });
+    row.addEventListener("click", () => {
+      if (row._place === "you") location.href = "../call/";
+      else if (row._place) open(row._place);
+    });
+    rows.appendChild(row);
+    rowEls.push(row);
+  }
+}
+
+function pageCount() { return Math.max(1, Math.ceil(PLACES.length / perPage)); }
+
+function drawPage(again) {
+  turning.forEach(clearTimeout);
+  turning = [];
+  if (again) for (const row of rowEls) for (const flaps of row._flaps) for (const f of flaps) { f._i = 0; f.textContent = " "; }
+
+  const shown = PLACES.slice(page * perPage, page * perPage + perPage);
+  rowEls.forEach((row, r) => {
+    // the visitor's row sits right after the places, and the rows below it stay blank
+    const p = r < shown.length ? shown[r] : r === shown.length ? "you" : null;
+    row._place = p;
+    row.classList.toggle("you", p === "you");
+    row.disabled = !p;
+    row.style.cursor = p ? "" : "default";
+    const data = p ? rowsFor(p) : {};
+    row.setAttribute("aria-label", p === "you" ? "You, boarding: book a call"
+      : p ? [data.place, data.title, data.status].join(", ") : "");
+    cols.forEach((c, ci) => {
+      const text = fit(data[c.key], c.chars);
+      row._flaps[ci].forEach((f, k) => turnTo(f, text[k], r * 90 + ci * 50 + k * 22 + Math.random() * 90));
+    });
+  });
+
+  const dots = $("pages");
+  dots.innerHTML = "";
+  if (pageCount() > 1) for (let i = 0; i < pageCount(); i++) {
+    const d = document.createElement("i");
+    if (i === page) d.className = "on";
+    dots.appendChild(d);
+  }
+}
+
+function turnPages() {
+  clearInterval(turner);
+  if (pageCount() < 2) return;
+  turner = setInterval(() => {
+    if (document.hidden || current) return;
+    page = (page + 1) % pageCount();
+    drawPage();
+  }, 9000);
+}
+
+function tick() {
+  const clock = $("clock");
+  if (!clock) return;
+  const t = new Intl.DateTimeFormat("en-GB", { timeZone: "Europe/Brussels", hour: "2-digit", minute: "2-digit" }).format(new Date());
+  clock.textContent = (innerWidth < 640 ? "" : "BRUSSELS ") + t;
+}
+setInterval(tick, 10000);
+
+/* ============ ONE PLACE, OPENED ============ */
+let current = null;
+
+function media(piece, attrs) {
+  if (piece.kind === "photo") {
+    const img = document.createElement("img");
+    img.src = piece.src;
+    img.alt = "";
+    return img;
+  }
+  const v = document.createElement("video");
+  v.src = piece.src;
+  v.muted = true;
+  v.loop = true;
+  v.playsInline = true;
+  v.preload = attrs && attrs.preload || "metadata";
+  return v;
+}
+
+function show(pl, index) {
+  const screen = $("screen");
+  screen.innerHTML = "";
+  const m = media(pl.pieces[index], { preload: "auto" });
+  screen.appendChild(m);
+  if (m.tagName === "VIDEO") {
+    m.play().catch(() => {});
+    const sound = document.createElement("button");
+    sound.type = "button";
+    sound.className = "sound";
+    sound.textContent = "Sound";
+    sound.addEventListener("click", () => {
+      m.muted = !m.muted;
+      sound.classList.toggle("on", !m.muted);
+      sound.textContent = m.muted ? "Sound" : "Sound on";
+      if (m.paused) m.play().catch(() => {});
+    });
+    screen.appendChild(sound);
+  }
+  [...$("strip").children].forEach((b, i) => b.classList.toggle("on", i === index));
+}
+
+function open(pl) {
+  current = pl;
+  const when = monthOf(pl.when);
+  $("card-where").textContent = [pl.place, pl.country].filter(Boolean).join(", ") + (when ? "  /  " + when : "");
+  $("card-title").innerHTML = "";
+  $("card-title").append(pl.title || "");
+  if (pl.example) {
+    const tag = document.createElement("span");
+    tag.className = "tag";
+    tag.textContent = "EXAMPLE";
+    $("card-title").appendChild(tag);
+  }
+  $("card-what").textContent = pl.what || "";
+
+  const strip = $("strip");
+  strip.innerHTML = "";
+  const pieces = pl.pieces || [];
+  strip.hidden = pieces.length < 2;
+  pieces.forEach((p, n) => {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.setAttribute("aria-label", "Piece " + (n + 1));
+    b.appendChild(media(p));
+    b.addEventListener("click", () => show(pl, n));
+    strip.appendChild(b);
+  });
+  if (pieces.length) show(pl, 0);
+  else $("screen").innerHTML = "";
+
+  $("veil").hidden = false;
+  $("card").hidden = false;
+  $("close").focus();
+}
+
+function close() {
+  $("card").hidden = true;
+  $("veil").hidden = true;
+  $("screen").innerHTML = "";
+  current = null;
+}
+
+$("close").addEventListener("click", close);
+$("veil").addEventListener("click", close);
+addEventListener("keydown", (e) => { if (e.key === "Escape" && current) close(); });
+
+/* ============ START ============ */
+function start() {
+  measure();
+  build();
+  page = Math.min(page, pageCount() - 1);
+  drawPage();
+  turnPages();
+}
+
+fetch("../data/world.json", { cache: "no-cache" })
+  .then((r) => r.ok ? r.json() : { places: [] })
+  .catch(() => ({ places: [] }))
+  .then((d) => {
+    const list = (d.places || []).filter((p) => p && p.place);
+    // newest first where there is a month, the examples at the end
+    PLACES = list
+      .map((p, i) => ({ p, i }))
+      .sort((a, b) => (!!a.p.example - !!b.p.example) || String(b.p.when || "").localeCompare(String(a.p.when || "")) || a.i - b.i)
+      .map((x) => x.p);
+    start();
+  });
+
+let resized = 0;
+let lastWidth = innerWidth;
+addEventListener("resize", () => {
+  clearTimeout(resized);
+  resized = setTimeout(() => {
+    // a phone's address bar sliding away changes only the height, which
+    // is only worth a redraw if a row more or less now fits
+    const rows = perPage;
+    if (Math.abs(innerWidth - lastWidth) < 2) { measure(); if (perPage === rows) return; }
+    lastWidth = innerWidth;
+    start();
+  }, 200);
+});
+</script>
+</body>
+</html>

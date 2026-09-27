@@ -24,7 +24,7 @@ const RELAY = "https://kresha-idea-box.vollerodaniele.workers.dev";
 // the pages that are not clients: a client given one of these names would
 // overwrite the page itself
 const RESERVED = ["admin", "assets", "data", "_template", "p", "proposals", "_proposal", "i", "boxes", "_box", "uploads",
-  "call", "reels", "r", "t", "partner", "world"];
+  "call", "reels", "r", "t", "partner", "world", "board"];
 
 const $ = (id) => document.getElementById(id);
 const token = () => localStorage.getItem(TOKEN_KEY) || "";

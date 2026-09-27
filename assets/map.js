@@ -115,12 +115,13 @@ function startPlace(id) {
   worldEditing = had ? id : null;
   worldDraft = had
     ? JSON.parse(JSON.stringify(had))
-    : { place: "", country: "", lat: null, lon: null, title: "", what: "", pieces: [] };
+    : { place: "", country: "", lat: null, lon: null, title: "", when: "", what: "", pieces: [] };
   worldAutoNamed = !had;
 
   $("map-place").value = worldDraft.place || "";
   $("map-country").value = worldDraft.country || "";
   $("map-title").value = worldDraft.title || "";
+  $("map-when").value = worldDraft.when || "";
   $("map-what").value = worldDraft.what || "";
   $("map-msg").textContent = "";
   $("map-form-head").textContent = had ? "Change " + (had.title || had.place) : "A new place";
@@ -385,6 +386,7 @@ async function saveWorldPlace() {
   d.place = $("map-place").value.trim();
   d.country = $("map-country").value.trim();
   d.title = $("map-title").value.trim();
+  d.when = /^\d{4}-\d{2}$/.test($("map-when").value) ? $("map-when").value : "";
   d.what = $("map-what").value.trim();
 
   if (d.lat == null) { msg.textContent = "Click the map where it was first."; return; }
@@ -396,7 +398,7 @@ async function saveWorldPlace() {
   const place = {
     id: d.id || Math.random().toString(36).slice(2, 10),
     place: d.place, country: d.country, lat: d.lat, lon: d.lon,
-    title: d.title, what: d.what,
+    title: d.title, ...(d.when ? { when: d.when } : {}), what: d.what,
     ...(d.example ? { example: true } : {}),
     pieces: d.pieces
   };
