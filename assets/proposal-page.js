@@ -164,6 +164,14 @@ function chooseArea(packageName) {
   send.textContent = "Send";
   box.appendChild(send);
 
+  // said where the details are given, the same as on every other form
+  const privacy = document.createElement("p");
+  privacy.className = "privacy-line";
+  privacy.style.cssText = "margin-top:0.8rem;font-size:0.78rem;line-height:1.55;color:rgba(242,242,242,0.45);";
+  privacy.innerHTML = 'We keep your name and email only to confirm this and get back to you, and delete them ' +
+    'whenever you <a href="mailto:info@noiraunoir.com" style="color:rgba(242,242,242,0.6);text-decoration:underline;">ask</a>.';
+  box.appendChild(privacy);
+
   btn.addEventListener("click", () => {
     box.hidden = !box.hidden;
     btn.textContent = box.hidden ? "Choose this package" : "Cancel";
