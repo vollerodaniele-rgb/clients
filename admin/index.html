@@ -19,7 +19,7 @@
       here.parentNode.insertBefore(css, here);
       // lock.js after dashboard.js, which is where the key name and the
       // unlock switch live, and before sheets.js, which is what it holds
-      ["dashboard.js", "lock.js", "proposals.js", "boxes.js", "transfers.js", "agenda.js", "people.js", "links.js", "sheets.js"].forEach(function (file) {
+      ["dashboard.js", "lock.js", "proposals.js", "boxes.js", "transfers.js", "agenda.js", "people.js", "usage.js", "links.js", "sheets.js"].forEach(function (file) {
         var js = document.createElement("script");
         js.src = "../assets/" + file + "?t=" + stamp;
         js.async = false;
@@ -231,6 +231,18 @@
         <button class="btn-mini" onclick="lockAgain()">Lock this browser</button>
       </div>
       <p class="form-msg" id="token-msg" style="margin-top:0.7rem"></p>
+    </div>
+
+    <div class="panel">
+      <div style="display:flex;justify-content:space-between;align-items:baseline;gap:1rem">
+        <h2>Usage</h2>
+        <button class="btn-mini" id="usage-refresh" type="button">Refresh</button>
+      </div>
+      <p class="muted" style="margin-bottom:0.6rem; font-size:0.9rem">
+        How close the studio is to the end of Cloudflare's free allowances. You get a
+        Telegram at 70% and again at 90%.
+      </p>
+      <div id="usage-list"></div>
     </div>
     </section>
 

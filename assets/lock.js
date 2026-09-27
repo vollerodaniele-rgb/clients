@@ -198,7 +198,7 @@ async function warnBeforeExpiry() {
     "background:var(--text, #F2F2F2);color:var(--bg, #000)";
   const when = info.days <= 0 ? "has expired" : "expires in " + info.days + " day" + (info.days === 1 ? "" : "s");
   bar.innerHTML = "Your access key " + when + (info.expires ? " (" + info.expires + ")" : "") + ". " +
-    '<a href="https://github.com/settings/tokens" target="_blank" rel="noopener" style="color:inherit;font-weight:600">Renew it on GitHub</a>' +
+    '<a href="https://github.com/settings/personal-access-tokens" target="_blank" rel="noopener" style="color:inherit;font-weight:600">Renew it on GitHub</a>' +
     ", then paste the new one under Key.";
   document.body.prepend(bar);
 }
