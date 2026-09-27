@@ -148,3 +148,57 @@ function lockAgain() {
   try { localStorage.removeItem(TOKEN_KEY); } catch { /* nothing to forget */ }
   location.reload();
 }
+
+/* ============ WHEN THE KEY RUNS OUT ============ */
+/* A key that expires fails on the next save, with no warning before.
+   So two weeks ahead a line appears at the top of every page he edits
+   from, with where to renew it. The browser cannot read the expiry
+   date itself (GitHub keeps that header from pages), so the relay asks
+   GitHub with the key and hands the date back. Asked once a day at
+   most per browser, and again whenever the key changes. */
+const KEY_RELAY = "https://kresha-idea-box.vollerodaniele.workers.dev";
+const KEY_WARN_DAYS = 14;
+const KEY_SEEN = "noir-key-expiry";
+
+whenUnlocked(() => { setTimeout(warnBeforeExpiry, 1200); });
+
+async function warnBeforeExpiry() {
+  let key = "";
+  try { key = localStorage.getItem(TOKEN_KEY) || ""; } catch { return; }
+  if (!key) return;
+
+  const today = new Date().toISOString().slice(0, 10);
+  // the key's last characters tell a new key from the old, without keeping another copy of it
+  const which = key.slice(-6);
+  let info = null;
+  try {
+    const seen = JSON.parse(localStorage.getItem(KEY_SEEN) || "null");
+    if (seen && seen.which === which && seen.day === today) info = seen;
+  } catch { /* ask again */ }
+
+  if (!info) {
+    try {
+      const res = await fetch(KEY_RELAY + "/key", { headers: { "X-Studio-Key": key }, cache: "no-store" });
+      if (!res.ok) return;
+      const got = await res.json();
+      info = { which, day: today, expires: got.expires || "", days: got.days };
+      try { localStorage.setItem(KEY_SEEN, JSON.stringify(info)); } catch { /* asks again next time */ }
+    } catch {
+      return; // no line to the relay is no reason to worry him
+    }
+  }
+
+  if (typeof info.days !== "number" || info.days > KEY_WARN_DAYS) return;
+  if (document.getElementById("key-warning")) return;
+
+  const bar = document.createElement("div");
+  bar.id = "key-warning";
+  bar.setAttribute("role", "status");
+  bar.style.cssText = "padding:0.65rem 1rem;text-align:center;font-size:0.84rem;line-height:1.5;" +
+    "background:var(--text, #F2F2F2);color:var(--bg, #000)";
+  const when = info.days <= 0 ? "has expired" : "expires in " + info.days + " day" + (info.days === 1 ? "" : "s");
+  bar.innerHTML = "Your access key " + when + (info.expires ? " (" + info.expires + ")" : "") + ". " +
+    '<a href="https://github.com/settings/tokens" target="_blank" rel="noopener" style="color:inherit;font-weight:600">Renew it on GitHub</a>' +
+    ", then paste the new one under Key.";
+  document.body.prepend(bar);
+}
