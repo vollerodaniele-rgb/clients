@@ -23,6 +23,7 @@ const SHEETS = [
   { id: "money", name: "Money" },
   { id: "proposals", name: "Proposals" },
   { id: "agenda", name: "Agenda" },
+  { id: "people", name: "Contacts" },
   { id: "partners", name: "Partners" },
   { id: "files", name: "Files" },
   { id: "boxes", name: "Boxes" },

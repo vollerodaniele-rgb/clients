@@ -19,7 +19,7 @@
       here.parentNode.insertBefore(css, here);
       // lock.js after dashboard.js, which is where the key name and the
       // unlock switch live, and before sheets.js, which is what it holds
-      ["dashboard.js", "lock.js", "proposals.js", "boxes.js", "transfers.js", "agenda.js", "links.js", "sheets.js"].forEach(function (file) {
+      ["dashboard.js", "lock.js", "proposals.js", "boxes.js", "transfers.js", "agenda.js", "people.js", "links.js", "sheets.js"].forEach(function (file) {
         var js = document.createElement("script");
         js.src = "../assets/" + file + "?t=" + stamp;
         js.async = false;
@@ -388,6 +388,25 @@
       <div id="code-list" style="margin-top:1rem"></div>
     </div>
 
+    </section>
+
+    <section id="sheet-people" hidden>
+    <div class="panel">
+      <h2>Contacts</h2>
+      <p class="how" style="margin-bottom:1rem">
+        Everybody who booked a call or asked to be rung, from the call page, the reels page,
+        a personal link or a partner's page. One line per person, kept after the booking is gone.
+        Stored privately, never in the public repo.
+      </p>
+      <div class="row" style="align-items:flex-end">
+        <label class="field" style="flex:1;min-width:12rem"><span>Search</span>
+          <input id="people-search" type="search" placeholder="A name, a number or an email" autocomplete="off">
+        </label>
+        <button class="btn-mini" id="people-export">Export to a spreadsheet</button>
+      </div>
+      <p class="muted" id="people-count" style="font-size:0.8rem;margin-top:0.8rem"></p>
+      <div id="people-list" style="margin-top:0.6rem"></div>
+    </div>
     </section>
 
     <section id="sheet-partners" hidden>
