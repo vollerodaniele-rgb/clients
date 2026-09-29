@@ -13,7 +13,13 @@ function currentClient() {
   return (parts[0] || '').toLowerCase();
 }
 const CLIENT = currentClient();
-const DATA_URL = '../data/' + CLIENT + '.json';
+/* ?from=platform reads the same plan from the platform's database
+   instead of the file in this repo: the side by side test before the
+   portals move over. Without it nothing changes. */
+const FROM_PLATFORM = new URLSearchParams(location.search).get('from') === 'platform';
+const DATA_URL = FROM_PLATFORM
+  ? 'https://noir-platform.vollerodaniele.workers.dev/portal-data/noir-au-noir/' + CLIENT
+  : '../data/' + CLIENT + '.json';
 
 const CONFIG = {
   owner: 'vollerodaniele-rgb',
