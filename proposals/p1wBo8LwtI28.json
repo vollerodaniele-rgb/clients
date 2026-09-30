@@ -60,7 +60,7 @@
         {
           "key": "delivery",
           "n": 1,
-          "what": "Delivery within 1 day",
+          "what": "Delivery within 1 days",
           "sub": "Counted from the shoot day."
         }
       ],
@@ -81,7 +81,7 @@
       "was": "€950",
       "off": "",
       "badge": "",
-      "featured": true,
+      "featured": false,
       "features": [
         {
           "key": "shootday",
@@ -102,7 +102,7 @@
         {
           "key": "delivery",
           "n": 1,
-          "what": "Delivery within 1 day",
+          "what": "Delivery within 1 days",
           "sub": "Counted from the shoot day."
         }
       ],
