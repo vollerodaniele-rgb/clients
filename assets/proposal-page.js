@@ -94,7 +94,7 @@ function renderPackages(packages) {
         <div class="pkg-body">
           <ul class="feat">
             ${p.features.map((f) => `
-              <li><b>${esc(f.what || "")}</b>
+              <li><b>${esc(oneDay(f.what || ""))}</b>
                 ${f.sub ? `<span class="sub">${esc(f.sub)}</span>` : ""}
               </li>`).join("")}
           </ul>
@@ -263,6 +263,13 @@ function renderTerms(terms) {
   $("terms-grid").innerHTML = terms.map((t) => `
     <div class="term"><div class="k">${esc(t.k || "")}</div><div class="v">${esc(t.v || "")}</div></div>
   `).join("");
+}
+
+/* "Delivery within 1 days" was written by an editor page opened before
+   the wording was fixed and saved over the correction. Whatever a saved
+   proposal says, the page says it right. */
+function oneDay(text) {
+  return String(text).replace(/1 days/g, "1 day");
 }
 
 function esc(s) {
