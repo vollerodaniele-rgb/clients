@@ -427,6 +427,32 @@
       <div class="bc-grid" id="bc-grid"></div>
       <div id="bc-day"></div>
     </div>
+
+    <div class="panel">
+      <h2>On your phone</h2>
+      <p class="how" style="margin-bottom:1rem">
+        Your shoots, booked calls and offered times in your phone's own calendar, updating by
+        themselves. Posts stay here. The link is private: anyone who has it can read your agenda,
+        so keep it to yourself, and make a new one if it ever gets out.
+      </p>
+      <div class="row" id="feed-actions">
+        <button class="btn-mini solid" id="feed-show" type="button">Show my calendar link</button>
+      </div>
+      <div id="feed-box" hidden style="margin-top:1rem;display:grid;gap:0.8rem">
+        <a class="btn-mini solid" id="feed-webcal" href="#" style="justify-self:start">Add to iPhone or Mac calendar</a>
+        <div class="row" style="align-items:center">
+          <input id="feed-url" type="text" readonly style="flex:1;min-width:12rem;padding:0.5rem 0.8rem;border-radius:999px;border:1px solid var(--line);background:transparent;color:var(--dim);font:inherit;font-size:0.8rem">
+          <button class="btn-mini" id="feed-copy" type="button">Copy</button>
+        </div>
+        <p class="muted" style="font-size:0.8rem;line-height:1.6">
+          iPhone: tap the button above and choose Subscribe. Google Calendar: on a computer, Other
+          calendars, the plus, From URL, and paste the copied link. Changes show up within about
+          15 minutes on iPhone; Google can take several hours.
+        </p>
+        <div id="feed-renew"></div>
+      </div>
+      <p class="form-msg" id="feed-msg" style="margin-top:0.6rem"></p>
+    </div>
     </section>
 
     <section id="sheet-agenda" hidden>

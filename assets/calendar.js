@@ -43,7 +43,49 @@ onReady(() => {
   $("bc-today").addEventListener("click", () => { bcView = new Date(); bcPick = bcIso(new Date()); drawCalendar(); });
   $("bc-refresh").addEventListener("click", loadCalendar);
   drawKindChips();
+  $("feed-show").addEventListener("click", () => showFeed(false));
+  $("feed-copy").addEventListener("click", copyFeed);
 });
+
+/* ============ ON THE PHONE ============ */
+/* The relay serves the same agenda as a calendar feed. Its address has
+   a private key in it, handed out here only. */
+async function showFeed(fresh) {
+  const msg = $("feed-msg");
+  if (!token()) { msg.textContent = "Save your access key first."; return; }
+  msg.textContent = fresh ? "Making a new link..." : "Getting your link...";
+  try {
+    const res = await fetch(`${AGENDA_RELAY}/calendar/link${fresh ? "/new" : ""}`, {
+      method: fresh ? "POST" : "GET",
+      headers: { "X-Studio-Key": token() },
+      cache: "no-store"
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || String(res.status));
+    $("feed-webcal").href = data.webcal;
+    $("feed-url").value = data.https;
+    $("feed-box").hidden = false;
+    $("feed-actions").hidden = true;
+    msg.textContent = fresh ? "New link made. The old one has stopped working: subscribe again with this one." : "";
+    const renew = $("feed-renew");
+    renew.innerHTML = "";
+    renew.appendChild(dangerButton("Make a new link", () => showFeed(true)));
+  } catch (err) {
+    msg.textContent = "Could not get the link (" + err.message + ").";
+  }
+}
+
+async function copyFeed() {
+  const field = $("feed-url");
+  try {
+    await navigator.clipboard.writeText(field.value);
+    $("feed-copy").textContent = "Copied";
+  } catch {
+    field.select();
+    $("feed-copy").textContent = "Selected";
+  }
+  setTimeout(() => { $("feed-copy").textContent = "Copy"; }, 2000);
+}
 
 function bcShift(by) {
   bcView = new Date(bcView.getFullYear(), bcView.getMonth() + by, 1);
