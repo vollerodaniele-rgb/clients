@@ -30,7 +30,7 @@ const $ = (id) => document.getElementById(id);
 const token = () => localStorage.getItem(TOKEN_KEY) || "";
 
 /* ============ LOAD A SHEET WHEN IT IS OPENED ============ */
-/* Every panel used to fetch the moment the page loaded: nine panels,
+/* Every panel used to fetch the moment the page loaded: every panel,
    a dozen calls, most of them for sheets he was not looking at. Now a
    panel says which sheet it belongs to and waits to be asked. The sheet
    he opens on fires straight away, so nothing is slower than before,

@@ -1,7 +1,8 @@
 /* Client Portal (shared)
    ------------------------------------------------------------
-   Everything on this page comes from data/plan.json.
-   Edit that one file to update the portal.
+   Everything on this page comes from the client's plan: the
+   platform's copy first, data/<client>.json in this repo if the
+   platform does not answer (see readPlanData below).
    ------------------------------------------------------------ */
 /* Which client this page belongs to comes from the folder name in
    the URL, so every client folder holds byte identical files and a

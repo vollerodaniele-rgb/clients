@@ -1,9 +1,10 @@
 /* Client Portal Admin (shared)
    ------------------------------------------------------------
-   Loads data/plan.json into editable forms and publishes changes
-   back to GitHub with the Contents API. The access token is a
-   fine-grained GitHub token (Contents: read and write, this repo
-   only) and lives in this browser's localStorage, nowhere else.
+   Loads data/<client>.json into editable forms and saves changes
+   back to GitHub with the Contents API. The access key is a
+   fine-grained GitHub token and lives in this browser's
+   localStorage, nowhere else. Opened on the platform instead,
+   editor-shim.js answers these same calls from the database.
    ------------------------------------------------------------ */
 function currentClient() {
   const parts = location.pathname.split('/').filter(Boolean);

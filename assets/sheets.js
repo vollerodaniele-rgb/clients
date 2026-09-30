@@ -1,6 +1,6 @@
 /* Sheets
    ------------------------------------------------------------
-   The dashboard grew to nine panels and became a page you scroll
+   The dashboard grew to a dozen panels and became a page you scroll
    rather than a page you use. This puts them on tabs, the way a
    spreadsheet puts things on sheets: one at a time, and the one you
    were last on is the one you come back to.
