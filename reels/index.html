@@ -568,10 +568,10 @@
 <script>
 /* ============ SOME OF THEM ============ */
 /* The files decide what shows. Drop them into reels/examples named
-   01.mp4 or 1.mp4, either way, and they appear in that order; a number
-   with no file quietly drops out and the section stays hidden until at
-   least one has loaded. Nothing preloads beyond its first frame and
-   nothing plays until it is asked to. */
+   1.mp4 to 8.mp4 and they appear in that order; a number with no file
+   quietly drops out and the section stays hidden until at least one has
+   loaded. Nothing preloads beyond its first frame and nothing plays
+   until it is asked to. */
 const SHOTS = { folder: "examples/", count: 8, ext: ".mp4", gap: 8, row: 270 };
 
 (function () {
@@ -582,7 +582,7 @@ const SHOTS = { folder: "examples/", count: 8, ext: ".mp4", gap: 8, row: 270 };
   const phone = () => matchMedia("(max-width: 40rem)").matches;
 
   for (let n = 1; n <= SHOTS.count; n++) {
-    const num = String(n).padStart(2, "0");
+    const num = String(n).padStart(2, "0"); // the label on the tile
 
     const tile = document.createElement("button");
     tile.type = "button";
@@ -590,18 +590,13 @@ const SHOTS = { folder: "examples/", count: 8, ext: ".mp4", gap: 8, row: 270 };
     tile.setAttribute("aria-label", "Play example " + n);
 
     const film = document.createElement("video");
-    film.src = SHOTS.folder + num + SHOTS.ext;
+    film.src = SHOTS.folder + n + SHOTS.ext;
     film.muted = true;
     film.loop = true;
     film.playsInline = true;
     film.preload = "metadata";
 
-    /* Files land named 01.mp4 or 1.mp4 depending on what the camera or
-       the phone called them, and both are the same slot: the padded name
-       is asked for first and the bare one is the second try. */
-    let tried = false;
     film.addEventListener("error", () => {
-      if (!tried) { tried = true; film.src = SHOTS.folder + n + SHOTS.ext; film.load(); return; }
       tile.remove();
       place();
     });
