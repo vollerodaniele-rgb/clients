@@ -60,7 +60,9 @@
       ],
       "mix": {
         "label": "",
-        "chips": []
+        "chips": [
+          "client gallery to download with preview"
+        ]
       },
       "was": "€700"
     },
