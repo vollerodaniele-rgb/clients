@@ -162,7 +162,7 @@ const CATALOGUE = [
     sub: "Two angles on the moments that only happen once." },
   { key: "priority", what: () => "Priority on the calendar",
     sub: "First choice of shoot dates." },
-  { key: "delivery", n: 10, what: (n) => "Delivery within " + n + " days",
+  { key: "delivery", n: 10, what: (n) => "Delivery within " + n + (n === 1 ? " day" : " days"),
     sub: "Counted from the shoot day." }
 ];
 

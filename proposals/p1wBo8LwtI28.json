@@ -60,7 +60,7 @@
         {
           "key": "delivery",
           "n": 1,
-          "what": "Delivery within 1 days",
+          "what": "Delivery within 1 day",
           "sub": "Counted from the shoot day."
         }
       ],
@@ -102,7 +102,7 @@
         {
           "key": "delivery",
           "n": 1,
-          "what": "Delivery within 1 days",
+          "what": "Delivery within 1 day",
           "sub": "Counted from the shoot day."
         }
       ],
