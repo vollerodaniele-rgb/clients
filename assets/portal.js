@@ -13,13 +13,24 @@ function currentClient() {
   return (parts[0] || '').toLowerCase();
 }
 const CLIENT = currentClient();
-/* ?from=platform reads the same plan from the platform's database
-   instead of the file in this repo: the side by side test before the
-   portals move over. Without it nothing changes. */
-const FROM_PLATFORM = new URLSearchParams(location.search).get('from') === 'platform';
-const DATA_URL = FROM_PLATFORM
-  ? 'https://noir-platform.vollerodaniele.workers.dev/portal-data/noir-au-noir/' + CLIENT
-  : '../data/' + CLIENT + '.json';
+/* The plan comes from the platform's database first: a save there shows
+   at once. If the platform does not answer within three seconds, or does
+   not know this client yet, the file in this repo is read instead, as it
+   always was. ?from=repo skips the platform, for comparing the two. */
+const PLATFORM_DATA = 'https://noir-platform.vollerodaniele.workers.dev/portal-data/noir-au-noir/' + CLIENT;
+const DATA_URL = '../data/' + CLIENT + '.json';
+const FROM_REPO = new URLSearchParams(location.search).get('from') === 'repo';
+
+async function readPlanData() {
+  if (!FROM_REPO) {
+    try {
+      const res = await fetch(PLATFORM_DATA, { cache: "no-store", signal: AbortSignal.timeout(3000) });
+      if (res.ok) return await res.json();
+    } catch { /* the file below */ }
+  }
+  const res = await fetch(DATA_URL, { cache: "no-store" });
+  return res.json();
+}
 
 const CONFIG = {
   owner: 'vollerodaniele-rgb',
@@ -39,8 +50,7 @@ async function loadPlan() {
 
   let data;
   try {
-    const res = await fetch(DATA_URL, { cache: "no-store" });
-    data = await res.json();
+    data = await readPlanData();
   } catch (err) {
     $("tagline").textContent = "Could not load the plan data.";
     console.error("plan load failed:", err);
