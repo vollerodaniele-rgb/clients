@@ -20,6 +20,7 @@ const SHEETS = [
   // a sheet can hold more than one block. Adding a client belongs with
   // the clients, though in the page they are not neighbours.
   { id: "clients", name: "Clients", parts: ["clients", "clients-add"] },
+  { id: "calendar", name: "Calendar" },
   { id: "money", name: "Money" },
   { id: "proposals", name: "Proposals" },
   { id: "agenda", name: "Agenda" },

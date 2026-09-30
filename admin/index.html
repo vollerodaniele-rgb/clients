@@ -19,7 +19,7 @@
       here.parentNode.insertBefore(css, here);
       // lock.js after dashboard.js, which is where the key name and the
       // unlock switch live, and before sheets.js, which is what it holds
-      ["dashboard.js", "lock.js", "proposals.js", "boxes.js", "transfers.js", "agenda.js", "people.js", "usage.js", "links.js", "sheets.js"].forEach(function (file) {
+      ["dashboard.js", "lock.js", "proposals.js", "boxes.js", "transfers.js", "agenda.js", "calendar.js", "people.js", "usage.js", "links.js", "sheets.js"].forEach(function (file) {
         var js = document.createElement("script");
         js.src = "../assets/" + file + "?t=" + stamp;
         js.async = false;
@@ -101,6 +101,57 @@
     @media (max-width: 40rem) {
       .link-row { flex-wrap: wrap; }
       .link-what { flex-basis: 100%; }
+    }
+
+    /* The calendar: a month like the posting plan, with room in each day
+       for what is on it. Shoots are solid, calls outlined, offered times
+       dashed, posts quiet. No colour: the house style does it with fill. */
+    .bc-top { display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap; }
+    .bc-nav { display: flex; gap: 0.4rem; }
+    .bc-kinds { display: flex; gap: 0.4rem; flex-wrap: wrap; margin-top: 1rem; }
+    .bc-kind {
+      display: inline-flex; align-items: center; gap: 0.45rem; padding: 0.35rem 0.8rem; border-radius: 999px; cursor: pointer;
+      font-size: 0.72rem; border: 1px solid var(--line); background: none; color: var(--dim);
+    }
+    .bc-kind[aria-pressed="true"] { color: var(--text); border-color: rgba(242, 242, 242, 0.45); }
+    .bc-kind[aria-pressed="false"] .bc-swatch { opacity: 0.35; }
+    .bc-swatch { display: inline-block; width: 9px; height: 9px; border-radius: 2px; flex: 0 0 auto; }
+    .bc-swatch.shoot { background: var(--text); }
+    .bc-swatch.call { border: 1.5px solid var(--text); }
+    .bc-swatch.held { border: 1.5px dashed rgba(242, 242, 242, 0.6); }
+    .bc-swatch.post { background: rgba(242, 242, 242, 0.35); border-radius: 50%; }
+    .bc-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 4px; margin-top: 1.2rem; }
+    .bc-cell {
+      min-height: 6.6rem; padding: 0.35rem; border-radius: 8px; border: 1px solid var(--line-soft);
+      background: rgba(255, 255, 255, 0.025); color: inherit; font: inherit; text-align: left; cursor: pointer;
+      display: flex; flex-direction: column; gap: 3px; overflow: hidden; min-width: 0;
+    }
+    .bc-cell:hover { border-color: rgba(242, 242, 242, 0.4); }
+    .bc-cell.other { opacity: 0.4; }
+    .bc-cell.today { border-color: var(--text); }
+    .bc-cell.on { box-shadow: inset 0 0 0 1px var(--text); background: rgba(255, 255, 255, 0.07); }
+    .bc-cell.past .bc-chip { opacity: 0.55; }
+    .bc-num { font-size: 0.72rem; color: var(--dim); }
+    .bc-cell.today .bc-num { color: var(--text); font-weight: 600; }
+    .bc-chip {
+      display: block; font-size: 0.66rem; line-height: 1.3; padding: 2px 5px; border-radius: 4px;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%;
+    }
+    .bc-chip.shoot { background: var(--text); color: var(--bg); font-weight: 600; }
+    .bc-chip.call { border: 1px solid rgba(242, 242, 242, 0.6); }
+    .bc-chip.held { border: 1px dashed rgba(242, 242, 242, 0.35); color: var(--dim); }
+    .bc-chip.post { color: var(--dim); padding-left: 2px; }
+    .bc-chip.post::before { content: "CF"; margin-right: 4px; font-size: 0.55rem; vertical-align: 1px; }
+    .bc-chip.post.planned::before { content: "CB"; }
+    .bc-more { font-size: 0.62rem; color: var(--dim); padding-left: 2px; }
+    .bc-dots { display: none; gap: 3px; flex-wrap: wrap; margin-top: auto; }
+    .bc-day-title { font-family: var(--font-display); font-size: 1.2rem; font-weight: 500; letter-spacing: -0.02em; margin: 1.6rem 0 0.4rem; }
+    @media (max-width: 40rem) {
+      .bc-grid { gap: 3px; }
+      .bc-cell { min-height: 3.1rem; padding: 0.3rem; }
+      .bc-chip, .bc-more { display: none; }
+      .bc-dots { display: flex; }
+      .bc-dots .bc-swatch { width: 7px; height: 7px; }
     }
 
     .sheet-tab.on {
@@ -358,6 +409,24 @@
       </div>
     </div>
 
+    </section>
+
+    <section id="sheet-calendar" hidden>
+    <div class="panel">
+      <div class="bc-top">
+        <h2 id="bc-title" style="margin:0">Calendar</h2>
+        <div class="bc-nav">
+          <button class="btn-month" id="bc-prev" type="button" aria-label="Previous month">&larr;</button>
+          <button class="btn-month" id="bc-today" type="button">Today</button>
+          <button class="btn-month" id="bc-next" type="button" aria-label="Next month">&rarr;</button>
+          <button class="btn-mini" id="bc-refresh" type="button">Refresh</button>
+        </div>
+      </div>
+      <div class="bc-kinds" id="bc-kinds"></div>
+      <p class="muted" id="bc-status" style="font-size:0.82rem;margin-top:0.6rem;min-height:1em"></p>
+      <div class="bc-grid" id="bc-grid"></div>
+      <div id="bc-day"></div>
+    </div>
     </section>
 
     <section id="sheet-agenda" hidden>
