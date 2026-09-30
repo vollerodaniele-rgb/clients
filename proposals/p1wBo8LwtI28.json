@@ -24,12 +24,6 @@
           "what": "A full shoot day on site",
           "sub": "Shot around your day rather than against it.",
           "n": 1
-        },
-        {
-          "key": "photos",
-          "what": "60 ready to post photographs",
-          "sub": "Edited, framed for feed and stories, delivered with the reels.",
-          "n": 60
         }
       ],
       "mix": {
@@ -102,7 +96,7 @@
       "mix": {
         "label": "",
         "chips": [
-          "client gallery"
+          "client gallery to download with preview"
         ]
       }
     }
