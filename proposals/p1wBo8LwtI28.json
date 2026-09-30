@@ -90,6 +90,11 @@
           "sub": "Shot around your day rather than against it."
         },
         {
+          "key": "brainstorm",
+          "what": "A brainstorm session",
+          "sub": "We plan it together before anything is filmed."
+        },
+        {
           "key": "secondcam",
           "what": "A second camera",
           "sub": "Two angles on the moments that only happen once."
