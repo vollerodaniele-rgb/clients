@@ -1,108 +1,50 @@
-# Client portals
+# Noir au Noir: client portals and studio pages
 
-Every client portal lives in this one repo and is served from
-`noiraunoir.com/<client>/`.
+Everything in this repo is served from `noiraunoir.com`.
 
-- `noiraunoir.com/sakas/` — the portal
-- `noiraunoir.com/sakas/#posts` — the posting plan, a page of the portal
-- `noiraunoir.com/sakas/admin.html` — where you edit it (not linked anywhere)
+- `noiraunoir.com/` forwards to `/call/`, the studio's official page
+- `noiraunoir.com/<client>/` is a client's portal, `/<client>/admin.html`
+  its editor (not linked anywhere)
+- `noiraunoir.com/admin/` is the dashboard for everything else
 
-The root and any unknown address show only the studio name, so the
-domain gives nothing away on its own.
+## Clients
 
-## The dashboard
+Created and removed from the dashboard. Create copies the two files in
+`_template/` into a `<client>/` folder and writes `data/<client>.json`,
+all in one commit, so a client is never half made. Remove deletes both
+in one commit; the history keeps them.
 
-`noiraunoir.com/admin/` lists every client and links to each
-portal, plan and admin. It finds clients by reading the data folder, so
-it needs no list of its own. It also holds the access key: paste it
-there once and every client admin on this site can use it.
+A client's plan is `data/<client>.json`. The portal reads the studio
+platform's copy of it first and this file if the platform does not
+answer. Money is never in these files, because they are public: it lives
+in the private repo `studio-private`.
 
-The names `admin`, `assets`, `data` and `_template` belong to the site
-itself, so they cannot be used as client names.
+The names the site itself uses (`admin`, `assets`, `data`, `call`,
+`reels`, `p`, `i` and the rest) cannot be client names; the list is
+`RESERVED` in `assets/dashboard.js`.
 
-## Adding a client
+## Proposals and idea boxes
 
-Use the Create button on the dashboard: type the name, check the
-address it suggests, press Create. It copies the two template files
-into a new folder, writes the data file and commits all three at once,
-so a client is never half created. It is live about a minute later.
+- `proposals/<slug>.json` holds a proposal, `p/<slug>/` its page (a copy
+  of `_proposal/`). The address is random because a proposal carries
+  prices meant for one client.
+- `boxes/<slug>.json` holds an idea box's wording, `i/<slug>/` its page
+  and moderation page (copies of `_box/`).
 
-By hand is still possible: copy `data/_example.json` to
-`data/<client>.json`, copy the two files from `_template/` into a
-`<client>/` folder, commit.
-
-Either way there is no new repo, DNS record, Pages setting or relay
-change, and the same key opens it.
-
-
-## Removing a client
-
-The Remove button on a client card deletes its folder and its data
-file in one commit. It asks twice and names the client before doing
-it. The commit stays in the git history, so a mistake can be undone.
-Any requests that client sent stay as issues; they are history rather
-than part of the portal.
-
-## Money
-
-Amounts never go in a client data file, because those pages are public.
-They live in a separate **private** repo, `studio-private`, in
-`money.json`, which the dashboard reads with your key. Without the key
-the panel shows nothing at all.
-
-The admin key therefore needs Contents read and write on that private
-repo as well as on this one.
-
-## Proposals
-
-Proposals live here too, so there is one repo to manage:
-
-- `proposals/<slug>.json` holds one proposal
-- `p/<slug>/index.html` is copied from `_proposal/` and is the same
-  file for every proposal
-- the dashboard creates, edits and removes them, and shows which ones
-  have been accepted
-
-Addresses are random rather than readable, because a proposal carries
-prices and often a discount meant for one client alone. Choosing a
-package files an issue labeled `accepted` and `proposal:<slug>` and
-pings Telegram.
-
-The old proposal.noiraunoir.com forwards here, so links already sent
-still work.
-
-## Idea boxes
-
-Standalone pages where anyone can send an idea, with a picture or a
-voice message and no account, in the shape of Last Chapter:
-
-- `boxes/<slug>.json` holds the wording
-- `i/<slug>/` holds two files copied from `_box/`: the page and its
-  moderation page
-- ideas are issues labelled `idea` and `box:<slug>`, so one box never
-  shows another one
-
-The dashboard creates, lists and removes them, and Telegram names the
-box on every new idea.
-
-## How it fits together
-
-- `assets/` holds the only copy of the styles and the three scripts.
-  Fixing something there fixes it for every client at once.
-- `data/<client>.json` holds everything that client sees.
-- Requests from a portal become issues in this repo labeled `idea` and
-  `client:<client>`. The second label is what keeps one client from ever
-  seeing another's requests, and it is added automatically.
-- Submissions ping Telegram, naming the client.
+Requests, ideas and accepted proposals become issues in this repo, with
+a label naming whose they are, so nobody ever sees another's.
 
 ## The admin key
 
-One fine-grained GitHub token covers every client: repository access
-`clients`, with **Contents: read and write** (to publish the plan) and
-**Issues: read and write** (to clear requests). Paste it once per
-browser into the Access key box on any client's admin page.
+One fine-grained GitHub token, pasted once per browser: Contents and
+Issues, read and write, on this repo, and Contents, read and write, on
+`studio-private`.
 
-## Style
+## How it fits together
 
-House style: pitch black, plain white text, no colors, no shadows,
-Playfair Display headings with Inter body text.
+- `assets/` holds the only copy of the styles and scripts, so a fix
+  there reaches every page at once.
+- Everything the pages cannot do on their own (bookings, mail, files,
+  notifications) goes through the studio's relay, a Cloudflare Worker
+  kept in its own repo.
+- House style: glass on black, Satoshi, no colour.

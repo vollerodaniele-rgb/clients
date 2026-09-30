@@ -446,7 +446,7 @@ function normalizeDate(raw) {
 }
 
 /* ============ IDEAS & REQUESTS ============ */
-/* These are GitHub issues, not part of plan.json, so this panel acts
+/* These are GitHub issues, not part of the plan, so this panel acts
    on GitHub straight away. Nothing here waits for Save & Publish. */
 
 /* ============ DELIVERING THE WORK ============ */
