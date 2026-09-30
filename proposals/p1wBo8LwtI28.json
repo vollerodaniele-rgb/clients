@@ -24,6 +24,12 @@
           "what": "A full shoot day on site",
           "sub": "Shot around your day rather than against it.",
           "n": 1
+        },
+        {
+          "key": "delivery",
+          "n": 3,
+          "what": "Delivery within 3 days",
+          "sub": "Counted from the shoot day."
         }
       ],
       "mix": {
