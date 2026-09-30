@@ -48,6 +48,7 @@ onReady(() => {
     tab.addEventListener("click", () => showSheet(sheet.id));
     bar.appendChild(tab);
   }
+  buildPhoneMenu();
 
   /* Nothing opens while the lock is up, because opening a sheet is what
      makes its panels fetch. Without a key most panels could only say
@@ -75,6 +76,63 @@ function hasKey() {
   }
 }
 
+/* ============ THE PHONE MENU ============ */
+/* Eleven tabs wrap into four rows on a phone and push the sheet itself
+   below the fold. So on a phone the bar gives way to one button at the
+   bottom of the screen, where the thumb is, naming the sheet you are on.
+   It opens a panel that rises from the bottom with every sheet in it. */
+function buildPhoneMenu() {
+  const btn = document.createElement("button");
+  btn.type = "button";
+  btn.className = "sheet-menu-btn";
+  btn.id = "sheet-menu-btn";
+  btn.setAttribute("aria-haspopup", "true");
+  btn.setAttribute("aria-expanded", "false");
+  btn.innerHTML = '<svg viewBox="0 0 18 18" aria-hidden="true"><path d="M3 5h12M3 9h12M3 13h12"/></svg><span id="sheet-menu-name">Menu</span>';
+
+  const veil = document.createElement("div");
+  veil.className = "sheet-veil";
+  veil.hidden = true;
+
+  const drawer = document.createElement("nav");
+  drawer.className = "sheet-drawer";
+  drawer.id = "sheet-drawer";
+  drawer.hidden = true;
+  drawer.setAttribute("aria-label", "Sections");
+  drawer.innerHTML = '<span class="sheet-grab" aria-hidden="true"></span>';
+  for (const sheet of SHEETS) {
+    const item = document.createElement("button");
+    item.type = "button";
+    item.textContent = sheet.name;
+    item.dataset.sheet = sheet.id;
+    item.addEventListener("click", () => { closePhoneMenu(); showSheet(sheet.id); });
+    drawer.appendChild(item);
+  }
+
+  btn.addEventListener("click", () => (drawer.hidden ? openPhoneMenu() : closePhoneMenu()));
+  veil.addEventListener("click", closePhoneMenu);
+  addEventListener("keydown", (e) => { if (e.key === "Escape") closePhoneMenu(); });
+  document.body.append(veil, drawer, btn);
+}
+
+function openPhoneMenu() {
+  const drawer = document.getElementById("sheet-drawer");
+  if (!drawer) return;
+  drawer.hidden = false;
+  drawer.previousElementSibling.hidden = false;
+  document.getElementById("sheet-menu-btn").setAttribute("aria-expanded", "true");
+  const on = drawer.querySelector("button.on") || drawer.querySelector("button");
+  if (on) on.focus();
+}
+
+function closePhoneMenu() {
+  const drawer = document.getElementById("sheet-drawer");
+  if (!drawer || drawer.hidden) return;
+  drawer.hidden = true;
+  drawer.previousElementSibling.hidden = true;
+  document.getElementById("sheet-menu-btn").setAttribute("aria-expanded", "false");
+}
+
 function showSheet(id) {
   for (const sheet of SHEETS) {
     for (const part of partsOf(sheet)) {
@@ -83,11 +141,14 @@ function showSheet(id) {
     }
   }
 
-  for (const tab of document.querySelectorAll(".sheet-tab")) {
+  for (const tab of document.querySelectorAll(".sheet-tab, .sheet-drawer button")) {
     const on = tab.dataset.sheet === id;
     tab.classList.toggle("on", on);
     tab.setAttribute("aria-current", on ? "true" : "false");
   }
+  const named = document.getElementById("sheet-menu-name");
+  const sheet = SHEETS.find((s) => s.id === id);
+  if (named && sheet) named.textContent = sheet.name;
 
   /* The panels on this sheet load the first time it is opened, rather
      than all of them at once when the page opens. */
