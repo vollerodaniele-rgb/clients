@@ -154,37 +154,75 @@
       .bc-dots .bc-swatch { width: 7px; height: 7px; }
     }
 
-    /* On a phone: no tab bar, one button at the bottom and a panel that
-       rises from there. Hidden everywhere else. */
+    /* On a phone: no tab bar. One glass button at the bottom, and a glass
+       panel that rises from there with every sheet as a tile. Only the
+       site's whites and the soft light the portals have behind them. */
     .sheet-menu-btn, .sheet-veil, .sheet-drawer { display: none; }
     @media (max-width: 40rem) {
       .sheets { display: none; }
       .dash { padding-bottom: 7rem; }
+
       .sheet-menu-btn {
-        display: flex; align-items: center; gap: 0.55rem; position: fixed; z-index: 30;
+        display: flex; align-items: center; gap: 0.6rem; position: fixed; z-index: 30;
         left: 50%; transform: translateX(-50%); bottom: calc(env(safe-area-inset-bottom, 0px) + 14px);
-        padding: 0.7rem 1.2rem 0.7rem 1rem; border-radius: 999px; cursor: pointer; white-space: nowrap;
-        font-family: var(--font-body); font-size: 0.72rem; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase;
-        color: var(--text); background: rgba(20, 20, 24, 0.72); border: 1px solid rgba(255, 255, 255, 0.16);
-        backdrop-filter: blur(26px) saturate(180%); -webkit-backdrop-filter: blur(26px) saturate(180%);
-        box-shadow: 0 1px 0 rgba(255, 255, 255, 0.14) inset, 0 18px 40px -16px rgba(0, 0, 0, 0.9);
+        padding: 0.72rem 1rem 0.72rem 0.95rem; border-radius: 999px; cursor: pointer; white-space: nowrap;
+        font-family: var(--font-body); font-size: 0.72rem; font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase;
+        color: var(--text); border: 1px solid rgba(255, 255, 255, 0.16); border-top-color: rgba(255, 255, 255, 0.28);
+        background: linear-gradient(180deg, rgba(255, 255, 255, 0.10), rgba(255, 255, 255, 0.03)), rgba(16, 16, 20, 0.55);
+        backdrop-filter: blur(24px) saturate(180%); -webkit-backdrop-filter: blur(24px) saturate(180%);
+        box-shadow: 0 18px 40px -14px rgba(0, 0, 0, 0.95), 0 0 0 1px rgba(0, 0, 0, 0.4);
+        transition: transform 0.2s;
       }
-      .sheet-menu-btn svg { width: 16px; height: 16px; stroke: currentColor; stroke-width: 1.7; fill: none; stroke-linecap: round; }
-      .sheet-veil:not([hidden]) { display: block; position: fixed; inset: 0; z-index: 40; background: rgba(0, 0, 0, 0.5); }
+      .sheet-menu-btn:active { transform: translateX(-50%) scale(0.97); }
+      .sheet-menu-btn svg { width: 17px; height: 17px; stroke: currentColor; stroke-width: 1.6; fill: none; stroke-linecap: round; stroke-linejoin: round; display: block; }
+      .sheet-menu-btn .sheet-menu-caret { width: 14px; height: 14px; opacity: 0.55; margin-left: 0.1rem; }
+
+      .sheet-veil:not([hidden]) {
+        display: block; position: fixed; inset: 0; z-index: 40; background: rgba(0, 0, 0, 0.42);
+        backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); animation: sheet-fade 0.25s ease;
+      }
+
       .sheet-drawer:not([hidden]) {
-        display: grid; gap: 2px; position: fixed; z-index: 41; left: 0; right: 0; bottom: 0;
-        max-height: 82vh; overflow: auto; padding: 8px 14px calc(env(safe-area-inset-bottom, 0px) + 18px);
-        border-radius: 22px 22px 0 0; border: 1px solid rgba(255, 255, 255, 0.12); border-bottom: 0;
-        background: rgba(20, 20, 24, 0.86); backdrop-filter: blur(26px) saturate(180%); -webkit-backdrop-filter: blur(26px) saturate(180%);
-        animation: sheet-rise 0.24s cubic-bezier(.2, .8, .2, 1);
+        display: block; position: fixed; z-index: 41; left: 8px; right: 8px; bottom: calc(env(safe-area-inset-bottom, 0px) + 8px);
+        max-height: 84vh; overflow: auto; padding: 8px 16px 18px; border-radius: 28px;
+        border: 1px solid rgba(255, 255, 255, 0.12); border-top-color: rgba(255, 255, 255, 0.26);
+        background:
+          radial-gradient(28rem 14rem at 88% -12%, rgba(255, 255, 255, 0.13), transparent 62%),
+          radial-gradient(22rem 12rem at -10% 112%, rgba(255, 255, 255, 0.06), transparent 62%),
+          linear-gradient(180deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.015)),
+          rgba(14, 14, 18, 0.62);
+        backdrop-filter: blur(32px) saturate(190%); -webkit-backdrop-filter: blur(32px) saturate(190%);
+        box-shadow: 0 30px 80px -20px rgba(0, 0, 0, 0.95), inset 0 1px 0 rgba(255, 255, 255, 0.10);
+        animation: sheet-rise 0.34s cubic-bezier(.2, .8, .2, 1);
       }
-      .sheet-grab { justify-self: center; width: 38px; height: 4px; border-radius: 2px; background: rgba(255, 255, 255, 0.25); margin: 4px 0 10px; }
-      .sheet-drawer button {
-        text-align: left; padding: 0.85rem 1rem; border-radius: 12px; border: 0; background: none; cursor: pointer;
-        font-family: var(--font-body); font-size: 1rem; font-weight: 500; color: var(--dim);
+      .sheet-grab { display: block; width: 36px; height: 4px; border-radius: 2px; background: rgba(255, 255, 255, 0.22); margin: 2px auto 8px; }
+      .sheet-drawer-top { display: flex; align-items: center; justify-content: space-between; padding: 2px 4px; }
+      .sheet-drawer-mark { font-size: 0.62rem; font-weight: 700; letter-spacing: 0.5em; color: rgba(242, 242, 242, 0.62); }
+      .sheet-drawer-x {
+        width: 32px; height: 32px; border-radius: 50%; cursor: pointer; color: var(--text); font-size: 1.05rem; line-height: 1;
+        background: rgba(255, 255, 255, 0.06); border: 1px solid rgba(255, 255, 255, 0.14);
       }
-      .sheet-drawer button.on { background: var(--text); color: var(--bg); }
-      @keyframes sheet-rise { from { transform: translateY(100%); } to { transform: none; } }
+      .sheet-group { margin: 16px 4px 8px; font-size: 0.6rem; font-weight: 700; letter-spacing: 0.24em; text-transform: uppercase; color: rgba(242, 242, 242, 0.4); }
+      .sheet-tiles { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
+      .sheet-tile {
+        display: grid; justify-items: center; align-content: center; gap: 8px; min-height: 76px; padding: 12px 4px 10px;
+        border-radius: 18px; cursor: pointer; color: rgba(242, 242, 242, 0.7);
+        font-family: var(--font-body); font-size: 0.7rem; font-weight: 500; letter-spacing: 0.01em;
+        background: rgba(255, 255, 255, 0.035); border: 1px solid rgba(255, 255, 255, 0.07);
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+        transition: background 0.2s, border-color 0.2s, color 0.2s, transform 0.15s;
+        animation: sheet-tile-in 0.4s cubic-bezier(.2, .8, .2, 1) both; animation-delay: calc(var(--i, 0) * 18ms + 60ms);
+      }
+      .sheet-tile svg { width: 22px; height: 22px; stroke: currentColor; stroke-width: 1.5; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+      .sheet-tile span { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+      .sheet-tile:active { transform: scale(0.96); }
+      .sheet-tile.on {
+        color: var(--text); background: rgba(255, 255, 255, 0.13); border-color: rgba(255, 255, 255, 0.34);
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.22), 0 0 26px -8px rgba(255, 255, 255, 0.35);
+      }
+      @keyframes sheet-rise { from { transform: translateY(calc(100% + 20px)); } to { transform: none; } }
+      @keyframes sheet-fade { from { opacity: 0; } to { opacity: 1; } }
+      @keyframes sheet-tile-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
 
       /* the calendar's controls, smaller */
       .bc-top { gap: 0.6rem; }
@@ -193,7 +231,9 @@
       .bc-kinds { gap: 0.3rem; }
       .bc-kind { padding: 0.25rem 0.6rem; font-size: 0.66rem; gap: 0.35rem; }
     }
-    @media (max-width: 40rem) and (prefers-reduced-motion: reduce) { .sheet-drawer { animation: none; } }
+    @media (max-width: 40rem) and (prefers-reduced-motion: reduce) {
+      .sheet-drawer, .sheet-veil, .sheet-tile { animation: none !important; }
+    }
 
     .sheet-tab.on {
       background: var(--text);
