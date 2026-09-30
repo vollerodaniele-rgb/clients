@@ -3,7 +3,7 @@
   "client": "Labellov",
   "subtitle": "Cedric Fleurbaey",
   "kind": "project",
-  "kicker": "Videography Proposal · One off",
+  "kicker": "Photography Proposal · One off",
   "footer": "Prepared for Labellov Cedric Fleurbaey",
   "intro": {
     "lead": "Ways to work together",
@@ -13,7 +13,7 @@
     {
       "num": "01 · The core",
       "name": "Essential",
-      "tag": "The day filmed, cleanly",
+      "tag": "The day shot, cleanly",
       "price": "€550",
       "per": "one off · VAT incl.",
       "featured": false,
@@ -31,15 +31,19 @@
           "sub": "Edited, framed for feed and stories, delivered with the reels.",
           "n": 60
         }
-      ]
+      ],
+      "mix": {
+        "label": "",
+        "chips": []
+      }
     },
     {
       "num": "02 · The full day",
       "name": "Signature",
-      "tag": "The day filmed, and the pieces to post from it",
+      "tag": "The day shot, and the pieces to post from it",
       "price": "€650",
       "per": "one off · VAT incl.",
-      "featured": false,
+      "featured": true,
       "badge": "",
       "features": [
         {
@@ -49,29 +53,64 @@
           "n": 1
         },
         {
-          "key": "reels",
-          "what": "4 planned reels",
-          "sub": "Chosen and written before the shoot day, filmed in one session.",
-          "n": 4
-        },
-        {
-          "key": "photos",
-          "what": "150 ready to post photographs",
-          "sub": "Edited, framed for feed and stories, delivered with the reels.",
-          "n": 150
-        },
-        {
           "key": "brainstorm",
           "what": "A brainstorm session",
           "sub": "We plan it together before anything is filmed."
+        },
+        {
+          "key": "delivery",
+          "n": 1,
+          "what": "Delivery within 1 days",
+          "sub": "Counted from the shoot day."
         }
-      ]
+      ],
+      "mix": {
+        "label": "",
+        "chips": []
+      },
+      "was": "€700"
+    },
+    {
+      "num": "03 · The Noir",
+      "name": "Complete",
+      "tag": "",
+      "price": "€900",
+      "per": "one off · VAT incl.",
+      "was": "€950",
+      "off": "",
+      "badge": "",
+      "featured": true,
+      "features": [
+        {
+          "key": "shootday",
+          "n": 1,
+          "what": "A full shoot day on site",
+          "sub": "Shot around your day rather than against it."
+        },
+        {
+          "key": "secondcam",
+          "what": "A second camera",
+          "sub": "Two angles on the moments that only happen once."
+        },
+        {
+          "key": "delivery",
+          "n": 1,
+          "what": "Delivery within 1 days",
+          "sub": "Counted from the shoot day."
+        }
+      ],
+      "mix": {
+        "label": "",
+        "chips": [
+          "client gallery"
+        ]
+      }
     }
   ],
   "notes": [
     {
       "title": "How long it takes",
-      "body": "The finished work is delivered within three weeks of the shoot. You can follow where it has got to in your portal rather than having to ask."
+      "body": "The finished work is delivered within 1-3 days of the shoot. You can follow where it has got to in your portal rather than having to ask."
     },
     {
       "title": "Your client portal",
@@ -85,7 +124,7 @@
       {
         "n": "01",
         "title": "Plan",
-        "text": "We agree what matters on the day and how long it takes to film properly."
+        "text": "We agree what matters on the day and how long it takes to shoot properly."
       },
       {
         "n": "02",
