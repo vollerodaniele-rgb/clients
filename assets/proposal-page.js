@@ -42,9 +42,13 @@ function render(d) {
   $("foot-brand").textContent = d.studio || "NOIR AU NOIR";
   $("foot-meta").textContent = d.footer || "";
 
-  if (d.intro) {
-    $("intro-lead").textContent = d.intro.lead || "";
-    $("intro-text").textContent = d.intro.text || "";
+  // no opening words, no opening block: an empty one is just two lines
+  // with a gap between them
+  const lead = d.intro && String(d.intro.lead || "").trim();
+  const text = d.intro && String(d.intro.text || "").trim();
+  if (lead || text) {
+    $("intro-lead").textContent = lead || "";
+    $("intro-text").textContent = text || "";
   } else {
     $("intro").hidden = true;
   }
