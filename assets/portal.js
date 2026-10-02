@@ -1679,13 +1679,18 @@ function setupEventOnly(data) {
     ? new Date(ev.date + "T00:00:00").toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long", year: "numeric" })
     : "";
 
+  // the bar at the top already carries the client's name, so a title is
+  // only shown when the event has one of its own
+  const same = (a, b) => String(a || "").trim().toLowerCase() === String(b || "").trim().toLowerCase();
+  const ownTitle = ev.title && !same(ev.title, data.name);
+
   const page = document.createElement("div");
   page.className = "ev";
   page.innerHTML = `
     <div class="pt-intro">
       <div>
         <p class="pt-eyebrow">${esc(day || "The photos")}</p>
-        <h1 class="pt-display">${esc(ev.title || data.name || "")}</h1>
+        ${ownTitle ? `<h1 class="pt-display">${esc(ev.title)}</h1>` : ""}
         <p class="pt-lede" id="ev-lede"></p>
       </div>
     </div>
@@ -1799,7 +1804,7 @@ function layEvent() {
   if (!grid) return;
   const width = grid.clientWidth;
   const gap = 8; // the same gap the stylesheet gives .ev-grid
-  const aim = width < 640 ? 150 : 250;
+  const aim = width < 640 ? 180 : 250; // three upright photos to a row on a phone, not four
   const tiles = [...grid.children];
 
   let row = [], sum = 0;
