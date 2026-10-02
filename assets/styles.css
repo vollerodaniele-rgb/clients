@@ -2459,3 +2459,56 @@ body.reels-only .pt-brand { flex: 1; text-align: center; }
 .ro-nav { display: flex; gap: 0.5rem; margin-top: 1rem; }
 .ro-nav .btn-month:disabled { opacity: 0.35; cursor: default; }
 
+/* ============ AN EVENT GALLERY ============ */
+/* The tabs are hidden by .reels-only, which an event page carries too. */
+.ev-gate { max-width: 26rem; margin: var(--pt-gap, 1.4rem) auto 0; display: grid; gap: 0.9rem; }
+.ev-gate-title { font-family: var(--font-display); font-size: 1.5rem; font-weight: 500; letter-spacing: -0.02em; }
+.ev-go {
+  justify-self: start; border: 0; border-radius: 999px; padding: 0.85rem 1.5rem; cursor: pointer;
+  background: var(--text); color: var(--bg);
+  font-family: var(--font-body); font-size: 0.72rem; font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase;
+}
+.ev-go:disabled { opacity: 0.6; cursor: default; }
+.ev-msg { min-height: 1.2em; font-size: 0.85rem; color: var(--text); }
+
+.ev-grid { display: flex; flex-wrap: wrap; gap: 6px; margin-top: var(--pt-gap, 1.4rem); }
+.ev-tile {
+  position: relative; flex: 0 0 auto; padding: 0; border: 0; cursor: zoom-in; overflow: hidden;
+  border-radius: 6px; background: rgba(255, 255, 255, 0.05);
+}
+.ev-tile img, .ev-tile video { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform 0.4s cubic-bezier(.2, .8, .2, 1); }
+.ev-tile:focus-visible { outline: 2px solid var(--text); outline-offset: 2px; }
+@media (hover: hover) { .ev-tile:hover img, .ev-tile:hover video { transform: scale(1.03); } }
+.ev-play {
+  position: absolute; right: 8px; bottom: 8px; width: 28px; height: 28px; border-radius: 50%;
+  display: grid; place-items: center; font-size: 0.6rem; color: #fff; background: rgba(0, 0, 0, 0.55); pointer-events: none;
+}
+.ev-by { margin: 2.4rem 0 0; text-align: center; font-size: 0.82rem; color: var(--dim); }
+.ev-by a { color: var(--text); }
+
+.ev-box {
+  position: fixed; inset: 0; z-index: 60; display: grid; grid-template-rows: 1fr auto;
+  background: rgba(0, 0, 0, 0.92); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+}
+.ev-stage { display: grid; place-items: center; min-height: 0; padding: 3.4rem 0.6rem 0.6rem; }
+.ev-stage img, .ev-stage video { max-width: 100%; max-height: 100%; object-fit: contain; border-radius: 4px; }
+.ev-x, .ev-arrow {
+  position: absolute; z-index: 2; width: 42px; height: 42px; border-radius: 50%; cursor: pointer; color: var(--text);
+  background: rgba(20, 20, 24, 0.6); border: 1px solid rgba(255, 255, 255, 0.16); font-size: 1.1rem; line-height: 1;
+}
+.ev-x { top: calc(env(safe-area-inset-top, 0px) + 12px); right: 12px; }
+.ev-arrow { top: 50%; transform: translateY(-50%); }
+.ev-arrow.prev { left: 12px; }
+.ev-arrow.next { right: 12px; }
+.ev-arrow:disabled { opacity: 0.25; cursor: default; }
+.ev-bar {
+  display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+  padding: 0.8rem 1rem calc(env(safe-area-inset-bottom, 0px) + 0.9rem);
+}
+#ev-count { font-size: 0.8rem; color: var(--dim); font-variant-numeric: tabular-nums; }
+.ev-get {
+  padding: 0.8rem 1.5rem; border-radius: 999px; text-decoration: none; background: var(--text); color: var(--bg);
+  font-size: 0.72rem; font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase;
+}
+@media (max-width: 40rem) { .ev-arrow { display: none; } }
+@media (prefers-reduced-motion: reduce) { .ev-tile img, .ev-tile video { transition: none; } }

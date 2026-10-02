@@ -79,6 +79,13 @@ async function loadPlan() {
     $("tagline").after(note);
   }
 
+  // an event: no tabs, no plan, a gallery the guests sign in to
+  if (data.kind === "event") {
+    setupEventOnly(data);
+    renderFooter(data.contact);
+    return;
+  }
+
   // one take reels: no tabs, no plan, just the reels to watch and take
   if (data.kind === "reels") {
     setupReelsOnly(data);
@@ -1634,4 +1641,266 @@ function tuneReelsSoon() {
   if (reelsWaiting) return;
   reelsWaiting = true;
   setTimeout(() => { reelsWaiting = false; tuneReels(); }, 120);
+}
+
+/* ============ AN EVENT ============ */
+/* The whole page, for an event. The client sends this one address to
+   everybody who was there. A guest leaves a name and an email, then
+   scrolls every photo in a grid that keeps each one's own shape, opens
+   any of them large, and downloads the ones they want.
+
+   Each photo is three files in the client's deliveries: the original
+   (month "event"), a large view ("event-v") and a small one for the grid
+   ("event-t"), the last two made by the editor when it uploads. The list
+   and each photo's shape are in the plan (data.event.photos), so the
+   grid is laid out before a single picture has loaded.
+
+   The sign-in is a gate on this page, kept in this browser once passed.
+   It tells the studio who came; it does not lock the files. */
+const EV_MONTH = "event";
+const evUrl = (name, size) =>
+  `${CONFIG.submitUrl}/file?client=${encodeURIComponent(CLIENT)}` +
+  `&month=${EV_MONTH}${size ? "-" + size : ""}&name=${encodeURIComponent(name)}`;
+const evJpg = (p, size) => evUrl(p.name.replace(/\.[^.]+$/, "") + ".jpg", size);
+const evIsFilm = (p) => p.kind === "film";
+
+let evPhotos = [];
+let evAt = 0;
+
+function setupEventOnly(data) {
+  document.body.classList.add("reels-only", "event-only");
+  const shell = document.querySelector(".pt-shell");
+  if (!shell) return;
+  for (const view of shell.querySelectorAll(".pt-view")) view.hidden = true;
+
+  const ev = data.event || {};
+  evPhotos = (ev.photos || []).filter((p) => p && p.name && p.w > 0 && p.h > 0);
+  const day = ev.date
+    ? new Date(ev.date + "T00:00:00").toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long", year: "numeric" })
+    : "";
+
+  const page = document.createElement("div");
+  page.className = "ev";
+  page.innerHTML = `
+    <div class="pt-intro">
+      <div>
+        <p class="pt-eyebrow">${esc(day || "The photos")}</p>
+        <h1 class="pt-display">${esc(ev.title || data.name || "")}</h1>
+        <p class="pt-lede" id="ev-lede"></p>
+      </div>
+    </div>
+    <form class="pt-pane ev-gate" id="ev-gate" hidden novalidate>
+      <p class="ev-gate-title">Who's looking?</p>
+      <p class="muted">Leave your name and email and the photos open.</p>
+      <label class="field"><span>Your name</span><input id="ev-name" type="text" autocomplete="name" maxlength="80" required></label>
+      <label class="field"><span>Your email</span><input id="ev-email" type="email" autocomplete="email" maxlength="120" required></label>
+      <input id="ev-website" type="text" tabindex="-1" autocomplete="off" aria-hidden="true" style="position:absolute;left:-9999px">
+      <button class="ev-go" type="submit" id="ev-go">See the photos</button>
+      <p class="ev-msg" id="ev-msg" role="status"></p>
+      <p class="privacy-line" style="font-size:0.74rem;color:var(--dim);line-height:1.6">
+        Your name and email go to Noir au Noir, who made these photos, so we know who was there and
+        can reach you about them. Want them removed? <a href="mailto:info@noiraunoir.com" style="color:inherit">Ask</a>.
+      </p>
+    </form>
+    <div id="ev-body" hidden>
+      <div class="ev-grid" id="ev-grid"></div>
+      <p class="ev-by">Photographed by Noir au Noir. Planning something of your own? <a href="../call/">Book a call</a>.</p>
+    </div>`;
+  shell.appendChild(page);
+
+  if (!evPhotos.length) {
+    $("ev-lede").textContent = "The photos land here as soon as they are edited.";
+    return;
+  }
+
+  let known = false;
+  try { known = !!localStorage.getItem("noir-event:" + CLIENT); } catch { /* asked again next time */ }
+  if (known) openEvent();
+  else {
+    $("ev-lede").textContent = evPhotos.length + (evPhotos.length === 1 ? " photo" : " photos") + " from the day.";
+    $("ev-gate").hidden = false;
+    $("ev-gate").addEventListener("submit", joinEvent);
+  }
+}
+
+async function joinEvent(e) {
+  e.preventDefault();
+  const msg = $("ev-msg");
+  const name = $("ev-name").value.trim();
+  const email = $("ev-email").value.trim();
+  if (name.length < 2) { msg.textContent = "Your name, so we know who you are."; $("ev-name").focus(); return; }
+  if (!/^[^@\s]+@[^@\s]+\.[^@\s]{2,}$/.test(email)) { msg.textContent = "That email doesn't look complete."; $("ev-email").focus(); return; }
+
+  const btn = $("ev-go");
+  btn.disabled = true;
+  msg.textContent = "";
+  try {
+    const res = await fetch(`${CONFIG.submitUrl}/event/join`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ client: CLIENT, name, email, website: $("ev-website").value })
+    });
+    if (res.status === 400) {
+      msg.textContent = (await res.json()).error || "Check your name and email.";
+      btn.disabled = false;
+      return;
+    }
+    // anything else (the relay busy or down) must not keep a guest from the photos
+  } catch { /* the same: let them in */ }
+
+  try { localStorage.setItem("noir-event:" + CLIENT, JSON.stringify({ name, email })); } catch { /* asked again next time */ }
+  openEvent();
+}
+
+function openEvent() {
+  $("ev-gate").hidden = true;
+  $("ev-body").hidden = false;
+  $("ev-lede").textContent = evPhotos.length + (evPhotos.length === 1 ? " photo" : " photos") +
+    ". Tap one to see it large and download it.";
+
+  const grid = $("ev-grid");
+  grid.innerHTML = "";
+  evPhotos.forEach((p, i) => {
+    const tile = document.createElement("button");
+    tile.type = "button";
+    tile.className = "ev-tile";
+    tile.setAttribute("aria-label", "Photo " + (i + 1) + " of " + evPhotos.length);
+    if (evIsFilm(p)) {
+      const v = document.createElement("video");
+      v.src = evUrl(p.name) + "#t=0.1";
+      v.muted = true; v.playsInline = true; v.preload = "metadata";
+      tile.appendChild(v);
+      tile.insertAdjacentHTML("beforeend", '<span class="ev-play" aria-hidden="true">&#9654;</span>');
+    } else {
+      const img = document.createElement("img");
+      img.src = evJpg(p, "t");
+      img.alt = "";
+      img.loading = "lazy";
+      img.decoding = "async";
+      // a small file that is missing leaves a quiet tile, not a broken picture
+      img.addEventListener("error", () => img.remove());
+      tile.appendChild(img);
+    }
+    tile.addEventListener("click", () => showEventPhoto(i));
+    grid.appendChild(tile);
+  });
+
+  layEvent();
+  let soon = 0;
+  addEventListener("resize", () => { clearTimeout(soon); soon = setTimeout(layEvent, 120); });
+  buildEventBox();
+}
+
+/* Rows of equal height, each photo as wide as its shape asks, every
+   full row stretched to the edge. The last row keeps the usual height
+   rather than blowing two photos up to fill the line. */
+function layEvent() {
+  const grid = $("ev-grid");
+  if (!grid) return;
+  const width = grid.clientWidth;
+  const gap = 6;
+  const aim = width < 640 ? 150 : 250;
+  const tiles = [...grid.children];
+
+  let row = [], sum = 0;
+  const flush = (last) => {
+    if (!row.length) return;
+    const room = width - gap * (row.length - 1);
+    const h = last ? Math.min(aim, room / sum) : room / sum;
+    let used = 0;
+    row.forEach((t, k) => {
+      // the last one in a full row takes what is left, so rounding never wraps the row
+      const w = (!last && k === row.length - 1) ? room - used : Math.floor(t._r * h);
+      used += w;
+      t.style.width = w + "px";
+      t.style.height = Math.round(h) + "px";
+    });
+    row = []; sum = 0;
+  };
+
+  tiles.forEach((t, i) => {
+    const p = evPhotos[i];
+    t._r = p.w / p.h;
+    row.push(t);
+    sum += t._r;
+    if (sum * aim + gap * (row.length - 1) >= width) flush(false);
+  });
+  flush(true);
+}
+
+/* One photo, large. The small one is already on the phone, so it shows
+   at once and the large view replaces it when it has arrived. */
+function buildEventBox() {
+  if ($("ev-box")) return;
+  const box = document.createElement("div");
+  box.className = "ev-box";
+  box.id = "ev-box";
+  box.hidden = true;
+  box.innerHTML = `
+    <button type="button" class="ev-x" id="ev-x" aria-label="Close">&times;</button>
+    <button type="button" class="ev-arrow prev" id="ev-prev" aria-label="Previous">&larr;</button>
+    <div class="ev-stage" id="ev-stage"></div>
+    <button type="button" class="ev-arrow next" id="ev-next" aria-label="Next">&rarr;</button>
+    <div class="ev-bar">
+      <span id="ev-count"></span>
+      <a class="ev-get" id="ev-get" href="#">Download</a>
+    </div>`;
+  document.body.appendChild(box);
+
+  $("ev-x").addEventListener("click", closeEventPhoto);
+  $("ev-prev").addEventListener("click", () => showEventPhoto(evAt - 1));
+  $("ev-next").addEventListener("click", () => showEventPhoto(evAt + 1));
+  box.addEventListener("click", (e) => { if (e.target === box || e.target.id === "ev-stage") closeEventPhoto(); });
+  addEventListener("keydown", (e) => {
+    if (box.hidden) return;
+    if (e.key === "Escape") closeEventPhoto();
+    if (e.key === "ArrowLeft") showEventPhoto(evAt - 1);
+    if (e.key === "ArrowRight") showEventPhoto(evAt + 1);
+  });
+
+  // a swipe left or right moves on, the way a phone's own photos do
+  let from = null;
+  box.addEventListener("touchstart", (e) => { from = e.touches.length === 1 ? e.touches[0].clientX : null; }, { passive: true });
+  box.addEventListener("touchend", (e) => {
+    if (from === null) return;
+    const dx = e.changedTouches[0].clientX - from;
+    from = null;
+    if (Math.abs(dx) > 50) showEventPhoto(evAt + (dx < 0 ? 1 : -1));
+  });
+}
+
+function showEventPhoto(i) {
+  if (i < 0 || i >= evPhotos.length) return;
+  evAt = i;
+  const p = evPhotos[i];
+  const stage = $("ev-stage");
+  stage.innerHTML = "";
+
+  if (evIsFilm(p)) {
+    const v = document.createElement("video");
+    v.src = evUrl(p.name);
+    v.controls = true; v.playsInline = true; v.autoplay = true;
+    stage.appendChild(v);
+  } else {
+    const img = document.createElement("img");
+    img.alt = "";
+    img.src = evJpg(p, "t");
+    const big = new Image();
+    big.onload = () => { if (evAt === i) img.src = big.src; };
+    big.src = evJpg(p, "v");
+    stage.appendChild(img);
+  }
+
+  $("ev-count").textContent = (i + 1) + " / " + evPhotos.length;
+  $("ev-get").href = evUrl(p.name);
+  $("ev-prev").disabled = i === 0;
+  $("ev-next").disabled = i === evPhotos.length - 1;
+  $("ev-box").hidden = false;
+  document.documentElement.style.overflow = "hidden";
+}
+
+function closeEventPhoto() {
+  $("ev-box").hidden = true;
+  $("ev-stage").innerHTML = "";
+  document.documentElement.style.overflow = "";
 }

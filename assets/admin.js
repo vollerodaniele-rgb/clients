@@ -107,6 +107,17 @@ function render() {
      plus the day of the next visit and the footer. Everything else in
      the plan stays untouched, in case the client is moved to another
      kind later. */
+  /* An event gallery: the day, the photos, and who signed in to see
+     them. Nothing else in the plan applies. */
+  if (plan.kind === "event") {
+    app.appendChild(eventPanel());
+    app.appendChild(eventPhotosPanel());
+    app.appendChild(panel("Contact footer", (body) => {
+      body.appendChild(textField("Footer line", plan.contact, "line"));
+    }, plan.contact.line || ""));
+    return;
+  }
+
   if (plan.kind === "reels") {
     app.appendChild(deliveriesPanel());
     app.appendChild(panel("Next visit", (body) => {
@@ -743,6 +754,271 @@ function readableSize(bytes) {
   return mb >= 1 ? mb.toFixed(1) + " MB" : Math.max(1, Math.round(bytes / 1024)) + " KB";
 }
 
+/* ============ AN EVENT GALLERY ============ */
+/* Every photo of one day, for the guests. Each photo goes up as three
+   files: the original, a large view and a small one for the grid, the
+   last two made here in the browser so a gallery of hundreds opens fast
+   on a phone. Its name and shape go into plan.event.photos, which is
+   what the portal lays the grid out from. */
+const EVENT_MONTH = "event";
+const EVENT_SIZES = [["t", 640, 0.78], ["v", 2000, 0.86]]; // suffix, longest side, JPEG quality
+const EVENT_PICTURE = /^image\/(jpeg|png|webp)$/;
+const EVENT_FILM = /^video\/(mp4|quicktime|webm)$/;
+
+function eventPanel() {
+  if (!plan.event) plan.event = { title: plan.name || "", date: "", photos: [] };
+  if (!Array.isArray(plan.event.photos)) plan.event.photos = [];
+  if (!plan.nextShoot) plan.nextShoot = { date: "", time: "", location: "", focus: "", checklist: [] };
+  const ev = plan.event;
+
+  return panel("The event", (body) => {
+    body.appendChild(row(
+      textField("Name, as the guests see it", ev, "title"),
+      dateField("The day", ev, "date")
+    ));
+    body.appendChild(textField("Where (for your agenda)", plan.nextShoot, "location"));
+
+    const link = "https://noiraunoir.com/" + CLIENT + "/";
+    const share = document.createElement("div");
+    share.className = "row";
+    share.style.alignItems = "center";
+    share.innerHTML = `<p class="muted" style="font-size:0.9rem;flex:1;min-width:12rem">The address your client sends to the guests: <b style="color:var(--text)">${escHtml(link)}</b></p>`;
+    const copy = document.createElement("button");
+    copy.type = "button";
+    copy.className = "btn-mini";
+    copy.textContent = "Copy";
+    copy.addEventListener("click", async () => {
+      try { await navigator.clipboard.writeText(link); copy.textContent = "Copied"; }
+      catch { copy.textContent = "Copy it by hand"; }
+      setTimeout(() => { copy.textContent = "Copy"; }, 2000);
+    });
+    share.appendChild(copy);
+    body.appendChild(share);
+
+    const guests = document.createElement("p");
+    guests.className = "muted";
+    guests.style.cssText = "font-size:0.9rem;margin-top:0.6rem";
+    guests.textContent = "Guests who signed in: counting...";
+    body.appendChild(guests);
+    countEventGuests(guests);
+  }, ev.date || "no day set");
+}
+
+/* Everybody who left a name and email on this gallery. They are in
+   Contacts with everyone else; this is only this event's count. */
+async function countEventGuests(line) {
+  if (!token()) { line.textContent = "Save your access key to see who signed in."; return; }
+  try {
+    const res = await fetch(`${RELAY_URL}/people`, { headers: { "X-Studio-Key": token() }, cache: "no-store" });
+    if (!res.ok) throw new Error(String(res.status));
+    const here = ((await res.json()).people || []).filter((p) => (p.events || []).includes(CLIENT));
+    line.textContent = here.length
+      ? here.length + (here.length === 1 ? " guest has" : " guests have") + " signed in so far. They are in Contacts on the dashboard, with their email."
+      : "No guest has signed in yet.";
+  } catch (err) {
+    line.textContent = "Could not count the guests (" + err.message + ").";
+  }
+}
+
+function eventPhotosPanel() {
+  const photos = plan.event.photos;
+
+  return panel("Photos", (body) => {
+    const how = document.createElement("p");
+    how.className = "muted";
+    how.style.cssText = "font-size:0.9rem;margin-bottom:0.8rem";
+    how.textContent = "Pick every photo of the day at once (JPG, PNG or WEBP; MP4 or MOV for a film). " +
+      "They go up one by one in the order of their file names, and each is saved in the gallery as it lands. " +
+      "Keep this page open until it says done.";
+    body.appendChild(how);
+
+    const pick = document.createElement("label");
+    pick.className = "btn-mini solid";
+    pick.style.cursor = "pointer";
+    pick.textContent = "Add photos";
+    const input = document.createElement("input");
+    input.type = "file";
+    input.multiple = true;
+    input.accept = "image/jpeg,image/png,image/webp,video/mp4,video/quicktime,video/webm";
+    input.hidden = true;
+    pick.appendChild(input);
+
+    const sort = document.createElement("button");
+    sort.type = "button";
+    sort.className = "btn-mini";
+    sort.textContent = "Sort by file name";
+    sort.addEventListener("click", () => {
+      photos.sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true }));
+      draw();
+      status.textContent = "Sorted. Save and publish to keep it.";
+    });
+
+    const bar = document.createElement("div");
+    bar.className = "row";
+    bar.style.alignItems = "center";
+    bar.append(pick, sort);
+    body.appendChild(bar);
+
+    const status = document.createElement("p");
+    status.className = "form-msg";
+    status.style.marginTop = "0.6rem";
+    body.appendChild(status);
+
+    const grid = document.createElement("div");
+    grid.style.cssText = "display:grid;grid-template-columns:repeat(auto-fill,minmax(5.2rem,1fr));gap:6px;margin-top:0.8rem";
+    body.appendChild(grid);
+
+    function draw() {
+      grid.innerHTML = "";
+      photos.forEach((p, i) => {
+        const cell = document.createElement("div");
+        cell.style.cssText = "position:relative;aspect-ratio:1;border-radius:6px;overflow:hidden;background:rgba(255,255,255,0.05)";
+        cell.title = p.name;
+        if (p.kind === "film") {
+          cell.innerHTML = '<span class="muted" style="position:absolute;inset:0;display:grid;place-items:center;font-size:0.7rem">film</span>';
+        } else {
+          const img = document.createElement("img");
+          img.loading = "lazy";
+          img.alt = "";
+          img.style.cssText = "width:100%;height:100%;object-fit:cover;display:block";
+          img.src = `${RELAY_URL}/file?client=${encodeURIComponent(CLIENT)}&month=${EVENT_MONTH}-t&name=${encodeURIComponent(eventJpg(p.name))}`;
+          cell.appendChild(img);
+        }
+        const x = document.createElement("button");
+        x.type = "button";
+        x.setAttribute("aria-label", "Take " + p.name + " out of the gallery");
+        x.textContent = "\u00d7";
+        x.style.cssText = "position:absolute;top:3px;right:3px;width:22px;height:22px;border-radius:50%;border:0;cursor:pointer;background:rgba(0,0,0,0.65);color:#fff;font-size:0.9rem;line-height:1";
+        x.addEventListener("click", () => {
+          photos.splice(i, 1);
+          draw();
+          status.textContent = "Taken out of the gallery. Save and publish to keep it. The file itself stays in storage.";
+        });
+        cell.appendChild(x);
+        grid.appendChild(cell);
+      });
+    }
+    draw();
+
+    input.addEventListener("change", async () => {
+      const files = [...input.files].sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true }));
+      input.value = "";
+      if (!files.length) return;
+      if (!token()) { status.textContent = "Save your access key first."; return; }
+      pick.style.pointerEvents = "none";
+      pick.style.opacity = "0.5";
+      await uploadEventFiles(files, photos, status, draw);
+      pick.style.pointerEvents = "";
+      pick.style.opacity = "";
+    });
+  }, photos.length + (photos.length === 1 ? " photo" : " photos"));
+}
+
+// the name storage accepts: letters, digits, space, dot, dash, underscore
+function eventName(raw) {
+  const clean = String(raw).replace(/[^A-Za-z0-9 ._-]/g, "-").replace(/^[^A-Za-z0-9]+/, "");
+  return (clean || "photo.jpg").slice(-100);
+}
+const eventJpg = (name) => name.replace(/\.[^.]+$/, "") + ".jpg";
+
+async function uploadEventFiles(files, photos, status, draw) {
+  let done = 0, skipped = 0, failed = [];
+  const have = new Set(photos.map((p) => p.name));
+
+  for (const file of files) {
+    const name = eventName(file.name);
+    const at = "Photo " + (done + skipped + failed.length + 1) + " of " + files.length + ": " + file.name;
+
+    if (have.has(name)) { skipped++; continue; }
+    if (!EVENT_PICTURE.test(file.type) && !EVENT_FILM.test(file.type)) {
+      failed.push(file.name + " (not a JPG, PNG, WEBP, MP4 or MOV)");
+      continue;
+    }
+
+    try {
+      status.textContent = at + ", preparing";
+      let entry;
+      if (EVENT_FILM.test(file.type)) {
+        const shape = await filmShape(file);
+        await eventPut(EVENT_MONTH, name, file, file.type, (pct) => { status.textContent = at + ", " + pct + "%"; });
+        entry = { name, w: shape.w, h: shape.h, kind: "film" };
+      } else {
+        const picture = await readPicture(file);
+        for (const [suffix, side, quality] of EVENT_SIZES) {
+          const small = await shrinkPicture(picture, side, quality);
+          await eventPut(EVENT_MONTH + "-" + suffix, eventJpg(name), small, "image/jpeg", () => {});
+        }
+        await eventPut(EVENT_MONTH, name, file, file.type, (pct) => { status.textContent = at + ", " + pct + "%"; });
+        entry = { name, w: picture.width, h: picture.height };
+        if (picture.close) picture.close();
+      }
+      photos.push(entry);
+      have.add(name);
+      done++;
+      draw();
+      // saved as it goes, so a closed tab loses a few photos, not the evening
+      if (done % 30 === 0) { status.textContent = "Saving the gallery so far..."; await save(); }
+    } catch (err) {
+      failed.push(file.name + " (" + err.message + ")");
+    }
+  }
+
+  if (done) await save();
+  status.textContent = done + (done === 1 ? " photo" : " photos") + " added." +
+    (skipped ? " " + skipped + " already in the gallery, left alone." : "") +
+    (failed.length ? " Not added: " + failed.join("; ") + "." : " Done.");
+}
+
+/* One file into storage. When the relay says it has had too many in a
+   minute, or the line drops, it waits and tries again rather than
+   losing the photo: a gallery is hundreds of these in a row. */
+async function eventPut(month, name, blob, type, onProgress) {
+  const file = new File([blob], name, { type });
+  for (let attempt = 0; ; attempt++) {
+    try {
+      return await uploadDelivery(month, file, onProgress);
+    } catch (err) {
+      const again = /too many|429|connection dropped/i.test(err.message);
+      if (!again || attempt >= 6) throw err;
+      await new Promise((r) => setTimeout(r, 8000));
+    }
+  }
+}
+
+// the picture the right way up, whatever way the camera was held
+async function readPicture(file) {
+  if (window.createImageBitmap) {
+    try { return await createImageBitmap(file, { imageOrientation: "from-image" }); } catch { /* the older way below */ }
+  }
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => resolve(img);
+    img.onerror = () => reject(new Error("could not be read as a picture"));
+    img.src = URL.createObjectURL(file);
+  });
+}
+
+function shrinkPicture(picture, side, quality) {
+  const scale = Math.min(1, side / Math.max(picture.width, picture.height));
+  const canvas = document.createElement("canvas");
+  canvas.width = Math.round(picture.width * scale);
+  canvas.height = Math.round(picture.height * scale);
+  canvas.getContext("2d").drawImage(picture, 0, 0, canvas.width, canvas.height);
+  return new Promise((resolve, reject) => {
+    canvas.toBlob((b) => b ? resolve(b) : reject(new Error("could not be resized")), "image/jpeg", quality);
+  });
+}
+
+function filmShape(file) {
+  return new Promise((resolve) => {
+    const v = document.createElement("video");
+    v.preload = "metadata";
+    v.onloadedmetadata = () => resolve({ w: v.videoWidth || 16, h: v.videoHeight || 9 });
+    v.onerror = () => resolve({ w: 16, h: 9 });
+    v.src = URL.createObjectURL(file);
+  });
+}
+
 /* ============ WHAT KIND OF JOB ============ */
 /* One switch decides which half of the portal applies. A retainer
    repeats: months, a posting plan, progress per month. A one off runs
@@ -763,12 +1039,13 @@ function kindPanel(isProject) {
     note.style.cssText = "font-size:0.9rem;margin-bottom:1rem";
     note.textContent = "A monthly deal shows months and a posting plan. One take reels shows " +
       "only their reels, to watch and download, month by month. A one off job shows where the " +
-      "work has got to and when it lands. Each hides what does not apply, on the portal and here.";
+      "work has got to and when it lands. An event gallery shows every photo of one day to " +
+      "guests who leave their name and email. Each hides what does not apply, on the portal and here.";
     body.appendChild(note);
 
     // changing this changes which panels exist, so it redraws
     body.appendChild(switchField("This is a", plan, "kind",
-      [["", "Monthly deal"], ["reels", "One take reels"], ["project", "One off job"]], render));
+      [["", "Monthly deal"], ["reels", "One take reels"], ["project", "One off job"], ["event", "Event gallery"]], render));
 
     if (!isProject) return;
 
@@ -785,7 +1062,7 @@ function kindPanel(isProject) {
     hint.textContent = "Rename these to whatever you call them. The client sees the one you " +
       "are on marked, everything before it filled in, everything after it grey.";
     body.appendChild(hint);
-  }, isProject ? stageSummary(project) : plan.kind === "reels" ? "one take reels" : "monthly");
+  }, isProject ? stageSummary(project) : plan.kind === "reels" ? "one take reels" : plan.kind === "event" ? "event gallery" : "monthly");
 }
 
 function stageSummary(project) {
@@ -2066,6 +2343,10 @@ function linesField(label, obj, key) {
 async function save() {
   const msg = $("save-msg");
   const btn = $("save-btn");
+  // an event's day is its day in the agenda and the calendar too
+  if (plan.kind === "event" && plan.event) {
+    plan.nextShoot = Object.assign(plan.nextShoot || {}, { date: plan.event.date || "" });
+  }
   if (!token()) {
     msg.textContent = "Save your access key first (top of the page).";
     return;

@@ -244,11 +244,15 @@ function clientCard({ name, plan, requests }) {
   // a one off job has no posting plan to report on, so the card shows
   // how far the work has got instead
   const isProject = plan.kind === "project";
+  const isEvent = plan.kind === "event";
   const posts = (plan.posts || []).length;
   const planned = (plan.posts || []).filter((p) => p.status !== "posted").length;
+  const shots = isEvent ? ((plan.event && plan.event.photos) || []).length : 0;
   const second = isProject
     ? describeStage(plan.project)
-    : posts ? `${planned} of ${posts} posts still to go out` : "No posting plan yet";
+    : isEvent
+      ? (shots ? shots + (shots === 1 ? " photo" : " photos") + " in the gallery" : "Event gallery, no photos yet")
+      : posts ? `${planned} of ${posts} posts still to go out` : "No posting plan yet";
 
   card.innerHTML = `
     <div class="client-name">${escHtml(title)}</div>
@@ -258,7 +262,7 @@ function clientCard({ name, plan, requests }) {
     <div class="client-links">
       <a class="btn-mini solid" href="../${name}/admin.html">Edit</a>
       <a class="btn-mini" href="../${name}/">Portal</a>
-      ${isProject ? "" : `<a class="btn-mini" href="../${name}/#posts">Plan</a>`}
+      ${isProject || isEvent ? "" : `<a class="btn-mini" href="../${name}/#posts">Plan</a>`}
     </div>
     <p class="form-msg card-msg"></p>
   `;
@@ -596,6 +600,14 @@ function blankPlan(displayName, kind) {
     }];
   }
 
+  /* An event: the page is a gallery the guests sign in to. It starts
+     with the event's name and an empty list of photos; the editor fills
+     the list as it uploads. */
+  if (kind === "event") {
+    plan.kind = "event";
+    plan.event = { title: displayName, date: "", photos: [] };
+  }
+
   // a one off starts with the stages already in place, so the portal
   // says something the moment it exists
   if (kind === "project") {
@@ -633,6 +645,11 @@ const CREATE_DEFAULTS = {
     tagline: "Everything about the job in one place: the day, what we film, where the edit has got to and when it lands.",
     tiles: [["1", "Finished film"], ["4", "Short reels"], ["150", "Photographs"]]
   },
+  // an event gallery has no deal to show, only the day and the photos
+  event: {
+    tagline: "",
+    tiles: []
+  },
   // one take reels: their page is only the reels, so the tiles are kept
   // for the record in the plan rather than shown
   reels: {
@@ -646,6 +663,7 @@ function createDetail() {
   if (!wrap) return;
 
   const kind = $("new-kind") ? $("new-kind").value : "";
+  const isEvent = kind === "event";
   const d = CREATE_DEFAULTS[kind] || CREATE_DEFAULTS[""];
   const keep = (id, fallback) => ($(id) ? $(id).value : fallback);
 
@@ -661,7 +679,7 @@ function createDetail() {
         <input id="new-tagline" type="text" maxlength="200" value="${escHtml(tagline)}">
       </label>
     </div>
-    <p class="how" style="margin:0.9rem 0 0.4rem">What they get, shown as three tiles</p>
+    <p class="how" style="margin:0.9rem 0 0.4rem"${isEvent ? " hidden" : ""}>What they get, shown as three tiles</p>
     <div class="row">
       ${tiles.map(([n, l], i) => `
         <label class="field" style="min-width:6rem"><span>Number</span>
@@ -672,7 +690,9 @@ function createDetail() {
         </label>`).join("")}
     </div>
     <p class="how" style="margin:0.9rem 0 0.4rem">
-      Three dates to offer. Leave them empty to set the shoot yourself later.
+      ${isEvent
+        ? "The day of the event. It goes in your agenda and at the top of the gallery."
+        : "Three dates to offer. Leave them empty to set the shoot yourself later."}
     </p>
     <div class="row">
       <label class="field" style="flex:1; min-width:11rem"><span>Where</span>
@@ -683,8 +703,8 @@ function createDetail() {
       </label>
     </div>
     <div class="row">
-      ${[0, 1, 2].map((i) => `
-        <label class="field" style="min-width:9rem"><span>Date ${i + 1}</span>
+      ${(isEvent ? [0] : [0, 1, 2]).map((i) => `
+        <label class="field" style="min-width:9rem"><span>${isEvent ? "The day" : "Date " + (i + 1)}</span>
           <input id="date-${i}" type="date" value="${escHtml(keep("date-" + i, ""))}">
         </label>
         <label class="field" style="min-width:6rem"><span>Time</span>
@@ -730,7 +750,9 @@ function plannedPortal(displayName, kind) {
   plan.tagline = val("new-tagline");
   plan.dealNotes = kind === "project"
     ? "What we agreed for the job."
-    : kind === "reels"
+    : kind === "event"
+      ? ""
+      : kind === "reels"
       ? "One take reels."
       : "What we deliver every month. Adjust anytime, this page always shows the current agreement.";
 
@@ -746,6 +768,16 @@ function plannedPortal(displayName, kind) {
   const options = [0, 1, 2]
     .map((i) => ({ date: val("date-" + i), time: val("time-" + i), location: where, focus }))
     .filter((o) => o.date);
+
+  // an event has one day, and it is the event's: no dates to choose from
+  if (kind === "event") {
+    if (options.length) {
+      plan.event.date = options[0].date;
+      plan.nextShoot.date = options[0].date;
+      plan.nextShoot.time = options[0].time;
+    }
+    return plan;
+  }
 
   /* A one take client asked for their filming day on the reels page, and
      their page has no picker, so the day becomes the visit itself and

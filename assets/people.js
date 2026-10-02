@@ -16,7 +16,8 @@ const CAME_FROM = {
   reels: "Reels page",
   call: "Call page",
   invite: "Personal link",
-  callback: "Asked to be rung"
+  callback: "Asked to be rung",
+  event: "Event gallery"
 };
 
 let peopleKnown = [];
@@ -102,7 +103,7 @@ function drawPeopleRows(query) {
         ? `<p style="font-size:1.02rem;margin-top:0.15rem"><a href="tel:${escHtml(tel)}" style="color:var(--text)">${escHtml(p.phone)}</a></p>`
         : ""}
       <p class="muted" style="font-size:0.78rem;margin-top:0.25rem">
-        ${p.email ? escHtml(p.email) + " &middot; " : ""}${escHtml(from)}${p.ref ? " &middot; sent by " + escHtml(p.ref) : ""}
+        ${p.email ? escHtml(p.email) + " &middot; " : ""}${escHtml(from)}${(p.events || []).length ? " (" + escHtml(p.events.join(", ")) + ")" : ""}${p.ref ? " &middot; sent by " + escHtml(p.ref) : ""}
         &middot; ${escHtml(peopleDay(p.first))}${p.count > 1 ? " &middot; " + p.count + " times, last " + escHtml(peopleDay(p.last)) : ""}
       </p>`;
     row.appendChild(text);
