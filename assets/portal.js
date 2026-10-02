@@ -1798,7 +1798,7 @@ function layEvent() {
   const grid = $("ev-grid");
   if (!grid) return;
   const width = grid.clientWidth;
-  const gap = 6;
+  const gap = 8; // the same gap the stylesheet gives .ev-grid
   const aim = width < 640 ? 150 : 250;
   const tiles = [...grid.children];
 

@@ -2471,12 +2471,14 @@ body.reels-only .pt-brand { flex: 1; text-align: center; }
 .ev-go:disabled { opacity: 0.6; cursor: default; }
 .ev-msg { min-height: 1.2em; font-size: 0.85rem; color: var(--text); }
 
-.ev-grid { display: flex; flex-wrap: wrap; gap: 6px; margin-top: var(--pt-gap, 1.4rem); }
+.ev-grid { display: flex; flex-wrap: wrap; gap: 8px; margin-top: var(--pt-gap, 1.4rem); }
 .ev-tile {
   position: relative; flex: 0 0 auto; padding: 0; border: 0; cursor: zoom-in; overflow: hidden;
-  border-radius: 6px; background: rgba(255, 255, 255, 0.05);
+  border-radius: 16px; background: rgba(255, 255, 255, 0.05);
+  /* keeps the corners round while the picture inside grows on hover */
+  isolation: isolate; -webkit-mask-image: -webkit-radial-gradient(white, black);
 }
-.ev-tile img, .ev-tile video { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform 0.4s cubic-bezier(.2, .8, .2, 1); }
+.ev-tile img, .ev-tile video { width: 100%; height: 100%; object-fit: cover; display: block; border-radius: inherit; transition: transform 0.4s cubic-bezier(.2, .8, .2, 1); }
 .ev-tile:focus-visible { outline: 2px solid var(--text); outline-offset: 2px; }
 @media (hover: hover) { .ev-tile:hover img, .ev-tile:hover video { transform: scale(1.03); } }
 .ev-play {
