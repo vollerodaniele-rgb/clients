@@ -4,9 +4,9 @@
   "dealNotes": "",
   "deal": [],
   "nextShoot": {
-    "date": "",
+    "date": "2026-10-10",
     "time": "",
-    "location": "",
+    "location": "knokke",
     "focus": "",
     "checklist": []
   },
@@ -26,7 +26,7 @@
   "kind": "event",
   "event": {
     "title": "Labellov",
-    "date": "",
+    "date": "2026-10-10",
     "photos": [
       {
         "name": "NOIR AU NOIR-15.jpg",
