@@ -2487,28 +2487,46 @@ body.reels-only .pt-brand { flex: 1; text-align: center; }
 .ev-by a { color: var(--text); }
 
 .ev-box {
-  position: fixed; inset: 0; z-index: 60; display: grid; grid-template-rows: 1fr auto;
-  background: rgba(0, 0, 0, 0.92); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+  position: fixed; inset: 0; z-index: 60; display: flex; align-items: center; justify-content: center; gap: 14px;
+  padding: 16px; background: rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+  animation: ev-fade 0.2s ease;
 }
-.ev-stage { display: grid; place-items: center; min-height: 0; padding: 3.4rem 0.6rem 0.6rem; }
-.ev-stage img, .ev-stage video { max-width: 100%; max-height: 100%; object-fit: contain; border-radius: 4px; }
+.ev-card {
+  display: flex; flex-direction: column; gap: 10px; padding: 12px; max-width: 100%;
+  border-radius: 22px; border: 1px solid rgba(255, 255, 255, 0.12); border-top-color: rgba(255, 255, 255, 0.26);
+  background:
+    radial-gradient(26rem 14rem at 88% -12%, rgba(255, 255, 255, 0.12), transparent 62%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.015)),
+    rgba(14, 14, 18, 0.66);
+  backdrop-filter: blur(30px) saturate(180%); -webkit-backdrop-filter: blur(30px) saturate(180%);
+  box-shadow: 0 40px 100px -30px rgba(0, 0, 0, 0.95), inset 0 1px 0 rgba(255, 255, 255, 0.10);
+  animation: ev-rise 0.28s cubic-bezier(.2, .8, .2, 1);
+}
+.ev-top, .ev-bar { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: 0 4px; }
+.ev-bar { justify-content: flex-end; }
+.ev-stage { display: grid; place-items: center; }
+.ev-stage img, .ev-stage video { display: block; object-fit: contain; border-radius: 12px; background: rgba(255, 255, 255, 0.04); max-width: 100%; }
+#ev-count { font-size: 0.78rem; color: var(--dim); font-variant-numeric: tabular-nums; letter-spacing: 0.06em; }
 .ev-x, .ev-arrow {
-  position: absolute; z-index: 2; width: 42px; height: 42px; border-radius: 50%; cursor: pointer; color: var(--text);
-  background: rgba(20, 20, 24, 0.6); border: 1px solid rgba(255, 255, 255, 0.16); font-size: 1.1rem; line-height: 1;
+  flex: 0 0 auto; width: 40px; height: 40px; border-radius: 50%; cursor: pointer; color: var(--text);
+  background: rgba(255, 255, 255, 0.06); border: 1px solid rgba(255, 255, 255, 0.16); font-size: 1.05rem; line-height: 1;
 }
-.ev-x { top: calc(env(safe-area-inset-top, 0px) + 12px); right: 12px; }
-.ev-arrow { top: 50%; transform: translateY(-50%); }
-.ev-arrow.prev { left: 12px; }
-.ev-arrow.next { right: 12px; }
+.ev-x { width: 34px; height: 34px; }
+.ev-arrow { background: rgba(20, 20, 24, 0.6); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); }
+.ev-x:hover, .ev-arrow:hover:not(:disabled) { border-color: rgba(255, 255, 255, 0.5); }
 .ev-arrow:disabled { opacity: 0.25; cursor: default; }
-.ev-bar {
-  display: flex; align-items: center; justify-content: space-between; gap: 1rem;
-  padding: 0.8rem 1rem calc(env(safe-area-inset-bottom, 0px) + 0.9rem);
-}
-#ev-count { font-size: 0.8rem; color: var(--dim); font-variant-numeric: tabular-nums; }
 .ev-get {
-  padding: 0.8rem 1.5rem; border-radius: 999px; text-decoration: none; background: var(--text); color: var(--bg);
-  font-size: 0.72rem; font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase;
+  padding: 0.7rem 1.4rem; border-radius: 999px; text-decoration: none; background: var(--text); color: var(--bg);
+  font-size: 0.7rem; font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase;
 }
-@media (max-width: 40rem) { .ev-arrow { display: none; } }
+@keyframes ev-fade { from { opacity: 0; } to { opacity: 1; } }
+@keyframes ev-rise { from { opacity: 0; transform: translateY(10px) scale(0.985); } to { opacity: 1; transform: none; } }
+@media (max-width: 40rem) {
+  .ev-box { padding: 10px; }
+  .ev-arrow { display: none; }
+  .ev-card { padding: 10px; border-radius: 20px; }
+  .ev-bar { justify-content: center; padding-bottom: env(safe-area-inset-bottom, 0px); }
+}
+@media (prefers-reduced-motion: reduce) { .ev-box, .ev-card { animation: none; } }
 @media (prefers-reduced-motion: reduce) { .ev-tile img, .ev-tile video { transition: none; } }

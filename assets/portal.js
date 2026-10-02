@@ -1828,8 +1828,10 @@ function layEvent() {
   flush(true);
 }
 
-/* One photo, large. The small one is already on the phone, so it shows
-   at once and the large view replaces it when it has arrived. */
+/* One photo, large, in a glass box over the dimmed gallery rather than
+   across the whole screen. The box is sized from the photo's own shape,
+   so it is the right size at once: the small picture, already on the
+   device, fills it, and the large view replaces it when it has arrived. */
 function buildEventBox() {
   if ($("ev-box")) return;
   const box = document.createElement("div");
@@ -1837,20 +1839,26 @@ function buildEventBox() {
   box.id = "ev-box";
   box.hidden = true;
   box.innerHTML = `
-    <button type="button" class="ev-x" id="ev-x" aria-label="Close">&times;</button>
     <button type="button" class="ev-arrow prev" id="ev-prev" aria-label="Previous">&larr;</button>
-    <div class="ev-stage" id="ev-stage"></div>
-    <button type="button" class="ev-arrow next" id="ev-next" aria-label="Next">&rarr;</button>
-    <div class="ev-bar">
-      <span id="ev-count"></span>
-      <a class="ev-get" id="ev-get" href="#">Download</a>
-    </div>`;
+    <div class="ev-card" role="dialog" aria-modal="true" aria-label="Photo">
+      <div class="ev-top">
+        <span id="ev-count"></span>
+        <button type="button" class="ev-x" id="ev-x" aria-label="Close">&times;</button>
+      </div>
+      <div class="ev-stage" id="ev-stage"></div>
+      <div class="ev-bar">
+        <a class="ev-get" id="ev-get" href="#">Download</a>
+      </div>
+    </div>
+    <button type="button" class="ev-arrow next" id="ev-next" aria-label="Next">&rarr;</button>`;
   document.body.appendChild(box);
 
   $("ev-x").addEventListener("click", closeEventPhoto);
   $("ev-prev").addEventListener("click", () => showEventPhoto(evAt - 1));
   $("ev-next").addEventListener("click", () => showEventPhoto(evAt + 1));
-  box.addEventListener("click", (e) => { if (e.target === box || e.target.id === "ev-stage") closeEventPhoto(); });
+  // a click on the dimmed gallery around the box closes it
+  box.addEventListener("click", (e) => { if (e.target === box) closeEventPhoto(); });
+  addEventListener("resize", () => { if (!box.hidden) sizeEventPhoto(); });
   addEventListener("keydown", (e) => {
     if (box.hidden) return;
     if (e.key === "Escape") closeEventPhoto();
@@ -1891,12 +1899,27 @@ function showEventPhoto(i) {
     stage.appendChild(img);
   }
 
+  sizeEventPhoto();
   $("ev-count").textContent = (i + 1) + " / " + evPhotos.length;
   $("ev-get").href = evUrl(p.name);
   $("ev-prev").disabled = i === 0;
   $("ev-next").disabled = i === evPhotos.length - 1;
   $("ev-box").hidden = false;
   document.documentElement.style.overflow = "hidden";
+}
+
+/* The largest the photo can be inside the box: most of the window, never
+   more than its own large view, with room left for the bars. */
+function sizeEventPhoto() {
+  const p = evPhotos[evAt];
+  const shown = $("ev-stage") && $("ev-stage").firstElementChild;
+  if (!p || !shown) return;
+  const phone = innerWidth < 640;
+  const maxW = Math.min(innerWidth - (phone ? 28 : 200), 1400);
+  const maxH = innerHeight - (phone ? 190 : 210);
+  const scale = Math.min(maxW / p.w, maxH / p.h);
+  shown.style.width = Math.max(120, Math.round(p.w * scale)) + "px";
+  shown.style.height = Math.max(90, Math.round(p.h * scale)) + "px";
 }
 
 function closeEventPhoto() {
