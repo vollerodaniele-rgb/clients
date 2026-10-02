@@ -27,6 +27,43 @@
   "event": {
     "title": "Labellov",
     "date": "",
-    "photos": []
+    "photos": [
+      {
+        "name": "NOIR AU NOIR-15.jpg",
+        "w": 4382,
+        "h": 5477
+      },
+      {
+        "name": "NOIR AU NOIR-25.jpg",
+        "w": 4425,
+        "h": 5531
+      },
+      {
+        "name": "NOIR AU NOIR-29.jpg",
+        "w": 4545,
+        "h": 5681
+      },
+      {
+        "name": "NOIR AU NOIR-30.jpg",
+        "w": 4672,
+        "h": 7008
+      },
+      {
+        "name": "NOIR AU NOIR-38.jpg",
+        "w": 4672,
+        "h": 7008
+      }
+    ]
+  },
+  "project": {
+    "what": "",
+    "stages": [
+      "Booked",
+      "Filmed",
+      "Editing",
+      "Delivered"
+    ],
+    "stage": 0,
+    "deliverBy": ""
   }
 }
