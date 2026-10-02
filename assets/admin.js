@@ -108,13 +108,11 @@ function render() {
      the plan stays untouched, in case the client is moved to another
      kind later. */
   /* An event gallery: the day, the photos, and who signed in to see
-     them. Nothing else in the plan applies. */
+     them. Nothing else in the plan applies, the footer included: an
+     event's page ends with the studio's name alone. */
   if (plan.kind === "event") {
     app.appendChild(eventPanel());
     app.appendChild(eventPhotosPanel());
-    app.appendChild(panel("Contact footer", (body) => {
-      body.appendChild(textField("Footer line", plan.contact, "line"));
-    }, plan.contact.line || ""));
     return;
   }
 

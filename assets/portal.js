@@ -82,7 +82,8 @@ async function loadPlan() {
   // an event: no tabs, no plan, a gallery the guests sign in to
   if (data.kind === "event") {
     setupEventOnly(data);
-    renderFooter(data.contact);
+    // the client's name is in the bar at the top; the foot is only the studio's
+    renderFooter({ line: "NOIR AU NOIR" });
     return;
   }
 
