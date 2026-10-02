@@ -2493,7 +2493,7 @@ body.reels-only .pt-brand { flex: 1; text-align: center; }
   animation: ev-fade 0.2s ease;
 }
 .ev-card {
-  display: flex; flex-direction: column; gap: 10px; padding: 12px; max-width: 100%;
+  display: flex; flex-direction: column; gap: 16px; padding: 20px 22px; max-width: 100%;
   border-radius: 22px; border: 1px solid rgba(255, 255, 255, 0.12); border-top-color: rgba(255, 255, 255, 0.26);
   background:
     radial-gradient(26rem 14rem at 88% -12%, rgba(255, 255, 255, 0.12), transparent 62%),
@@ -2503,7 +2503,7 @@ body.reels-only .pt-brand { flex: 1; text-align: center; }
   box-shadow: 0 40px 100px -30px rgba(0, 0, 0, 0.95), inset 0 1px 0 rgba(255, 255, 255, 0.10);
   animation: ev-rise 0.28s cubic-bezier(.2, .8, .2, 1);
 }
-.ev-top, .ev-bar { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: 0 4px; }
+.ev-top, .ev-bar { display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
 .ev-bar { justify-content: flex-end; }
 .ev-stage { display: grid; place-items: center; }
 .ev-stage img, .ev-stage video { display: block; object-fit: contain; border-radius: 12px; background: rgba(255, 255, 255, 0.04); max-width: 100%; }
@@ -2525,7 +2525,7 @@ body.reels-only .pt-brand { flex: 1; text-align: center; }
 @media (max-width: 40rem) {
   .ev-box { padding: 10px; }
   .ev-arrow { display: none; }
-  .ev-card { padding: 10px; border-radius: 20px; }
+  .ev-card { padding: 14px; gap: 12px; border-radius: 20px; }
   .ev-bar { justify-content: center; padding-bottom: env(safe-area-inset-bottom, 0px); }
 }
 @media (prefers-reduced-motion: reduce) { .ev-box, .ev-card { animation: none; } }

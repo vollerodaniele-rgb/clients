@@ -1908,15 +1908,17 @@ function showEventPhoto(i) {
   document.documentElement.style.overflow = "hidden";
 }
 
-/* The largest the photo can be inside the box: most of the window, never
-   more than its own large view, with room left for the bars. */
+/* The size of the photo inside the box. On a computer the whole box
+   takes about three quarters of the window's height, so there is air
+   around it and the gallery shows behind; a phone uses what it has. */
 function sizeEventPhoto() {
   const p = evPhotos[evAt];
   const shown = $("ev-stage") && $("ev-stage").firstElementChild;
   if (!p || !shown) return;
   const phone = innerWidth < 640;
-  const maxW = Math.min(innerWidth - (phone ? 28 : 200), 1400);
-  const maxH = innerHeight - (phone ? 190 : 210);
+  const bars = 150; // the counter, the button and the box's own padding
+  const maxW = phone ? innerWidth - 44 : Math.min(innerWidth * 0.62, 1100);
+  const maxH = phone ? innerHeight - 230 : innerHeight * 0.76 - bars;
   const scale = Math.min(maxW / p.w, maxH / p.h);
   shown.style.width = Math.max(120, Math.round(p.w * scale)) + "px";
   shown.style.height = Math.max(90, Math.round(p.h * scale)) + "px";
