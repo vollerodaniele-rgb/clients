@@ -235,6 +235,22 @@
       .sheet-drawer, .sheet-veil, .sheet-tile { animation: none !important; }
     }
 
+    /* Contacts: a glass folder per event, opened to see its guests */
+    .people-folder {
+      margin-bottom: 0.6rem; border-radius: var(--radius); border: 1px solid var(--line);
+      background: rgba(255, 255, 255, 0.035); box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+    }
+    .people-folder[open] { background: rgba(255, 255, 255, 0.055); border-color: rgba(255, 255, 255, 0.2); }
+    .people-folder summary {
+      display: flex; align-items: center; gap: 0.7rem; padding: 0.9rem 1.1rem; cursor: pointer; list-style: none;
+    }
+    .people-folder summary::-webkit-details-marker { display: none; }
+    .people-folder summary svg { width: 20px; height: 20px; flex: 0 0 auto; stroke: currentColor; stroke-width: 1.5; fill: none; stroke-linejoin: round; }
+    .people-folder summary b { flex: 1; min-width: 0; font-weight: 500; font-size: 1rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .people-folder summary span { font-size: 0.78rem; white-space: nowrap; }
+    .people-folder summary:focus-visible { outline: 2px solid var(--text); outline-offset: 2px; border-radius: var(--radius); }
+    .people-folder-body { padding: 0 1.1rem 0.6rem; }
+
     .sheet-tab.on {
       background: var(--text);
       border-color: var(--text);
@@ -583,9 +599,9 @@
     <div class="panel">
       <h2>Contacts</h2>
       <p class="how" style="margin-bottom:1rem">
-        Everybody who booked a call or asked to be rung, from the call page, the reels page,
-        a personal link or a partner's page. One line per person, kept after the booking is gone.
-        Stored privately, never in the public repo.
+        Everybody who booked a call or asked to be rung, and every guest who signed in to an
+        event gallery, kept in a folder per event. One line per person, kept after the booking
+        is gone. Stored privately, never in the public repo.
       </p>
       <div class="row" style="align-items:flex-end">
         <label class="field" style="flex:1;min-width:12rem"><span>Search</span>
@@ -594,6 +610,7 @@
         <button class="btn-mini" id="people-export">Export to a spreadsheet</button>
       </div>
       <p class="muted" id="people-count" style="font-size:0.8rem;margin-top:0.8rem"></p>
+      <div id="people-events" style="margin-top:0.6rem"></div>
       <div id="people-list" style="margin-top:0.6rem"></div>
     </div>
     </section>
