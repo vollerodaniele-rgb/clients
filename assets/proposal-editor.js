@@ -367,8 +367,7 @@ async function save() {
       Accept: "application/vnd.github+json"
     };
 
-    const content = btoa(unescape(encodeURIComponent(JSON.stringify(plan, null, 2) + "
-")));
+    const content = btoa(unescape(encodeURIComponent(JSON.stringify(plan, null, 2) + "\n")));
 
     // 409 means another commit landed on the repo in the same second:
     // read the file again and repeat, as admin.js does
