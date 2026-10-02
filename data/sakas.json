@@ -328,7 +328,7 @@
     "deliverBy": ""
   },
   "shootPick": {
-    "asked": true,
+    "asked": false,
     "note": "",
     "options": [
       {
