@@ -1710,7 +1710,7 @@ function setupEventOnly(data) {
     </form>
     <div id="ev-body" hidden>
       <div class="ev-grid" id="ev-grid"></div>
-      <p class="ev-by">Photographed by Noir au Noir. Planning something of your own? <a href="../call/">Book a call</a>.</p>
+      <p class="ev-by">Photos by Noir au Noir. <a href="../call/">Book a call</a></p>
     </div>`;
   shell.appendChild(page);
 

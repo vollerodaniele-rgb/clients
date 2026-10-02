@@ -2485,7 +2485,7 @@ body.reels-only .pt-brand { flex: 1; text-align: center; }
   position: absolute; right: 8px; bottom: 8px; width: 28px; height: 28px; border-radius: 50%;
   display: grid; place-items: center; font-size: 0.6rem; color: #fff; background: rgba(0, 0, 0, 0.55); pointer-events: none;
 }
-.ev-by { margin: 2.4rem 0 0; text-align: center; font-size: 0.82rem; color: var(--dim); }
+.ev-by { margin: 2.4rem 0 0; text-align: center; font-size: 0.82rem; color: var(--dim); white-space: nowrap; }
 .ev-by a { color: var(--text); }
 
 .ev-box {
