@@ -367,20 +367,25 @@ async function save() {
       Accept: "application/vnd.github+json"
     };
 
-    const cur = await fetch(api, { headers, cache: "no-store" });
-    if (!cur.ok) throw new Error("could not read the current file (" + cur.status + ")");
-    const { sha } = await cur.json();
+    const content = btoa(unescape(encodeURIComponent(JSON.stringify(plan, null, 2) + "
+")));
 
-    const put = await fetch(api, {
-      method: "PUT",
-      headers: { ...headers, "Content-Type": "application/json" },
-      body: JSON.stringify({
-        message: `Update the ${plan.client || SLUG} proposal`,
-        content: btoa(unescape(encodeURIComponent(JSON.stringify(plan, null, 2) + "\n"))),
-        sha
-      })
-    });
-    if (!put.ok) throw new Error("publish failed (" + put.status + ")");
+    // 409 means another commit landed on the repo in the same second:
+    // read the file again and repeat, as admin.js does
+    for (let attempt = 0; ; attempt++) {
+      const cur = await fetch(api, { headers, cache: "no-store" });
+      if (!cur.ok) throw new Error("could not read the current file (" + cur.status + ")");
+      const { sha } = await cur.json();
+
+      const put = await fetch(api, {
+        method: "PUT",
+        headers: { ...headers, "Content-Type": "application/json" },
+        body: JSON.stringify({ message: `Update the ${plan.client || SLUG} proposal`, content, sha })
+      });
+      if (put.ok) break;
+      if (put.status !== 409 || attempt >= 4) throw new Error("publish failed (" + put.status + ")");
+      await new Promise((r) => setTimeout(r, 700 * (attempt + 1)));
+    }
 
     msg.textContent = "Published. The proposal updates in about a minute.";
   } catch (err) {

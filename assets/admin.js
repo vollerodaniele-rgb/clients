@@ -2340,7 +2340,19 @@ function linesField(label, obj, key) {
 
 /* ============ SAVE ============ */
 
-async function save() {
+/* One save at a time. The event uploader saves by itself every so many
+   photos, and a press on the button in the same moment used to start a
+   second save beside it: GitHub takes one and answers the other 409.
+   Now a save waits for the one before it. */
+let saveQueue = Promise.resolve();
+
+function save() {
+  const run = saveQueue.then(saveNow, saveNow);
+  saveQueue = run.catch(() => {});
+  return run;
+}
+
+async function saveNow() {
   const msg = $("save-msg");
   const btn = $("save-btn");
   // an event's day is its day in the agenda and the calendar too
@@ -2364,18 +2376,26 @@ async function save() {
       "Authorization": "Bearer " + token(),
       "Accept": "application/vnd.github+json"
     };
-
-    const cur = await fetch(api, { headers });
-    if (!cur.ok) throw new Error("could not read current file (" + cur.status + ")");
-    const { sha } = await cur.json();
-
     const content = btoa(unescape(encodeURIComponent(JSON.stringify(plan, null, 2) + "\n")));
-    const put = await fetch(api, {
-      method: "PUT",
-      headers: { ...headers, "Content-Type": "application/json" },
-      body: JSON.stringify({ message: "Update plan via admin", content, sha })
-    });
-    if (!put.ok) throw new Error("publish failed (" + put.status + ")");
+
+    /* 409 is GitHub saying the repo moved while this was being written:
+       any other commit landing in the same second does it, not only one
+       to this file. Nothing is wrong, so the file is read again and the
+       save repeated, a little later each time. */
+    for (let attempt = 0; ; attempt++) {
+      const cur = await fetch(api, { headers, cache: "no-store" });
+      if (!cur.ok) throw new Error("could not read current file (" + cur.status + ")");
+      const { sha } = await cur.json();
+
+      const put = await fetch(api, {
+        method: "PUT",
+        headers: { ...headers, "Content-Type": "application/json" },
+        body: JSON.stringify({ message: "Update plan via admin", content, sha })
+      });
+      if (put.ok) break;
+      if (put.status !== 409 || attempt >= 4) throw new Error("publish failed (" + put.status + ")");
+      await new Promise((r) => setTimeout(r, 700 * (attempt + 1)));
+    }
 
     msg.textContent = "Published! The live site updates in about a minute.";
     return true;
