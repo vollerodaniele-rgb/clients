@@ -125,9 +125,6 @@ function render() {
       ));
       body.appendChild(textField("Where", plan.nextShoot, "location"));
     }, plan.nextShoot.date || "not planned"));
-    app.appendChild(panel("Contact footer", (body) => {
-      body.appendChild(textField("Footer line", plan.contact, "line"));
-    }, plan.contact.line || ""));
     return;
   }
 
@@ -271,9 +268,6 @@ function render() {
      were removed from the portal, and a field that changes nothing on
      the page is worse than no field. Whatever was typed in them stays
      in the data file, harmless, in case they ever come back. */
-  app.appendChild(panel("Contact footer", (body) => {
-    body.appendChild(textField("Footer line", plan.contact, "line"));
-  }, plan.contact.line || ""));
 }
 
 /* ============ IMPORT A WRITTEN PLAN ============ */

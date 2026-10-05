@@ -82,15 +82,14 @@ async function loadPlan() {
   // an event: no tabs, no plan, a gallery the guests sign in to
   if (data.kind === "event") {
     setupEventOnly(data);
-    // the client's name is in the bar at the top; the foot is only the studio's
-    renderFooter({ line: "NOIR AU NOIR" });
+    renderFooter();
     return;
   }
 
   // one take reels: no tabs, no plan, just the reels to watch and take
   if (data.kind === "reels") {
     setupReelsOnly(data);
-    renderFooter(data.contact);
+    renderFooter();
     return;
   }
 
@@ -106,7 +105,7 @@ async function loadPlan() {
   renderResults(data.posts || []);
   renderDocs(data.documents || [], data.deliveries || []);
   renderInvoices(data.invoices || []);
-  renderFooter(data.contact, isProject);
+  renderFooter();
   // last, so it can override headings the renders above just set
   if (isProject) setupProject(data);
   else setupPosts(data.posts || []);
@@ -1362,16 +1361,15 @@ function renderInvoices(invoices) {
   }
 }
 
-function renderFooter(contact) {
-  if (!contact) return;
-  $("contact-line").textContent = contact.line || "NOIR AU NOIR";
+/* The foot of every portal is the studio's name alone. It used to read
+   "CLIENT x NOIR AU NOIR", but the client's name is already in the bar at
+   the top, and saying it twice added nothing. */
+function renderFooter() {
+  $("contact-line").textContent = "NOIR AU NOIR";
 
   /* The line under it, asking whether they had questions and giving an
-     address, is gone. A client who has this page already knows how to
-     reach us, and it read like a sign-off on a newsletter.
-
-     Emptied rather than left alone, because a page cached from before
-     this change still carries the old sentence in its markup. */
+     address, is gone too. Removed rather than left alone, because a page
+     cached from before that change still carries it in its markup. */
   const line = document.querySelector(".footer .muted");
   if (line) line.remove();
 }
@@ -1860,6 +1858,7 @@ function buildEventBox() {
   document.body.appendChild(box);
 
   $("ev-x").addEventListener("click", closeEventPhoto);
+  $("ev-get").addEventListener("click", getEventPhoto);
   $("ev-prev").addEventListener("click", () => showEventPhoto(evAt - 1));
   $("ev-next").addEventListener("click", () => showEventPhoto(evAt + 1));
   // a click on the dimmed gallery around the box closes it
@@ -1906,12 +1905,98 @@ function showEventPhoto(i) {
   }
 
   sizeEventPhoto();
+  if (!evHeld || evHeld.i !== i) { evHeld = null; $("ev-get").textContent = "Download"; }
   $("ev-count").textContent = (i + 1) + " / " + evPhotos.length;
   $("ev-get").href = evUrl(p.name);
   $("ev-prev").disabled = i === 0;
   $("ev-next").disabled = i === evPhotos.length - 1;
   $("ev-box").hidden = false;
   document.documentElement.style.overflow = "hidden";
+}
+
+/* Getting the photo. Sending the browser to the file's address and hoping
+   it saves it works on a computer and fails quietly on many phones and
+   inside apps. So the page fetches the photo itself, showing how far it
+   is, and then hands it over the way the device expects: a phone gets
+   its own share sheet, where Save Image puts it in Photos; a computer
+   gets a file saved under the photo's own name.
+
+   A phone only opens the share sheet on a tap, and a tap goes stale
+   while a large photo loads. When that happens the button turns into
+   "Save photo" and the second tap, with the photo already here, opens
+   it at once. A film is too large to hold in memory, so it still goes
+   by its address. */
+let evHeld = null; // { i, file }: a photo fetched and waiting for a tap
+
+async function getEventPhoto(e) {
+  const i = evAt;
+  const p = evPhotos[i];
+  if (!p || evIsFilm(p)) return; // the link's own address does it
+  e.preventDefault();
+
+  const btn = $("ev-get");
+  if (btn.dataset.busy) return;
+  if (evHeld && evHeld.i === i) { handOver(evHeld.file, i); return; }
+
+  btn.dataset.busy = "1";
+  btn.textContent = "Preparing...";
+  try {
+    const res = await fetch(evUrl(p.name));
+    if (!res.ok || !res.body) throw new Error("status " + res.status);
+    const total = Number(res.headers.get("Content-Length")) || 0;
+    const reader = res.body.getReader();
+    const parts = [];
+    let got = 0;
+    for (;;) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      parts.push(value);
+      got += value.length;
+      if (total && evAt === i) btn.textContent = "Preparing " + Math.min(99, Math.round(got / total * 100)) + "%";
+    }
+    const type = res.headers.get("Content-Type") || "image/jpeg";
+    const file = new File(parts, p.name, { type });
+    delete btn.dataset.busy;
+    if (evAt !== i) return; // they moved on to another photo
+    evHeld = { i, file };
+    handOver(file, i);
+  } catch (err) {
+    console.error("could not fetch the photo:", err);
+    delete btn.dataset.busy;
+    btn.textContent = "Download";
+    // the old way, which is still better than nothing
+    location.href = evUrl(p.name);
+  }
+}
+
+async function handOver(file, i) {
+  const btn = $("ev-get");
+  const settle = (text) => {
+    btn.textContent = text;
+    setTimeout(() => { if (evAt === i && !btn.dataset.busy) btn.textContent = evHeld && evHeld.i === i ? "Save photo" : "Download"; }, 2200);
+  };
+  const phone = matchMedia("(pointer: coarse)").matches;
+
+  if (phone && navigator.canShare && navigator.canShare({ files: [file] })) {
+    try {
+      await navigator.share({ files: [file] });
+      settle("Saved");
+    } catch (err) {
+      // closed without choosing, or the tap went stale while it loaded:
+      // either way the photo is here, and one more tap opens the sheet
+      btn.textContent = "Save photo";
+    }
+    return;
+  }
+
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(file);
+  a.download = file.name;
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 4000);
+  evHeld = null;
+  settle("Downloaded");
 }
 
 /* The size of the photo inside the box. On a computer the whole box

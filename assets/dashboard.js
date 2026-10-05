@@ -585,7 +585,7 @@ function blankPlan(displayName, kind) {
     documents: [],
     invoices: [],
     posts: [],
-    contact: { line: displayName.toUpperCase() + " x NOIR AU NOIR", email: "info@noiraunoir.com", note: "" }
+    contact: { line: "NOIR AU NOIR", email: "info@noiraunoir.com", note: "" }
   };
 
   /* One take reels: the page shows nothing but the reels, month by
