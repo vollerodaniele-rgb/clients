@@ -296,6 +296,8 @@ function partnerRow(p, partners, f, clientNames) {
   /* The same partner, sending the reels page instead. The booking made
      there carries their id exactly as one made from their own page. */
   head.appendChild(copyButton("Copy reels link", async () => location.origin + "/reels/#" + p.id));
+  // and the booking page itself, for a partner who just wants to send a call
+  head.appendChild(copyButton("Copy booking link", async () => location.origin + "/call/#by-" + p.id));
   /* Their own board, behind a long random key rather than their name,
      since it shows money. Send it to them and nobody else. */
   head.appendChild(copyButton("Copy their board", async () => {

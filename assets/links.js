@@ -17,7 +17,7 @@ const SITE = "https://noiraunoir.com";
    the base alone is a mistake worth catching here. */
 const STUDIO_LINKS = [
   { name: "The studio page", url: SITE + "/", note: "Goes to the booking page" },
-  { name: "Book a call", url: SITE + "/call/", note: "The official page, the one Google lists" },
+  { name: "Book a call", url: SITE + "/call/", note: "The official page, the one Google lists. A partner's own link ends in #by-their-name" },
   { name: "One take reels", url: SITE + "/reels/", note: "A partner's own link ends in #their-name too" },
   { name: "For photographers", url: SITE + "/r/", note: "A partner's own link ends in #their-name" },
   { name: "Send files", url: SITE + "/t/", note: "A transfer link ends in #its-id" },

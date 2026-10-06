@@ -30,10 +30,52 @@ const HASH = location.hash.replace(/^#/, "").trim();
    an invitation id, which is the same alphabet and could otherwise be
    mistaken for one. */
 const MOVING = HASH.startsWith("move-") ? HASH.slice(5) : "";
-const INVITE = MOVING ? "" : HASH;
+
+/* A fourth: "by-" in front of a partner's name is that partner's own
+   booking link. It is the open booking page, with their name on it, and
+   whoever books through it is credited to them, the same as from their
+   page or the reels page. The prefix keeps it apart from an invitation
+   id for the same reason "move-" does. */
+const BY = !MOVING && HASH.startsWith("by-") ? HASH.slice(3).toLowerCase() : "";
+const INVITE = MOVING || BY ? "" : HASH;
 
 // the line about the studio is for strangers; a personal link knows us
-if (HASH && document.getElementById("studio-line")) document.getElementById("studio-line").hidden = true;
+if (HASH && !BY && document.getElementById("studio-line")) document.getElementById("studio-line").hidden = true;
+
+/* Who sent them. Only kept once the relay has confirmed the partner
+   exists, so a stray #by-anything never credits anybody, and kept in
+   the place sentBy() below reads when the booking is made. */
+(async function () {
+  if (!/^[a-z0-9][a-z0-9-]{1,39}$/.test(BY)) return;
+
+  let partner;
+  try {
+    const res = await fetch(`${RELAY}/ref?id=${encodeURIComponent(BY)}`, { cache: "no-store" });
+    if (!res.ok) return;
+    partner = await res.json();
+  } catch (err) {
+    console.error("partner lookup failed:", err);
+    return;
+  }
+
+  try {
+    localStorage.setItem("noir-ref", JSON.stringify({ id: BY, at: Date.now() }));
+  } catch { /* a blocked storage only costs the attribution */ }
+
+  const sent = document.getElementById("call-sent");
+  if (sent && partner.name) {
+    sent.textContent = partner.name + " sent you this." +
+      (partner.discount ? " Because of that, " + partner.discount + "." : "");
+    sent.hidden = false;
+  }
+
+  // counted after the page is up, so it never delays anything
+  fetch(`${RELAY}/ref/seen`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ id: BY })
+  }).catch(() => { /* a missed count is not worth a broken page */ });
+})();
 
 async function load() {
   try {
@@ -386,8 +428,9 @@ function done(name, email, phoneUsed) {
   document.title = "Booked";
 }
 
-/* If they came here from a partner's page, that page left its id
-   behind. Only honoured for a couple of hours, so somebody who looked
+/* If they came here from a partner's page, or by a partner's own
+   booking link, its id was left behind. Only honoured for a couple of
+   hours, so somebody who looked
    at a partner page last week and books today is not credited to them.
    The fee is real money, so a stale attribution is worse than none. */
 function sentBy() {

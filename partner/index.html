@@ -203,7 +203,8 @@ async function load() {
   const links = $("links");
   links.append(
     linkRow("Your page", origin + "/r/#" + data.id),
-    linkRow("One take reels", origin + "/reels/#" + data.id)
+    linkRow("One take reels", origin + "/reels/#" + data.id),
+    linkRow("Book a call", origin + "/call/#by-" + data.id)
   );
 
   const opens = Number(data.opens) || 0;
