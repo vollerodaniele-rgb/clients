@@ -1,8 +1,7 @@
 /* Client Portal (shared)
    ------------------------------------------------------------
-   Everything on this page comes from the client's plan: the
-   platform's copy first, data/<client>.json in this repo if the
-   platform does not answer (see readPlanData below).
+   Everything on this page comes from the client's plan,
+   data/<client>.json in this repo.
    ------------------------------------------------------------ */
 /* Which client this page belongs to comes from the folder name in
    the URL, so every client folder holds byte identical files and a
@@ -13,48 +12,15 @@ function currentClient() {
   if (parts[0] === 'clients') parts.shift();
   return (parts[0] || '').toLowerCase();
 }
-/* Another studio's portal. The platform serves this same page for every
-   photographer on it, and says whose it is before this file loads: the
-   client, the studio's name and address, and where its plan and files
-   are. On noiraunoir.com nothing is set and everything below is Noir au
-   Noir's own, as it always was. */
-const TENANT = window.NOIR_TENANT || null;
-
-const CLIENT = TENANT ? TENANT.client : currentClient();
-/* The plan comes from the platform's database first: a save there shows
-   at once. If the platform does not answer within three seconds, or does
-   not know this client yet, the file in this repo is read instead, as it
-   always was. ?from=repo skips the platform, for comparing the two. */
-const PLATFORM_DATA = TENANT ? TENANT.data
-  : 'https://noir-platform.vollerodaniele.workers.dev/portal-data/noir-au-noir/' + CLIENT;
+const CLIENT = currentClient();
 const DATA_URL = '../data/' + CLIENT + '.json';
-const FROM_REPO = new URLSearchParams(location.search).get('from') === 'repo';
-
-async function readPlanData() {
-  // another studio's plan lives only in the platform: there is no file behind it
-  if (TENANT) {
-    const res = await fetch(PLATFORM_DATA, { cache: "no-store" });
-    if (!res.ok) throw new Error("status " + res.status);
-    return res.json();
-  }
-  if (!FROM_REPO) {
-    try {
-      const res = await fetch(PLATFORM_DATA, { cache: "no-store", signal: AbortSignal.timeout(3000) });
-      if (res.ok) return await res.json();
-    } catch { /* the file below */ }
-  }
-  const res = await fetch(DATA_URL, { cache: "no-store" });
-  return res.json();
-}
 
 const CONFIG = {
   owner: 'vollerodaniele-rgb',
   repo: 'clients',
-  submitUrl: TENANT ? TENANT.relay : 'https://kresha-idea-box.vollerodaniele.workers.dev',
+  submitUrl: 'https://kresha-idea-box.vollerodaniele.workers.dev',
   site: 'clients'
 };
-const STUDIO_NAME = TENANT ? TENANT.studio : "Noir au Noir";
-const STUDIO_EMAIL = TENANT ? TENANT.email : "info@noiraunoir.com";
 
 const $ = (id) => document.getElementById(id);
 
@@ -67,7 +33,7 @@ async function loadPlan() {
 
   let data;
   try {
-    data = await readPlanData();
+    data = await (await fetch(DATA_URL, { cache: "no-store" })).json();
   } catch (err) {
     $("tagline").textContent = "Could not load the plan data.";
     console.error("plan load failed:", err);
@@ -1381,7 +1347,7 @@ function renderInvoices(invoices) {
    "CLIENT x NOIR AU NOIR", but the client's name is already in the bar at
    the top, and saying it twice added nothing. */
 function renderFooter() {
-  $("contact-line").textContent = STUDIO_NAME.toUpperCase();
+  $("contact-line").textContent = "NOIR AU NOIR";
 
   /* The line under it, asking whether they had questions and giving an
      address, is gone too. Removed rather than left alone, because a page
@@ -1679,9 +1645,6 @@ const evUrl = (name, size) =>
 const evJpg = (p, size) => evUrl(p.name.replace(/\.[^.]+$/, "") + ".jpg", size);
 const evIsFilm = (p) => p.kind === "film";
 
-// two studios on the platform can each have a client by the same name
-const EVENT_SEEN = "noir-event:" + (TENANT ? TENANT.slug + "/" : "") + CLIENT;
-
 let evPhotos = [];
 let evAt = 0;
 
@@ -1721,15 +1684,13 @@ function setupEventOnly(data) {
       <button class="ev-go" type="submit" id="ev-go">See the photos</button>
       <p class="ev-msg" id="ev-msg" role="status"></p>
       <p class="privacy-line" style="font-size:0.74rem;color:var(--dim);line-height:1.6">
-        Your name and email go to ${esc(STUDIO_NAME)}, who made these photos, so we know who was there and
-        can reach you about them. Want them removed? <a href="mailto:${esc(STUDIO_EMAIL)}" style="color:inherit">Ask</a>.
+        Your name and email go to Noir au Noir, who made these photos, so we know who was there and
+        can reach you about them. Want them removed? <a href="mailto:info@noiraunoir.com" style="color:inherit">Ask</a>.
       </p>
     </form>
     <div id="ev-body" hidden>
       <div class="ev-grid" id="ev-grid"></div>
-      <p class="ev-by">Photos by ${esc(STUDIO_NAME)}. ${TENANT
-        ? (TENANT.site ? `<a href="${esc(TENANT.site)}" target="_blank" rel="noopener">Visit</a>` : "")
-        : '<a href="../call/">Book a call</a>'}</p>
+      <p class="ev-by">Photos by Noir au Noir. <a href="../call/">Book a call</a></p>
     </div>`;
   shell.appendChild(page);
 
@@ -1739,7 +1700,7 @@ function setupEventOnly(data) {
   }
 
   let known = false;
-  try { known = !!localStorage.getItem(EVENT_SEEN); } catch { /* asked again next time */ }
+  try { known = !!localStorage.getItem("noir-event:" + CLIENT); } catch { /* asked again next time */ }
   if (known) openEvent();
   else {
     $("ev-lede").textContent = evPhotos.length + (evPhotos.length === 1 ? " photo" : " photos") + " from the day.";
@@ -1773,7 +1734,7 @@ async function joinEvent(e) {
     // anything else (the relay busy or down) must not keep a guest from the photos
   } catch { /* the same: let them in */ }
 
-  try { localStorage.setItem(EVENT_SEEN, JSON.stringify({ name, email })); } catch { /* asked again next time */ }
+  try { localStorage.setItem("noir-event:" + CLIENT, JSON.stringify({ name, email })); } catch { /* asked again next time */ }
   openEvent();
 }
 

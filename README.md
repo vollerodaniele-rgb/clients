@@ -14,9 +14,8 @@ Created and removed from the dashboard. Create copies the two files in
 all in one commit, so a client is never half made. Remove deletes both
 in one commit; the history keeps them.
 
-A client's plan is `data/<client>.json`. The portal reads the studio
-platform's copy of it first and this file if the platform does not
-answer. Money is never in these files, because they are public: it lives
+A client's plan is `data/<client>.json`, which the portal reads. Money
+is never in these files, because they are public: it lives
 in the private repo `studio-private`.
 
 The names the site itself uses (`admin`, `assets`, `data`, `call`,
