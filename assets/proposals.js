@@ -163,7 +163,7 @@ function proposalRow({ slug, name, accepted, seen }) {
   }, row);
 
   row.append(open, edit, copy, message, remove);
-  if (accepted.length) row.insertBefore(notRealButton(name, accepted, row), remove);
+  if (accepted.length) row.insertBefore(notRealButton(name, accepted), remove);
   return row;
 }
 
@@ -171,7 +171,7 @@ function proposalRow({ slug, name, accepted, seen }) {
    somebody trying the page out. Without this the dashboard reports a
    signed client that is not signed, on the one screen meant to say
    where the business stands. */
-function notRealButton(name, accepted, row) {
+function notRealButton(name, accepted) {
   const btn = smallButton("Not real", null);
   const many = accepted.length > 1;
   let armed = false;

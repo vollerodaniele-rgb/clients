@@ -75,28 +75,6 @@ body {
   font-size: 1.05rem;
 }
 
-.hero-nav {
-  margin-top: 2.6rem;
-  display: flex;
-  gap: 2rem;
-  flex-wrap: wrap;
-  justify-content: center;
-}
-
-.hero-nav a {
-  font-size: 0.82rem;
-  font-weight: 600;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
-  color: var(--text);
-  text-decoration: none;
-  padding-bottom: 0.25rem;
-  border-bottom: 2px solid transparent;
-  transition: border-color 0.2s;
-}
-
-.hero-nav a:hover { border-color: var(--text); }
-
 /* ============ SECTIONS ============ */
 .section {
   max-width: 62rem;
@@ -923,20 +901,6 @@ body {
 /* ============ MONTHS ============ */
 .month-list { display: flex; flex-direction: column; gap: 1.1rem; }
 
-.month-card {
-  border: 1px solid var(--line);
-  border-radius: var(--radius);
-  padding: 1.5rem 1.7rem;
-}
-
-.month-top {
-  display: flex;
-  align-items: center;
-  gap: 0.9rem;
-  flex-wrap: wrap;
-  margin-bottom: 0.9rem;
-}
-
 .month-title {
   font-family: var(--font-display);
   font-size: 1.35rem;
@@ -984,8 +948,6 @@ body {
   background: var(--text);
   border-radius: 999px;
 }
-
-.month-notes { color: var(--dim); font-size: 0.9rem; margin-top: 0.7rem; }
 
 /* ============ DOCUMENTS ============ */
 .doc-grid {
@@ -1696,7 +1658,6 @@ body {
   color: var(--dim);
 }
 
-
 /* a quiet line under the tagline, used by the example portal */
 .hero-notice {
   margin-top: 0.9rem;
@@ -1790,7 +1751,7 @@ body::after {
    the blur is kept for the bars that real content scrolls under. */
 .tile, .shoot-card, .shoot-count, .panel, .client-card, .item,
 .ref-card, .ref-peek, .ref-num, .ref-price, .delivery,
-.pick-card, .pick-done, .month-card, .doc-card,
+.pick-card, .pick-done, .doc-card,
 .request-form, .request-card, .post-card, .idea-form, .idea-card,
 .idea-row, .hero-notice {
   background-color: var(--glass);
@@ -2112,11 +2073,7 @@ select { background-color: #0B0B0B; border-color: rgba(255, 255, 255, 0.12); bor
 .portal .pt-pane .tile { padding: 1rem 1.1rem; }
 .portal .pt-pane .tile .num { font-size: 1.8rem; }
 .portal .pt-pane .tile .lbl { font-weight: 400; letter-spacing: 0.16em; font-size: 0.62rem; }
-
-.portal .pt-pane .month-list { gap: 0.6rem; }
-.portal .pt-pane .month-card { padding: 1rem 1.15rem; }
 .portal .pt-pane .month-title { font-size: 1.05rem; }
-.portal .pt-pane .month-top { margin-bottom: 0.5rem; }
 
 .portal .pt-pane .plan-list { border-top: 0; }
 .portal .pt-pane .plan-list li { padding: 0.85rem 0; }

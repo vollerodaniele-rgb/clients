@@ -81,7 +81,6 @@ async function loadPlan() {
   renderShoot(data.nextShoot);
   setupShootPick(data.shootPick, data.rolling);
   renderFilmPlan(data.filmPlan);
-  renderMonths(data.months || []);
   renderIntro(data, isProject);
   renderProgress(data.months || []);
   renderResults(data.posts || []);
@@ -677,13 +676,6 @@ const DEFAULT_STAGES = ["Booked", "Filmed", "Editing", "Delivered"];
 function setupProject(data) {
   const project = data.project || {};
 
-  // months and the posting plan measure a repeating deal, so neither
-  // means anything for a single job
-  const months = $("months");
-  if (months) months.hidden = true;
-  const nav = document.querySelector(".hero-nav");
-  if (nav) nav.hidden = true;
-
   // one job has no posting plan, and its first page is not a month
   const postsTab = document.querySelector('.pt-tab[data-view="posts"]');
   if (postsTab) {
@@ -1089,42 +1081,6 @@ function renderFilmPlan(plan) {
     `;
     list.appendChild(li);
   });
-}
-
-function renderMonths(months) {
-  const wrap = $("month-list");
-  // the tabbed page dropped this list; the progress pane covers this month
-  if (!wrap) return;
-  wrap.innerHTML = "";
-
-  // a heading over nothing looks broken. On day one this is simply not
-  // filled in yet, and saying so reads as in progress rather than wrong.
-  if (!months.length) {
-    wrap.innerHTML = `<p class="muted">The first month appears here once we have planned it together.</p>`;
-    return;
-  }
-
-  for (const m of months) {
-    const badgeClass =
-      m.status === "done" ? "done" :
-      m.status === "active" ? "active" : "";
-    const badgeText =
-      m.status === "done" ? "Delivered" :
-      m.status === "active" ? "In progress" : "Planned";
-
-    const card = document.createElement("div");
-    card.className = "month-card";
-    card.innerHTML = `
-      <div class="month-top">
-        <span class="month-title">${esc(m.label)}</span>
-        <span class="badge ${badgeClass}">${badgeText}</span>
-      </div>
-      ${bar("Reels", m.reels)}
-      ${bar("Photos", m.photos)}
-      ${m.notes ? `<p class="month-notes">${esc(m.notes)}</p>` : ""}
-    `;
-    wrap.appendChild(card);
-  }
 }
 
 function bar(label, v) {

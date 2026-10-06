@@ -1705,7 +1705,7 @@ function listPanel(title, arr, blank, fillItem, summary, rowLabel) {
 /* One line describing a post while it is folded: when it goes out,
    what it is, and whether it has been. Enough to find the one you
    want without opening any of them. */
-function postRowLabel(post, i) {
+function postRowLabel(post) {
   const when = post.date
     ? new Date(post.date + "T00:00:00").toLocaleDateString("en-GB", { day: "numeric", month: "short" })
     : "No date";

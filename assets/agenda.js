@@ -1039,7 +1039,7 @@ function agendaRow(e, past) {
     open.textContent = "Open";
     head.appendChild(open);
   } else if (!past) {
-    head.appendChild(cancelCallButton(e, row));
+    head.appendChild(cancelCallButton(e));
   }
   if (e.kind === "call" && e.reels) {
     head.appendChild(e.client
@@ -1051,7 +1051,7 @@ function agendaRow(e, past) {
   return row;
 }
 
-function cancelCallButton(e, row) {
+function cancelCallButton(e) {
   return dangerButton("Cancel", async () => {
     const res = await fetch(`${AGENDA_RELAY}/call/cancel`, {
       method: "POST",
