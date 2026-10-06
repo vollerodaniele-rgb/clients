@@ -13,7 +13,12 @@ function currentClient() {
   return (parts[0] || '').toLowerCase();
 }
 
-const CLIENT = currentClient();
+/* Another studio's editor, opened on the platform: it says whose this is
+   before this file loads (the client, the studio, where its files go).
+   On noiraunoir.com nothing is set and all of it is Noir au Noir's own. */
+const TENANT = window.NOIR_TENANT || null;
+
+const CLIENT = TENANT ? TENANT.client : currentClient();
 const OWNER = "vollerodaniele-rgb";
 const REPO = "clients";
 const FILE = "data/" + CLIENT + ".json";
@@ -459,7 +464,8 @@ function normalizeDate(raw) {
    themselves live in the bucket and are listed from it, so uploading
    one never means editing anything. */
 
-const RELAY_URL = "https://kresha-idea-box.vollerodaniele.workers.dev";
+const RELAY_URL = TENANT ? TENANT.relay : "https://kresha-idea-box.vollerodaniele.workers.dev";
+const PORTAL_URL = TENANT ? TENANT.portal : "https://noiraunoir.com/" + CLIENT + "/";
 
 function deliveriesPanel() {
   if (!Array.isArray(plan.deliveries)) plan.deliveries = [];
@@ -596,6 +602,7 @@ function fileArea(d) {
       list.innerHTML = files.length
         ? files.map((f) => `<div>${escHtml(f.name)} <span class="muted">${readableSize(f.size)}</span></div>`).join("")
         : '<span class="muted">Nothing in this month yet.</span>';
+      if (TENANT) files.forEach((f, i) => list.children[i].appendChild(removeFileButton(d.month, f.name, draw)));
     } catch (err) {
       list.textContent = "Could not read what is there.";
     }
@@ -672,6 +679,35 @@ function fileArea(d) {
   wrap.append(pick, msg, tellRow);
   draw();
   return wrap;
+}
+
+/* On the platform a studio's storage is counted against its plan, so a
+   delivered file can be taken out again. Asks once more first. */
+function removeFileButton(month, name, after) {
+  const b = document.createElement("button");
+  b.type = "button";
+  b.className = "btn-mini danger";
+  b.style.cssText = "margin-left:0.6rem;padding:0.1rem 0.5rem;font-size:0.62rem";
+  b.textContent = "Remove";
+  let armed = false;
+  b.addEventListener("click", async () => {
+    if (!armed) { armed = true; b.textContent = "Sure?"; setTimeout(() => { armed = false; b.textContent = "Remove"; }, 4000); return; }
+    b.disabled = true;
+    if (await removeStored(month, name)) after();
+    else { b.disabled = false; b.textContent = "Could not"; }
+  });
+  return b;
+}
+
+async function removeStored(month, name) {
+  try {
+    const res = await fetch(`${RELAY_URL}/file/remove?client=${encodeURIComponent(CLIENT)}` +
+      `&month=${encodeURIComponent(month)}&name=${encodeURIComponent(name)}`, { method: "POST" });
+    return res.ok || res.status === 404;
+  } catch (err) {
+    console.error("could not remove " + name + ":", err);
+    return false;
+  }
 }
 
 /* This client's address and name, from the private repo, which only a
@@ -770,7 +806,7 @@ function eventPanel() {
     ));
     body.appendChild(textField("Where (for your agenda)", plan.nextShoot, "location"));
 
-    const link = "https://noiraunoir.com/" + CLIENT + "/";
+    const link = PORTAL_URL;
     const share = document.createElement("div");
     share.className = "row";
     share.style.alignItems = "center";
@@ -805,7 +841,7 @@ async function countEventGuests(line) {
     if (!res.ok) throw new Error(String(res.status));
     const here = ((await res.json()).people || []).filter((p) => (p.events || []).includes(CLIENT));
     line.textContent = here.length
-      ? here.length + (here.length === 1 ? " guest has" : " guests have") + " signed in so far. They are in Contacts on the dashboard, with their email."
+      ? here.length + (here.length === 1 ? " guest has" : " guests have") + " signed in so far. They are " + (TENANT ? "under Guests on your dashboard" : "in Contacts on the dashboard") + ", with their email."
       : "No guest has signed in yet.";
   } catch (err) {
     line.textContent = "Could not count the guests (" + err.message + ").";
@@ -881,10 +917,21 @@ function eventPhotosPanel() {
         x.setAttribute("aria-label", "Take " + p.name + " out of the gallery");
         x.textContent = "\u00d7";
         x.style.cssText = "position:absolute;top:3px;right:3px;width:22px;height:22px;border-radius:50%;border:0;cursor:pointer;background:rgba(0,0,0,0.65);color:#fff;font-size:0.9rem;line-height:1";
-        x.addEventListener("click", () => {
+        x.addEventListener("click", async () => {
           photos.splice(i, 1);
           draw();
-          status.textContent = "Taken out of the gallery. Save and publish to keep it. The file itself stays in storage.";
+          if (!TENANT) {
+            status.textContent = "Taken out of the gallery. Save and publish to keep it. The file itself stays in storage.";
+            return;
+          }
+          // on the platform the photo leaves storage too, all three sizes of it
+          status.textContent = "Removing...";
+          await removeStored(EVENT_MONTH, p.name);
+          if (p.kind !== "film") {
+            for (const [suffix] of EVENT_SIZES) await removeStored(EVENT_MONTH + "-" + suffix, eventJpg(p.name));
+          }
+          await save();
+          status.textContent = "Removed from the gallery and from storage.";
         });
         cell.appendChild(x);
         grid.appendChild(cell);
@@ -1399,7 +1446,7 @@ async function inviteToShoot(pick) {
     const who = contacts[CLIENT];
     if (!who || !who.email) return "No address on file, so no calendar invite was sent.";
 
-    const sent = await fetch("https://kresha-idea-box.vollerodaniele.workers.dev/shoot-confirmed", {
+    const sent = await fetch(RELAY_URL + "/shoot-confirmed", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -2003,7 +2050,7 @@ function textField(label, obj, key, multiline) {
    naming the file after its position in the list would move the wrong
    picture the moment the order changed. */
 
-const THUMB_RELAY = "https://kresha-idea-box.vollerodaniele.workers.dev";
+const THUMB_RELAY = RELAY_URL;
 
 function newPostId() {
   const bytes = crypto.getRandomValues(new Uint8Array(6));
@@ -2389,7 +2436,7 @@ async function saveNow() {
       await new Promise((r) => setTimeout(r, 700 * (attempt + 1)));
     }
 
-    msg.textContent = "Published! The live site updates in about a minute.";
+    msg.textContent = TENANT ? "Saved. Your client's page shows it now." : "Published! The live site updates in about a minute.";
     return true;
   } catch (err) {
     console.error("save failed:", err);
