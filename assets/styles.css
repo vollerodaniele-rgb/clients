@@ -899,8 +899,6 @@ body {
 .plan-note { color: var(--dim); font-size: 0.9rem; margin-top: 0.15rem; }
 
 /* ============ MONTHS ============ */
-.month-list { display: flex; flex-direction: column; gap: 1.1rem; }
-
 .month-title {
   font-family: var(--font-display);
   font-size: 1.35rem;
