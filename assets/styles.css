@@ -2065,7 +2065,6 @@ select { background-color: #0B0B0B; border-color: rgba(255, 255, 255, 0.12); bor
 
 /* cards that were full sections now sit inside a pane, so they step down */
 .portal .pt-pane .tile,
-.portal .pt-pane .month-card,
 .portal .pt-pane .doc-card,
 .portal .pt-pane .delivery { background-color: rgba(0, 0, 0, 0.26); border-color: var(--line-soft); box-shadow: none; }
 
