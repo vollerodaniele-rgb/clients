@@ -27,7 +27,158 @@
   "event": {
     "title": "Labellov",
     "date": "2026-10-10",
-    "photos": []
+    "photos": [
+      {
+        "name": "LABELLOV-1.jpg",
+        "w": 4090,
+        "h": 6135
+      },
+      {
+        "name": "LABELLOV-2.jpg",
+        "w": 4672,
+        "h": 7008
+      },
+      {
+        "name": "LABELLOV-3.jpg",
+        "w": 4672,
+        "h": 7008
+      },
+      {
+        "name": "LABELLOV-4.jpg",
+        "w": 4672,
+        "h": 7008
+      },
+      {
+        "name": "LABELLOV-5.jpg",
+        "w": 4672,
+        "h": 7008
+      },
+      {
+        "name": "LABELLOV-6.jpg",
+        "w": 4672,
+        "h": 7008
+      },
+      {
+        "name": "LABELLOV-7.jpg",
+        "w": 4158,
+        "h": 5197
+      },
+      {
+        "name": "LABELLOV-8.jpg",
+        "w": 4672,
+        "h": 7008
+      },
+      {
+        "name": "LABELLOV-9.jpg",
+        "w": 4113,
+        "h": 5484
+      },
+      {
+        "name": "LABELLOV-10.jpg",
+        "w": 3845,
+        "h": 5126
+      },
+      {
+        "name": "LABELLOV-11.jpg",
+        "w": 4325,
+        "h": 5766
+      },
+      {
+        "name": "LABELLOV-12.jpg",
+        "w": 4672,
+        "h": 7008
+      },
+      {
+        "name": "LABELLOV-13.jpg",
+        "w": 4672,
+        "h": 7008
+      },
+      {
+        "name": "LABELLOV-14.jpg",
+        "w": 4881,
+        "h": 4672
+      },
+      {
+        "name": "LABELLOV-15.jpg",
+        "w": 5226,
+        "h": 4181
+      },
+      {
+        "name": "LABELLOV-16.jpg",
+        "w": 4672,
+        "h": 7008
+      },
+      {
+        "name": "LABELLOV-17.jpg",
+        "w": 4672,
+        "h": 7008
+      },
+      {
+        "name": "LABELLOV-18.jpg",
+        "w": 4672,
+        "h": 7008
+      },
+      {
+        "name": "LABELLOV-19.jpg",
+        "w": 4672,
+        "h": 7008
+      },
+      {
+        "name": "LABELLOV-20.jpg",
+        "w": 4672,
+        "h": 7008
+      },
+      {
+        "name": "LABELLOV-21.jpg",
+        "w": 4672,
+        "h": 7008
+      },
+      {
+        "name": "LABELLOV-22.jpg",
+        "w": 4421,
+        "h": 6632
+      },
+      {
+        "name": "LABELLOV-23.jpg",
+        "w": 4672,
+        "h": 7008
+      },
+      {
+        "name": "LABELLOV-24.jpg",
+        "w": 4672,
+        "h": 5840
+      },
+      {
+        "name": "LABELLOV-25.jpg",
+        "w": 4421,
+        "h": 6632
+      },
+      {
+        "name": "LABELLOV-26.jpg",
+        "w": 4672,
+        "h": 7008
+      },
+      {
+        "name": "LABELLOV-27.jpg",
+        "w": 4672,
+        "h": 7008
+      },
+      {
+        "name": "LABELLOV-28.jpg",
+        "w": 4672,
+        "h": 7008
+      },
+      {
+        "name": "LABELLOV-29.jpg",
+        "w": 4672,
+        "h": 5840
+      },
+      {
+        "name": "LABELLOV-30.jpg",
+        "w": 4672,
+        "h": 7008
+      }
+    ]
   },
   "project": {
     "what": "",
