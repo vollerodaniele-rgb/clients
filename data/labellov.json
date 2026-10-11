@@ -25,7 +25,7 @@
   },
   "kind": "event",
   "event": {
-    "title": "Labellov",
+    "title": "LA MER X JO MALONE",
     "date": "2026-10-10",
     "photos": [
       {
@@ -477,6 +477,51 @@
         "name": "LABELLOV-90.jpg",
         "w": 7008,
         "h": 4672
+      },
+      {
+        "name": "LABELLOV-91.jpg",
+        "w": 4672,
+        "h": 7008
+      },
+      {
+        "name": "LABELLOV-92.jpg",
+        "w": 4672,
+        "h": 5840
+      },
+      {
+        "name": "LABELLOV-93.jpg",
+        "w": 4672,
+        "h": 7008
+      },
+      {
+        "name": "LABELLOV-94.jpg",
+        "w": 7008,
+        "h": 4672
+      },
+      {
+        "name": "LABELLOV-95.jpg",
+        "w": 4672,
+        "h": 7008
+      },
+      {
+        "name": "LABELLOV-96.jpg",
+        "w": 4672,
+        "h": 7008
+      },
+      {
+        "name": "LABELLOV-97.jpg",
+        "w": 4317,
+        "h": 6476
+      },
+      {
+        "name": "LABELLOV-98.jpg",
+        "w": 4606,
+        "h": 5757
+      },
+      {
+        "name": "LABELLOV-99.jpg",
+        "w": 4672,
+        "h": 7008
       }
     ]
   },
