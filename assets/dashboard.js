@@ -949,7 +949,10 @@ async function commitOnce(files, message, removePaths, repo) {
   };
 
   const call = async (path, init) => {
-    const res = await fetch(api + path, { headers, ...init });
+    // no-store, or the browser answers the branch read from its cache for
+    // a minute after the last save, every retry builds on that same old
+    // commit, and GitHub refuses the move with a 422
+    const res = await fetch(api + path, { headers, cache: "no-store", ...init });
     if (!res.ok) {
       // GitHub answers 404 rather than 403 when a key may not do
       // something, deliberately, so you cannot probe for what exists.

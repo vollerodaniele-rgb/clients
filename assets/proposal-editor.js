@@ -75,7 +75,7 @@ function render() {
 
   if (!plan.packages) plan.packages = [];
   app.appendChild(listPanel("Packages", plan.packages, () => ({
-    num: "", name: "", tag: "", price: "", per: "per month · VAT incl.",
+    num: "", name: "", tag: "", price: "", per: "per month · VAT excl.",
     was: "", off: "", badge: "", featured: false, features: []
   }), (p, body) => {
     body.appendChild(row(

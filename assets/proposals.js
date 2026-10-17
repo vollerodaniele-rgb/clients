@@ -294,7 +294,7 @@ async function createProposal() {
 const PROPOSAL_WORDING = {
   monthly: {
     kicker: "Videography Proposal · Monthly",
-    per: "per month · VAT incl.",
+    per: "per month · VAT excl.",
     names: ["Essential", "Signature", "Rebrand"],
     nums: ["01 · Entry level", "02 · The working month", "03 · The full build"],
     tags: [
@@ -323,7 +323,7 @@ const PROPOSAL_WORDING = {
     },
     portalNote: "Every collaboration comes with a personal portal, included in all packages. The plan for the month, the shoot day, the finished deliverables and the posting calendar all live in one place, updated as we work.",
     terms: [
-      { k: "Prices", v: "Per month, VAT included, no hidden production costs" },
+      { k: "Prices", v: "Per month, VAT excluded, no hidden production costs" },
       { k: "Deposit", v: "33 percent on the first month, once only, to reserve the shoot" },
       { k: "Balance", v: "On delivery. Every month after is settled in one payment" },
       { k: "Invoices", v: "Payable within 30 days" },
@@ -334,7 +334,7 @@ const PROPOSAL_WORDING = {
   },
   project: {
     kicker: "Videography Proposal · One off",
-    per: "one off · VAT incl.",
+    per: "one off · VAT excl.",
     names: ["Essential", "Signature", "Complete"],
     nums: ["01 · The core", "02 · The full day", "03 · The full build"],
     tags: [
@@ -359,7 +359,7 @@ const PROPOSAL_WORDING = {
     },
     portalNote: "The job comes with a personal portal. The shoot day, what we are filming, where the edit has got to and the delivery all live in one place, updated as we work.",
     terms: [
-      { k: "Price", v: "For the job, VAT included, no hidden production costs" },
+      { k: "Price", v: "For the job, VAT excluded, no hidden production costs" },
       { k: "Deposit", v: "50 percent to reserve the date" },
       { k: "Balance", v: "On delivery" },
       { k: "Invoices", v: "Payable within 30 days" },
