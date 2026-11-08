@@ -28,5 +28,16 @@
     "title": "SAKAS",
     "date": "",
     "photos": []
+  },
+  "project": {
+    "what": "",
+    "stages": [
+      "Booked",
+      "Filmed",
+      "Editing",
+      "Delivered"
+    ],
+    "stage": 0,
+    "deliverBy": ""
   }
 }
