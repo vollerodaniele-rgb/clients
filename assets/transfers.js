@@ -333,28 +333,68 @@ function buildTransferBody(t, body) {
 }
 
 function sendTransferFile(id, file, onProgress) {
-  return new Promise((resolve, reject) => {
-    const url = `${TRANSFER_RELAY}/transfer/upload?id=${encodeURIComponent(id)}` +
-      `&name=${encodeURIComponent(file.name)}`;
+  const url = `${TRANSFER_RELAY}/transfer/upload?id=${encodeURIComponent(id)}` +
+    `&name=${encodeURIComponent(file.name)}`;
+  return transferSendFile(url, file, onProgress);
+}
 
+/* One request carries at most 100MB, so anything bigger goes up in
+   pieces that the bucket joins into one file at the end. The same as
+   sendFile in admin.js; change both together. */
+const TRANSFER_PIECE = 64 * 1024 * 1024;
+
+async function transferSendFile(url, file, onProgress) {
+  const headers = { "X-Studio-Key": token(), "X-File-Type": file.type || "application/octet-stream" };
+  if (file.size <= TRANSFER_PIECE) {
+    return transferSendBody(url, file, headers, (done) => onProgress(Math.round(done / file.size * 100)));
+  }
+
+  const opened = await transferSendBody(url + "&step=start&size=" + file.size, null, headers, () => {});
+  const upload = encodeURIComponent(opened.upload);
+  const parts = [];
+  try {
+    for (let n = 1, from = 0; from < file.size; n++, from += TRANSFER_PIECE) {
+      const piece = file.slice(from, Math.min(from + TRANSFER_PIECE, file.size));
+      // a dropped piece is tried again before the whole file is given up
+      for (let tries = 1; ; tries++) {
+        try {
+          const got = await transferSendBody(`${url}&step=part&upload=${upload}&part=${n}`, piece, headers,
+            (done) => onProgress(Math.min(99, Math.round((from + done) / file.size * 100))));
+          parts.push({ part: got.part, etag: got.etag });
+          break;
+        } catch (err) {
+          if (tries >= 3) throw err;
+          await new Promise((r) => setTimeout(r, 1500 * tries));
+        }
+      }
+    }
+    await transferSendBody(`${url}&step=done&upload=${upload}`, JSON.stringify({ parts }), headers, () => {});
+    onProgress(100);
+  } catch (err) {
+    // leave nothing half made behind in the bucket
+    transferSendBody(`${url}&step=abort&upload=${upload}`, null, headers, () => {}).catch(() => {});
+    throw err;
+  }
+}
+
+/* XHR rather than fetch, only because it reports upload progress and a
+   video file is long enough that silence feels broken. */
+function transferSendBody(url, body, headers, onSent) {
+  return new Promise((resolve, reject) => {
     const xhr = new XMLHttpRequest();
     xhr.open("POST", url);
-    xhr.setRequestHeader("X-Studio-Key", token());
-    xhr.setRequestHeader("X-File-Type", file.type || "application/octet-stream");
-
-    xhr.upload.addEventListener("progress", (e) => {
-      if (e.lengthComputable) onProgress(Math.round((e.loaded / e.total) * 100));
-    });
-
+    for (const [k, v] of Object.entries(headers)) xhr.setRequestHeader(k, v);
+    xhr.upload.addEventListener("progress", (e) => { if (e.lengthComputable) onSent(e.loaded); });
     xhr.addEventListener("load", () => {
-      if (xhr.status === 201) return resolve();
+      if (xhr.status === 200 || xhr.status === 201) {
+        try { return resolve(JSON.parse(xhr.responseText)); } catch { return resolve({}); }
+      }
       let why = "error " + xhr.status;
       try { why = JSON.parse(xhr.responseText).error || why; } catch { /* keep the code */ }
       reject(new Error(why));
     });
-
     xhr.addEventListener("error", () => reject(new Error("the connection dropped")));
-    xhr.send(file);
+    xhr.send(body);
   });
 }
 

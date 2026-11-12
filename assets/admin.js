@@ -470,7 +470,7 @@ function deliveriesPanel() {
     note.style.cssText = "font-size:0.9rem;margin-bottom:1rem";
     note.textContent = "Add a month, then drag the finished files in. They land in the " +
       "client's portal straight away, no publishing needed, and the link never expires. " +
-      "One file at a time, up to 95MB each.";
+      "Big films go up in parts by themselves, up to 4GB each.";
     body.appendChild(note);
 
     body.appendChild(sublist(plan.deliveries, () => ({
@@ -713,31 +713,70 @@ async function deliveredSoFar() {
   return known;
 }
 
+function uploadDelivery(month, file, onProgress) {
+  const url = `${RELAY_URL}/deliver?client=${encodeURIComponent(CLIENT)}` +
+    `&month=${encodeURIComponent(month)}&name=${encodeURIComponent(file.name)}`;
+  return sendFile(url, file, onProgress);
+}
+
+/* One request carries at most 100MB, so anything bigger goes up in
+   pieces that the bucket joins into one file at the end. Small files
+   still go in one go. transfers.js has the same function for transfer
+   links; change both together. */
+const PIECE = 64 * 1024 * 1024;
+
+async function sendFile(url, file, onProgress) {
+  const headers = { "X-Studio-Key": token(), "X-File-Type": file.type || "application/octet-stream" };
+  if (file.size <= PIECE) {
+    return sendBody(url, file, headers, (done) => onProgress(Math.round(done / file.size * 100)));
+  }
+
+  const opened = await sendBody(url + "&step=start&size=" + file.size, null, headers, () => {});
+  const upload = encodeURIComponent(opened.upload);
+  const parts = [];
+  try {
+    for (let n = 1, from = 0; from < file.size; n++, from += PIECE) {
+      const piece = file.slice(from, Math.min(from + PIECE, file.size));
+      // a dropped piece is tried again before the whole file is given up
+      for (let tries = 1; ; tries++) {
+        try {
+          const got = await sendBody(`${url}&step=part&upload=${upload}&part=${n}`, piece, headers,
+            (done) => onProgress(Math.min(99, Math.round((from + done) / file.size * 100))));
+          parts.push({ part: got.part, etag: got.etag });
+          break;
+        } catch (err) {
+          if (tries >= 3) throw err;
+          await new Promise((r) => setTimeout(r, 1500 * tries));
+        }
+      }
+    }
+    await sendBody(`${url}&step=done&upload=${upload}`, JSON.stringify({ parts }), headers, () => {});
+    onProgress(100);
+  } catch (err) {
+    // leave nothing half made behind in the bucket
+    sendBody(`${url}&step=abort&upload=${upload}`, null, headers, () => {}).catch(() => {});
+    throw err;
+  }
+}
+
 /* XHR rather than fetch, only because it reports upload progress and a
    video file is long enough that silence feels broken. */
-function uploadDelivery(month, file, onProgress) {
+function sendBody(url, body, headers, onSent) {
   return new Promise((resolve, reject) => {
-    const url = `${RELAY_URL}/deliver?client=${encodeURIComponent(CLIENT)}` +
-      `&month=${encodeURIComponent(month)}&name=${encodeURIComponent(file.name)}`;
-
     const xhr = new XMLHttpRequest();
     xhr.open("POST", url);
-    xhr.setRequestHeader("X-Studio-Key", token());
-    xhr.setRequestHeader("X-File-Type", file.type || "application/octet-stream");
-
-    xhr.upload.addEventListener("progress", (e) => {
-      if (e.lengthComputable) onProgress(Math.round((e.loaded / e.total) * 100));
-    });
-
+    for (const [k, v] of Object.entries(headers)) xhr.setRequestHeader(k, v);
+    xhr.upload.addEventListener("progress", (e) => { if (e.lengthComputable) onSent(e.loaded); });
     xhr.addEventListener("load", () => {
-      if (xhr.status === 201) return resolve();
+      if (xhr.status === 200 || xhr.status === 201) {
+        try { return resolve(JSON.parse(xhr.responseText)); } catch { return resolve({}); }
+      }
       let why = "error " + xhr.status;
       try { why = JSON.parse(xhr.responseText).error || why; } catch { /* keep the code */ }
       reject(new Error(why));
     });
-
     xhr.addEventListener("error", () => reject(new Error("the connection dropped")));
-    xhr.send(file);
+    xhr.send(body);
   });
 }
 
