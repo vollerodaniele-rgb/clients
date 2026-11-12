@@ -1336,8 +1336,14 @@ function reelMonthName(month) {
   return isNaN(d.getTime()) ? month : d.toLocaleDateString("en-GB", { month: "long", year: "numeric" });
 }
 
+/* One take reels, delivered the way an event gallery is: every reel in
+   a grid that keeps its own shape, opened large in the same glass box,
+   downloaded one by one or all at once, and the next shoot one tap
+   away at the end. No sign-in: the client is the only one who has this
+   address. The reels come from the deliveries, month by month, newest
+   first, so the editor's uploads need nothing new. */
 async function setupReelsOnly(data) {
-  document.body.classList.add("reels-only");
+  document.body.classList.add("reels-only", "event-only");
 
   const shell = document.querySelector(".pt-shell");
   if (!shell) return;
@@ -1345,19 +1351,17 @@ async function setupReelsOnly(data) {
   for (const view of shell.querySelectorAll(".pt-view")) view.hidden = true;
 
   const page = document.createElement("div");
-  page.className = "ro";
+  page.className = "ev";
   page.innerHTML = `
     <div class="pt-intro">
       <div>
-        <p class="pt-eyebrow">Your reels</p>
-        <h1 class="pt-display">Filmed in one take. Ready to post.</h1>
-        <p class="pt-lede">Swipe through them, tap one for sound, and download the ones you want. They stay here.</p>
+        <p class="pt-eyebrow" id="ev-eyebrow">Your reels</p>
+        <p class="pt-lede" id="ev-lede">Loading your reels...</p>
       </div>
     </div>
-    <div id="ro-months"><p class="muted">Loading your reels...</p></div>`;
+    <div id="ev-body"></div>`;
   shell.appendChild(page);
 
-  const wrap = page.querySelector("#ro-months");
   const months = [...new Set((data.deliveries || []).map((d) => d.month).filter(Boolean))]
     .sort().reverse();
 
@@ -1377,207 +1381,239 @@ async function setupReelsOnly(data) {
   }));
 
   const filled = found.filter((m) => m.files.length);
-  wrap.innerHTML = "";
+  const body = $("ev-body");
 
   if (!filled.length) {
     const next = data.nextShoot && data.nextShoot.date
       ? " We film on " + new Date(data.nextShoot.date + "T00:00:00").toLocaleDateString("en-GB",
           { weekday: "long", day: "numeric", month: "long" }) + "."
       : "";
-    wrap.innerHTML = `<section class="pt-pane ro-empty"><p>Your reels land here as soon as they are edited.${esc(next)}</p></section>`;
+    $("ev-lede").textContent = "Your reels land here as soon as they are edited." + next;
     return;
   }
 
-  for (const m of filled) wrap.appendChild(reelMonth(m, data));
-  tuneReels();
-  addEventListener("scroll", tuneReelsSoon, { passive: true });
-  addEventListener("resize", tuneReelsSoon);
-  document.addEventListener("visibilitychange", () => { if (!document.hidden) tuneReels(); });
-}
-
-function reelMonth(m, data) {
-  const entry = (data.deliveries || []).find((d) => d.month === m.month) || {};
-  const films = m.files.filter((f) => REEL_VIDEO.test(f.name)).length;
-
-  const section = document.createElement("section");
-  section.className = "pt-pane ro-month";
-  section.innerHTML = `
-    <div class="ro-head">
-      <h2 class="pt-h2">${esc(entry.label || reelMonthName(m.month))}</h2>
-      <span class="pt-meta">${films ? films + " reel" + (films === 1 ? "" : "s") : m.files.length + " file" + (m.files.length === 1 ? "" : "s")}</span>
-    </div>
-    ${entry.note ? `<p class="pt-small">${esc(entry.note)}</p>` : ""}`;
-
-  const rail = document.createElement("div");
-  rail.className = "ro-rail";
-
-  m.files.forEach((f, i) => {
-    const url = fileUrl({ month: m.month, name: f.name });
-    const item = document.createElement("div");
-    item.className = "ro-item";
-
-    const frame = document.createElement("div");
-    frame.className = "ro-frame";
-
-    if (REEL_VIDEO.test(f.name)) {
-      const film = document.createElement("video");
-      film.src = url;
-      film.muted = true;
-      film.loop = true;
-      film.playsInline = true;
-      film.preload = "metadata";
-      // a wide film gets a wide frame rather than losing its sides
-      film.addEventListener("loadedmetadata", () => {
-        if (film.videoWidth > film.videoHeight) frame.classList.add("wide");
-      });
-
-      const sound = document.createElement("button");
-      sound.type = "button";
-      sound.className = "ro-sound";
-      sound.textContent = "Tap for sound";
-
-      /* A tap turns the sound on for this one and off for all the
-         others; a second tap pauses it. Every film starts silent,
-         because a browser will not start one any other way. */
-      frame.addEventListener("click", () => {
-        if (film.muted) {
-          for (const other of document.querySelectorAll(".ro-frame video")) {
-            other.muted = true;
-            other.closest(".ro-frame").classList.remove("loud");
-          }
-          film.muted = false;
-          frame.classList.add("loud");
-          sound.textContent = "Sound on";
-          film.play().catch(() => {});
-        } else if (film.paused) {
-          film.play().catch(() => {});
-        } else {
-          film.pause();
-          frame.dataset.held = "1";
-        }
-      });
-
-      frame.append(film, sound);
-    } else {
-      const pic = document.createElement("img");
-      pic.src = url;
-      pic.alt = f.name;
-      pic.loading = "lazy";
-      frame.appendChild(pic);
-    }
-
-    const num = document.createElement("b");
-    num.className = "ro-num";
-    num.textContent = String(i + 1).padStart(2, "0");
-    frame.appendChild(num);
-
-    const dl = document.createElement("a");
-    dl.className = "ro-dl";
-    dl.href = url;
-    dl.setAttribute("download", f.name);
-    dl.textContent = "Download";
-
-    item.append(frame, dl);
-    rail.appendChild(item);
+  // one list for the glass box, so its arrows run through every reel
+  evPhotos = [];
+  const groups = filled.map((m) => {
+    const entry = (data.deliveries || []).find((d) => d.month === m.month) || {};
+    const items = m.files.map((f) => {
+      const film = REEL_VIDEO.test(f.name);
+      // upright until the film says otherwise, which nearly every reel is
+      const p = { name: f.name, url: fileUrl({ month: m.month, name: f.name }),
+        kind: film ? "film" : "picture", w: film ? 1080 : 1080, h: film ? 1920 : 1350 };
+      evPhotos.push(p);
+      return p;
+    });
+    return { label: entry.label || reelMonthName(m.month), items };
   });
 
-  const nav = document.createElement("div");
-  nav.className = "ro-nav";
-  const back = document.createElement("button");
-  back.type = "button";
-  back.className = "btn-month";
-  back.setAttribute("aria-label", "Previous reel");
-  back.innerHTML = "&larr;";
-  const next = document.createElement("button");
-  next.type = "button";
-  next.className = "btn-month";
-  next.setAttribute("aria-label", "Next reel");
-  next.innerHTML = "&rarr;";
-  nav.append(back, next);
+  const films = evPhotos.filter(evIsFilm).length;
+  const count = films
+    ? films + (films === 1 ? " reel" : " reels")
+    : evPhotos.length + (evPhotos.length === 1 ? " file" : " files");
+  $("ev-lede").textContent = count + ". Tap one to watch it large and download it.";
+  // one delivery names its month at the top; several each get their own
+  if (groups.length === 1) $("ev-eyebrow").textContent = groups[0].label;
 
-  const step = (dir) => {
-    const mid = rail.getBoundingClientRect().left + rail.clientWidth / 2;
-    const items = [...rail.children];
-    const centre = (el) => { const b = el.getBoundingClientRect(); return b.left + b.width / 2; };
-    const found = dir > 0 ? items.find((el) => centre(el) > mid + 8)
-      : [...items].reverse().find((el) => centre(el) < mid - 8);
-    if (found) reelGlide(rail, rail.scrollLeft + centre(found) - mid);
-  };
-  back.addEventListener("click", () => step(-1));
-  next.addEventListener("click", () => step(1));
+  for (const g of groups) {
+    if (groups.length > 1) {
+      const head = document.createElement("p");
+      head.className = "pt-eyebrow ev-month";
+      head.textContent = g.label;
+      body.appendChild(head);
+    }
+    const grid = document.createElement("div");
+    grid.className = "ev-grid";
+    g.items.forEach((p) => grid.appendChild(reelTile(p, grid, g.items)));
+    grid._items = g.items;
+    body.appendChild(grid);
+  }
 
-  const edges = () => {
-    back.disabled = rail.scrollLeft < 8;
-    next.disabled = rail.scrollLeft > rail.scrollWidth - rail.clientWidth - 8;
-  };
-  rail.addEventListener("scroll", () => { edges(); tuneReelsSoon(); }, { passive: true });
-  setTimeout(edges, 0);
+  const end = document.createElement("div");
+  end.className = "ev-end";
+  const all = document.createElement("button");
+  all.type = "button";
+  all.className = "ev-go";
+  all.textContent = "Download all";
+  all.addEventListener("click", () => downloadAllReels(all));
+  const book = document.createElement("a");
+  book.className = "ev-ghost";
+  book.href = "../reels/#lock";
+  book.textContent = "Book next shoot";
+  end.append(all, book);
+  body.appendChild(end);
+  body.insertAdjacentHTML("beforeend", '<p class="ev-by">Filmed by Noir au Noir.</p>');
 
-  section.append(rail, nav);
-  return section;
+  layReels();
+  let soon = 0;
+  addEventListener("resize", () => { clearTimeout(soon); soon = setTimeout(layReels, 120); });
+  buildEventBox();
 }
 
-/* Animated by hand: a smooth scrollTo on a snapping row does nothing at
-   all in some browsers, and never runs in a background tab. */
-function reelGlide(rail, to) {
-  const from = rail.scrollLeft;
-  const span = to - from;
-  if (!span) return;
-  if (matchMedia("(prefers-reduced-motion: reduce)").matches) { rail.scrollLeft = to; return; }
-
-  rail.style.scrollSnapType = "none";
-  const began = performance.now();
-  const done = () => { clearTimeout(land); rail.style.scrollSnapType = ""; tuneReelsSoon(); };
-  const land = setTimeout(() => { rail.scrollLeft = to; done(); }, 420);
-  const frame = (now) => {
-    const part = Math.min(1, (now - began) / 320);
-    const eased = part < 0.5 ? 2 * part * part : 1 - Math.pow(-2 * part + 2, 2) / 2;
-    rail.scrollLeft = from + span * eased;
-    if (part < 1) requestAnimationFrame(frame); else done();
-  };
-  requestAnimationFrame(frame);
-}
-
-/* In each row, the reel nearest the middle plays, silently unless it was
-   tapped; everything else stops. A row off the screen plays nothing. */
-function tuneReels() {
-  const still = matchMedia("(prefers-reduced-motion: reduce)").matches;
-  for (const rail of document.querySelectorAll(".ro-rail")) {
-    const box = rail.getBoundingClientRect();
-    const onScreen = box.bottom > 60 && box.top < innerHeight - 60;
-    const mid = box.left + rail.clientWidth / 2;
-
-    let wanted = null;
-    let nearest = Infinity;
-    for (const frame of rail.querySelectorAll(".ro-frame")) {
-      const b = frame.getBoundingClientRect();
-      const off = Math.abs(b.left + b.width / 2 - mid);
-      if (off < nearest) { nearest = off; wanted = frame; }
-    }
-
-    for (const frame of rail.querySelectorAll(".ro-frame")) {
-      const film = frame.querySelector("video");
-      if (!film) continue;
-      const run = !still && onScreen && frame === wanted;
-      if (run && film.paused && frame.dataset.held !== "1") {
-        film.play().catch(() => {});
-      } else if (!run && !film.paused) {
-        film.pause();
-        film.muted = true;
-        frame.classList.remove("loud");
-        const sound = frame.querySelector(".ro-sound");
-        if (sound) sound.textContent = "Tap for sound";
-        delete frame.dataset.held;
-      }
-    }
+function layReels() {
+  for (const grid of document.querySelectorAll(".ev-grid")) {
+    if (grid._items) layGrid(grid, grid._items);
   }
 }
 
-let reelsWaiting = false;
-function tuneReelsSoon() {
-  if (reelsWaiting) return;
-  reelsWaiting = true;
-  setTimeout(() => { reelsWaiting = false; tuneReels(); }, 120);
+function reelTile(p, grid, items) {
+  const tile = document.createElement("button");
+  tile.type = "button";
+  tile.className = "ev-tile";
+  const at = evPhotos.indexOf(p);
+  tile.setAttribute("aria-label", (evIsFilm(p) ? "Reel " : "File ") + (at + 1) + " of " + evPhotos.length);
+
+  if (evIsFilm(p)) {
+    const v = document.createElement("video");
+    v.muted = true; v.playsInline = true; v.loop = true; v.preload = "metadata";
+    // only as it scrolls near: a month of reels all asking at once is slow
+    reelSoon(tile, () => { v.src = p.url + "#t=0.1"; });
+    // the real shape, once the film has said it, and the grid follows
+    v.addEventListener("loadedmetadata", () => {
+      if (!v.videoWidth || !v.videoHeight) return;
+      if (v.videoWidth === p.w && v.videoHeight === p.h) return;
+      p.w = v.videoWidth; p.h = v.videoHeight;
+      clearTimeout(layReels.soon);
+      layReels.soon = setTimeout(layReels, 80);
+    });
+    /* A phone plays only so many films on one page and leaves the rest
+       black. So there each tile keeps a still of its first frame and lets
+       its film go; the glass box plays the real one. */
+    if (!matchMedia("(hover: hover)").matches) {
+      v.addEventListener("loadeddata", () => {
+        try {
+          const still = document.createElement("canvas");
+          still.width = v.videoWidth; still.height = v.videoHeight;
+          still.getContext("2d").drawImage(v, 0, 0);
+          v.replaceWith(still);
+          v.removeAttribute("src");
+          v.load();
+        } catch { /* the film stays, which is only slower */ }
+      }, { once: true });
+    }
+    // a quiet preview under the pointer on a computer; a phone just taps
+    if (matchMedia("(hover: hover)").matches) {
+      tile.addEventListener("mouseenter", () => v.play().catch(() => {}));
+      tile.addEventListener("mouseleave", () => { v.pause(); try { v.currentTime = 0.1; } catch { /* not loaded yet */ } });
+    }
+    tile.appendChild(v);
+    tile.insertAdjacentHTML("beforeend", '<span class="ev-play" aria-hidden="true">&#9654;</span>');
+  } else {
+    const img = document.createElement("img");
+    img.src = p.url;
+    img.alt = "";
+    img.loading = "lazy";
+    img.decoding = "async";
+    img.addEventListener("load", () => {
+      if (!img.naturalWidth || (img.naturalWidth === p.w && img.naturalHeight === p.h)) return;
+      p.w = img.naturalWidth; p.h = img.naturalHeight;
+      clearTimeout(layReels.soon);
+      layReels.soon = setTimeout(layReels, 80);
+    });
+    img.addEventListener("error", () => img.remove());
+    tile.appendChild(img);
+  }
+  tile.addEventListener("click", () => showEventPhoto(evPhotos.indexOf(p)));
+  return tile;
+}
+
+/* Runs `start` once the tile is within a screen of being seen. */
+let reelWatch = null;
+function reelSoon(tile, start) {
+  if (!("IntersectionObserver" in window)) { start(); return; }
+  if (!reelWatch) {
+    reelWatch = new IntersectionObserver((seen) => {
+      for (const s of seen) {
+        if (!s.isIntersecting) continue;
+        reelWatch.unobserve(s.target);
+        s.target._start();
+      }
+    }, { rootMargin: "100% 0px" });
+  }
+  tile._start = start;
+  reelWatch.observe(tile);
+}
+
+/* Every reel at once. A computer takes them as ordinary downloads, one
+   after another (the browser may ask once whether that is all right).
+   A phone cannot be handed several films in one go without holding all
+   of them in memory, so there it is one reel per tap, each straight to
+   the share sheet where Save Video puts it in Photos. */
+let reelsAllAt = 0;
+let reelsAllHeld = null;
+
+async function downloadAllReels(btn) {
+  if (btn.dataset.busy) return;
+  const items = evPhotos;
+  const phone = matchMedia("(pointer: coarse)").matches;
+
+  if (!phone) {
+    btn.dataset.busy = "1";
+    btn.disabled = true;
+    for (let k = 0; k < items.length; k++) {
+      btn.textContent = "Downloading " + (k + 1) + " / " + items.length;
+      const frame = document.createElement("iframe");
+      frame.hidden = true;
+      frame.src = evSrc(items[k]);
+      document.body.appendChild(frame);
+      // left in place for a while: taking it away early can stop the file
+      setTimeout(() => frame.remove(), 300000);
+      await new Promise((r) => setTimeout(r, 1500));
+    }
+    delete btn.dataset.busy;
+    btn.disabled = false;
+    btn.textContent = "All " + items.length + " downloading";
+    setTimeout(() => { btn.textContent = "Download all"; }, 4000);
+    return;
+  }
+
+  if (reelsAllAt >= items.length) reelsAllAt = 0;
+  const k = reelsAllAt;
+  const p = items[k];
+  const next = () => {
+    reelsAllHeld = null;
+    reelsAllAt = k + 1;
+    btn.textContent = reelsAllAt >= items.length
+      ? "All " + items.length + " saved"
+      : "Save reel " + (reelsAllAt + 1) + " of " + items.length;
+  };
+
+  if (reelsAllHeld && reelsAllHeld.k === k) {
+    try { await navigator.share({ files: [reelsAllHeld.file] }); next(); }
+    catch { btn.textContent = "Save reel " + (k + 1) + " of " + items.length; }
+    return;
+  }
+
+  btn.dataset.busy = "1";
+  btn.textContent = "Preparing " + (k + 1) + " of " + items.length;
+  try {
+    const res = await fetch(evSrc(p));
+    if (!res.ok || !res.body) throw new Error("status " + res.status);
+    const total = Number(res.headers.get("Content-Length")) || 0;
+    const reader = res.body.getReader();
+    const parts = [];
+    let got = 0;
+    for (;;) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      parts.push(value);
+      got += value.length;
+      if (total) btn.textContent = "Preparing " + (k + 1) + " of " + items.length + ", " + Math.min(99, Math.round(got / total * 100)) + "%";
+    }
+    const file = new File(parts, p.name, { type: res.headers.get("Content-Type") || "video/mp4" });
+    delete btn.dataset.busy;
+    if (!(navigator.canShare && navigator.canShare({ files: [file] }))) throw new Error("no share sheet");
+    reelsAllHeld = { k, file };
+    try { await navigator.share({ files: [file] }); next(); }
+    // the tap went stale while it loaded: the reel is here, one more tap saves it
+    catch { btn.textContent = "Save reel " + (k + 1) + " of " + items.length; }
+  } catch (err) {
+    console.error("could not prepare the reel:", err);
+    delete btn.dataset.busy;
+    // the plain way, one reel per tap, which every phone understands
+    location.href = evSrc(p);
+    next();
+  }
 }
 
 /* ============ AN EVENT ============ */
@@ -1600,6 +1636,11 @@ const evUrl = (name, size) =>
   `&month=${EV_MONTH}${size ? "-" + size : ""}&name=${encodeURIComponent(name)}`;
 const evJpg = (p, size) => evUrl(p.name.replace(/\.[^.]+$/, "") + ".jpg", size);
 const evIsFilm = (p) => p.kind === "film";
+// a delivered reel carries its own address; an event photo is found by
+// name, with a small and a large copy made when it was uploaded
+const evSrc = (p) => p.url || evUrl(p.name);
+const evSmall = (p) => p.url || evJpg(p, "t");
+const evLarge = (p) => p.url || evJpg(p, "v");
 
 let evPhotos = [];
 let evAt = 0;
@@ -1738,7 +1779,10 @@ function openEvent() {
    rather than blowing two photos up to fill the line. */
 function layEvent() {
   const grid = $("ev-grid");
-  if (!grid) return;
+  if (grid) layGrid(grid, evPhotos);
+}
+
+function layGrid(grid, items) {
   const width = grid.clientWidth;
   const gap = 8; // the same gap the stylesheet gives .ev-grid
   const aim = width < 640 ? 180 : 250; // three upright photos to a row on a phone, not four
@@ -1761,7 +1805,7 @@ function layEvent() {
   };
 
   tiles.forEach((t, i) => {
-    const p = evPhotos[i];
+    const p = items[i];
     t._r = p.w / p.h;
     row.push(t);
     sum += t._r;
@@ -1829,23 +1873,23 @@ function showEventPhoto(i) {
 
   if (evIsFilm(p)) {
     const v = document.createElement("video");
-    v.src = evUrl(p.name);
+    v.src = evSrc(p);
     v.controls = true; v.playsInline = true; v.autoplay = true;
     stage.appendChild(v);
   } else {
     const img = document.createElement("img");
     img.alt = "";
-    img.src = evJpg(p, "t");
+    img.src = evSmall(p);
     const big = new Image();
     big.onload = () => { if (evAt === i) img.src = big.src; };
-    big.src = evJpg(p, "v");
+    big.src = evLarge(p);
     stage.appendChild(img);
   }
 
   sizeEventPhoto();
   if (!evHeld || evHeld.i !== i) { evHeld = null; $("ev-get").textContent = "Download"; }
   $("ev-count").textContent = (i + 1) + " / " + evPhotos.length;
-  $("ev-get").href = evUrl(p.name);
+  $("ev-get").href = evSrc(p);
   $("ev-prev").disabled = i === 0;
   $("ev-next").disabled = i === evPhotos.length - 1;
   $("ev-box").hidden = false;
@@ -1879,7 +1923,7 @@ async function getEventPhoto(e) {
   btn.dataset.busy = "1";
   btn.textContent = "Preparing...";
   try {
-    const res = await fetch(evUrl(p.name));
+    const res = await fetch(evSrc(p));
     if (!res.ok || !res.body) throw new Error("status " + res.status);
     const total = Number(res.headers.get("Content-Length")) || 0;
     const reader = res.body.getReader();
@@ -1903,7 +1947,7 @@ async function getEventPhoto(e) {
     delete btn.dataset.busy;
     btn.textContent = "Download";
     // the old way, which is still better than nothing
-    location.href = evUrl(p.name);
+    location.href = evSrc(p);
   }
 }
 
