@@ -16,3 +16,8 @@ megabytes each is fine, eight of fifty is not.
 
 They are served straight from this folder, so a new file is live about a
 minute after it is committed.
+
+Each film can have a still beside it with the same number, 1.jpg next to
+1.mp4. Phones show it until the film starts, and an iPhone on low battery
+never starts it by itself, so without one that tile is a black box. I make
+them with ffmpeg from the second second of the film.

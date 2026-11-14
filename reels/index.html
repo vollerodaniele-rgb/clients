@@ -627,6 +627,11 @@ const SHOTS = { folder: NICHE.examples || "examples/", count: 8, ext: ".mp4", ga
     film.loop = true;
     film.playsInline = true;
     film.preload = "metadata";
+    /* An iPhone draws nothing of a film until it plays, so when it will
+       not let one start (low battery, low power mode) the tile would be
+       an empty black box. A still beside each film, 1.jpg next to 1.mp4,
+       stands in until it runs; without one the tile is only darker. */
+    film.poster = SHOTS.folder + n + ".jpg";
     film.src = SHOTS.folder + n + SHOTS.ext;
 
     film.addEventListener("error", () => {
