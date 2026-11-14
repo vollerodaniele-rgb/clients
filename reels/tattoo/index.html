@@ -778,7 +778,9 @@ const SHOTS = { folder: NICHE.examples || "examples/", count: 8, ext: ".mp4", ga
       const run = !still.matches && onScreen(tile) && (!phone() || tile === wanted);
 
       if (run && film.paused && tile.dataset.held !== "1") {
-        film.play().then(() => tile.classList.add("playing")).catch(() => {});
+        film.play().then(() => tile.classList.add("playing")).catch((err) => {
+          tile.dataset.refused = err && err.name || "refused";
+        });
       } else if (!run && !film.paused) {
         film.pause();
         tile.classList.remove("playing");
@@ -810,6 +812,28 @@ const SHOTS = { folder: NICHE.examples || "examples/", count: 8, ext: ".mp4", ga
      itself, where the phone allows it. */
   document.addEventListener("touchend", tune, { passive: true });
   wrap.addEventListener("scrollend", tune);
+
+  /* ?debug on the address shows why the films are or are not running,
+     for checking on a phone where there is no console to look at. */
+  if (QUERY.has("debug")) {
+    const box = document.createElement("pre");
+    box.style.cssText = "position:fixed;left:8px;right:8px;bottom:8px;z-index:99;margin:0;padding:10px;" +
+      "font:11px/1.4 monospace;color:#fff;background:rgba(0,0,0,0.85);border:1px solid #444;border-radius:10px;white-space:pre-wrap";
+    document.body.appendChild(box);
+    const show = () => {
+      box.textContent = [
+        "reduce motion: " + still.matches,
+        "phone rail: " + phone(),
+        "page visible: " + !document.hidden,
+        ...[...wrap.children].map((t, i) => {
+          const v = t.querySelector("video");
+          return (i + 1) + ": ready " + (v ? v.readyState : "-") + ", " + (v && !v.paused ? "PLAYING" : "paused") +
+            (t.dataset.refused ? ", refused: " + t.dataset.refused : "") + (onScreen(t) ? "" : ", off screen");
+        })
+      ].join("\n");
+    };
+    setInterval(show, 700);
+  }
 
   /* The two buttons, and whether either of them has anywhere to go. */
   const prev = document.getElementById("shots-prev");
