@@ -617,11 +617,17 @@ const SHOTS = { folder: NICHE.examples || "examples/", count: 8, ext: ".mp4", ga
     tile.setAttribute("aria-label", "Play example " + n);
 
     const film = document.createElement("video");
-    film.src = SHOTS.folder + n + SHOTS.ext;
+    /* As attributes as well as settings: an iPhone only lets a film
+       start by itself when the markup says muted and inline, and quietly
+       refuses one that is muted from script alone. */
+    film.setAttribute("muted", "");
+    film.setAttribute("playsinline", "");
+    film.defaultMuted = true;
     film.muted = true;
     film.loop = true;
     film.playsInline = true;
     film.preload = "metadata";
+    film.src = SHOTS.folder + n + SHOTS.ext;
 
     film.addEventListener("error", () => {
       tile.remove();
@@ -797,6 +803,13 @@ const SHOTS = { folder: NICHE.examples || "examples/", count: 8, ext: ".mp4", ga
      and it says nothing when it refuses, so the page comes back to a
      wall of stills. This asks again the moment it is looked at. */
   document.addEventListener("visibilitychange", () => { if (!document.hidden) tune(); });
+
+  /* A phone in low power mode lets nothing start by itself, but it does
+     let a film start from a touch. So the first touch anywhere on the
+     page, a swipe of the rail included, asks again, inside the touch
+     itself, where the phone allows it. */
+  document.addEventListener("touchend", tune, { passive: true });
+  wrap.addEventListener("scrollend", tune);
 
   /* The two buttons, and whether either of them has anywhere to go. */
   const prev = document.getElementById("shots-prev");
