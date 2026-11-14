@@ -18,7 +18,8 @@
   <meta name="twitter:card" content="summary_large_image">
   <meta name="description" content="Short reels filmed in a single continuous shot, all in one visit. Pick how many you want this month, from 8 reels.">
 
-  <link rel="stylesheet" href="../assets/styles.css?v=2026-09-17c">
+  <!-- from the root, since every niche folder holds this same file -->
+  <link rel="stylesheet" href="/assets/styles.css?v=2026-09-17c">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎬</text></svg>">
 
 <style>
@@ -436,8 +437,8 @@
       <p class="reel-sent" id="reel-sent" hidden></p>
       <h1 class="reel-title">One take. Straight to your feed.</h1>
       <p class="reel-intro">
-        Short reels filmed in a single continuous shot. No heavy edit, just the moment as it
-        happens in your kitchen, your shop or your studio. Pick how many you want this month,
+        <span id="niche-line">Short reels filmed in a single continuous shot. No heavy edit, just the moment as it
+        happens in your kitchen, your shop or your studio.</span> Pick how many you want this month,
         from <span id="intro-min">8</span> to <span id="intro-max">13</span>.
       </p>
       <p class="reel-run">Runtime approx. <b id="runtime">00:02:00:00</b> &middot; 1 visit</p>
@@ -455,7 +456,7 @@
           <b class="reel-sum" id="total">&euro;320</b>
           <span class="reel-rate"><s class="reel-was" id="was" hidden></s><span id="rate">&euro;40</span> per reel</span>
           <span class="reel-badge hot" id="launch-badge" hidden></span>
-          <span class="reel-badge">Minimum order &euro;300</span>
+          <span class="reel-badge" id="min-badge">Minimum order &euro;300</span>
         </div>
       </div>
 
@@ -561,13 +562,44 @@
   </main>
 
 <script>
+/* ============ WHICH NICHE ============ */
+/* /reels/ is the general page; /reels/tattoo/ is the same page for
+   tattoo artists. Every niche folder holds a byte-identical copy of this
+   file, so the page reads which one it is from the address and swaps the
+   few words that differ. A new niche is a folder with a copy of this
+   file, an entry here, and optionally its own examples/ folder; without
+   one its examples section simply stays hidden. */
+const NICHES = {
+  restaurant: {
+    title: "One take reels for restaurants",
+    line: "Short reels filmed in a single continuous shot. No heavy edit, just the moment as it happens in your kitchen and your dining room: the pass, the plating, the first bite.",
+    place: "Your restaurant, and the best moment of the day to film",
+    // the examples made so far are all restaurants, so this page shares them
+    examples: "/reels/examples/"
+  },
+  tattoo: {
+    title: "One take reels for tattoo artists",
+    line: "Short reels filmed in a single continuous shot. No heavy edit, just the moment as it happens in your studio: the stencil, the line work, the reveal.",
+    place: "Your studio, and which session we can film"
+  }
+};
+const NICHE_KEY = (location.pathname.match(/\/reels\/([a-z-]+)\/?$/) || [])[1] || "";
+const NICHE = NICHES[NICHE_KEY] || {};
+
+/* ============ WHICH CURRENCY ============ */
+/* The link decides: noiraunoir.com/reels/tattoo/?usd shows dollars,
+   everything else euros. The dollar prices are their own figures in
+   CONFIG.usd, not a conversion, so they stay round. */
+const QUERY = new URLSearchParams(location.search);
+const USD = QUERY.has("usd") || String(QUERY.get("cur") || "").toLowerCase() === "usd";
+
 /* ============ SOME OF THEM ============ */
 /* The files decide what shows. Drop them into reels/examples named
    1.mp4 to 8.mp4 and they appear in that order; a number with no file
    quietly drops out and the section stays hidden until at least one has
    loaded. Nothing preloads beyond its first frame and nothing plays
    until it is asked to. */
-const SHOTS = { folder: "examples/", count: 8, ext: ".mp4", gap: 8, row: 270 };
+const SHOTS = { folder: NICHE.examples || "examples/", count: 8, ext: ".mp4", gap: 8, row: 270 };
 
 (function () {
   const wrap = document.getElementById("shots");
@@ -856,11 +888,20 @@ const CONFIG = {
   noticeDays: 1,      // the soonest day a visit can be asked for
   horizonDays: 120,   // and the furthest ahead
   currency: "€",
+  // what a dollar link shows instead; no launch price in dollars
+  usd: { pricePerReel: 50, minSpend: 300 },
   bands: [
     { upTo: 9, title: "Every week", text: "Two a week. Enough to stay visible without thinking about it." },
     { upTo: 13, title: "Every few days", text: "Three a week, filmed in one visit. The most one visit carries." }
   ]
 };
+
+if (USD) {
+  CONFIG.currency = "$";
+  CONFIG.pricePerReel = CONFIG.usd.pricePerReel;
+  CONFIG.minSpend = CONFIG.usd.minSpend;
+  CONFIG.launch = null;
+}
 
 /* today in Gent, so the launch price ends at midnight there */
 const TODAY = new Date().toLocaleDateString("sv-SE", { timeZone: "Europe/Brussels" });
@@ -872,6 +913,12 @@ const MIN = Math.ceil(CONFIG.minSpend / PRICE);
 
 const $ = (id) => document.getElementById(id);
 const money = (n) => CONFIG.currency + n.toLocaleString("en-GB");
+
+// the words that differ by niche, and the minimum in this currency
+if (NICHE.line) $("niche-line").textContent = NICHE.line;
+if (NICHE.place) $("lock-note").placeholder = NICHE.place;
+if (NICHE.title) document.title = NICHE.title + " | Noir au Noir";
+$("min-badge").textContent = "Minimum order " + money(CONFIG.minSpend);
 const pad = (n) => String(n).padStart(2, "0");
 
 /* 15 seconds a reel, written the way an edit suite writes it */
@@ -1249,7 +1296,10 @@ form.addEventListener("submit", async (event) => {
   btn.disabled = true;
   msg.textContent = picked ? "Booking..." : "Sending...";
 
-  const note = "One take reels: " + count + " reels for " +
+  // which page and which currency, so the booking says it without asking
+  const note = "One take reels" +
+    (NICHE_KEY || USD ? " (" + [NICHE_KEY, USD ? "dollars" : ""].filter(Boolean).join(", ") + ")" : "") +
+    ": " + count + " reels for " +
     money(count * PRICE) + (LAUNCH ? " (launch price)" : "") + "." +
     (offer ? "\nPlus " + offer.freeReels + " free with code " + offer.code + "." : "") +
     "\nFilming day asked for: " + longDate(date) +
