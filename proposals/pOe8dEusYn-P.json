@@ -6,7 +6,7 @@
   "kicker": "Videography Proposal ",
   "footer": "Prepared for Ink Corporation Dave",
   "intro": {
-    "lead": "Ways to work together",
+    "lead": "",
     "text": ""
   },
   "packages": [
@@ -46,7 +46,7 @@
     {
       "num": "02 · Company Video",
       "name": "Commercial",
-      "tag": "A full month of content, planned as one",
+      "tag": "the video",
       "price": "€450",
       "per": "",
       "featured": false,
