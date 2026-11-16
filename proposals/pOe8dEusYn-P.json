@@ -12,7 +12,7 @@
   "packages": [
     {
       "num": "01 · Entry level",
-      "name": "one takers",
+      "name": "One takers",
       "tag": "one takers ready to post ",
       "price": "€320",
       "per": "",
@@ -48,7 +48,7 @@
       "name": "Commercial",
       "tag": "A full month of content, planned as one",
       "price": "€450",
-      "per": "per month · VAT excl.",
+      "per": "",
       "featured": false,
       "badge": "",
       "features": [
@@ -83,7 +83,7 @@
       "name": "Rebrand",
       "tag": "A new identity, then the production to carry it",
       "price": "€1000",
-      "per": "per month · VAT excl.",
+      "per": "",
       "featured": true,
       "badge": "Most complete",
       "features": [
