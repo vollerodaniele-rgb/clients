@@ -3,7 +3,7 @@
   "client": "Ink Corporation",
   "subtitle": "",
   "kind": "",
-  "kicker": "Videography Proposal · ",
+  "kicker": "Videography Proposal · Monthly",
   "footer": "Prepared for Ink Corporation Dave",
   "intro": {
     "lead": "",
@@ -76,7 +76,7 @@
           "company video"
         ]
       },
-      "was": "480"
+      "was": "500"
     },
     {
       "num": "03 · The full build",
@@ -132,8 +132,7 @@
         "chips": [
           "company video"
         ]
-      },
-      "was": "920"
+      }
     }
   ],
   "notes": [
