@@ -41,6 +41,12 @@
     .pb-row:first-of-type { margin-top: 0.8rem; }
     .pb-row span { font-variant-numeric: tabular-nums; color: var(--dim); }
 
+    .pb-money { display: inline-flex; gap: 0.3rem; margin-top: 0.8rem; padding: 0.25rem; border-radius: 999px; border: 1px solid var(--line-soft); }
+    .pb-money button {
+      border: 0; border-radius: 999px; padding: 0.45rem 0.95rem; cursor: pointer; background: transparent; color: var(--dim);
+      font-family: inherit; font-size: 0.68rem; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase;
+    }
+    .pb-money button[aria-pressed="true"] { background: var(--text); color: var(--bg); }
     .pb-link { display: flex; gap: 0.6rem; align-items: center; padding: 0.75rem 0; border-top: 1px solid var(--line-soft); }
     .pb-link:first-of-type { margin-top: 0.8rem; }
     .pb-link div { flex: 1; min-width: 0; }
@@ -141,6 +147,42 @@ function rows(wrap, list, none) {
   }
 }
 
+/* One take reels has a page per niche (reels/index.html, NICHES), and
+   each credits the partner whose link brought the visitor. A new niche
+   there gets a line here too. */
+const REEL_NICHES = [
+  ["", "One take reels"],
+  ["restaurant", "One take reels, restaurants"],
+  ["tattoo", "One take reels, tattoo artists"]
+];
+
+/* The links, in euros or dollars: a partner sending a studio abroad
+   flips the switch and every reels link shows prices in dollars. */
+function drawLinks(id, usd) {
+  const origin = location.origin;
+  const links = $("links");
+  links.innerHTML = "";
+
+  const money = document.createElement("div");
+  money.className = "pb-money";
+  for (const [label, dollars] of [["Euro", false], ["Dollar", true]]) {
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.textContent = label;
+    btn.setAttribute("aria-pressed", String(dollars === usd));
+    btn.addEventListener("click", () => drawLinks(id, dollars));
+    money.appendChild(btn);
+  }
+  links.appendChild(money);
+
+  links.append(
+    linkRow("Your page", origin + "/r/#" + id),
+    ...REEL_NICHES.map(([niche, title]) =>
+      linkRow(title, origin + "/reels/" + (niche ? niche + "/" : "") + (usd ? "?usd" : "") + "#" + id)),
+    linkRow("Book a call", origin + "/call/#by-" + id)
+  );
+}
+
 function linkRow(title, url) {
   const row = document.createElement("div");
   row.className = "pb-link";
@@ -199,13 +241,7 @@ async function load() {
     $("recruits-pane").hidden = false;
   }
 
-  const origin = location.origin;
-  const links = $("links");
-  links.append(
-    linkRow("Your page", origin + "/r/#" + data.id),
-    linkRow("One take reels", origin + "/reels/#" + data.id),
-    linkRow("Book a call", origin + "/call/#by-" + data.id)
-  );
+  drawLinks(data.id, false);
 
   const opens = Number(data.opens) || 0;
   const calls = Number(data.calls) || 0;
