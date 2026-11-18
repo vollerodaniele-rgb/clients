@@ -595,7 +595,10 @@ const NICHES = {
       "Rebook next month at the same rate"
     ],
     shotsNote: "Tap one to hear it. Tap again to stop.",
-    sound: true
+    sound: true,
+    // on a computer the first example is the big one, the next two
+    // stacked beside it
+    lead: true
   },
   tattoo: {
     title: "One take reels for tattoo artists",
@@ -712,6 +715,10 @@ const SHOTS = { folder: NICHE.examples || "examples/", count: 8, ext: ".mp4", ga
     /* A phone gets one rail: every film the same height, whatever its
        shape, so an upright one does not swallow the screen while the one
        after it arrives as a sliver. The rest of the page keeps rows. */
+    // undo a lead from a wider screen
+    wrap.style.paddingTop = "";
+    for (const tile of tiles) Object.assign(tile.style, { position: "", left: "", top: "" });
+
     if (phone()) {
       const tall = Math.min(innerHeight * 0.52, 420);
       for (const tile of tiles) {
@@ -753,12 +760,40 @@ const SHOTS = { folder: NICHE.examples || "examples/", count: 8, ext: ".mp4", ga
 
     tuneSoon();
 
+    /* A lead (NICHE.lead): the first film big on the left and the next
+       two stacked on its right, both columns ending at the same height.
+       Placed by hand, since a wrapping row cannot stack; the films after
+       them fall into rows below as usual. */
+    const lead = NICHE.lead && tiles.length >= 3 ? tiles.slice(0, 3) : [];
+    if (lead.length) {
+      const g = SHOTS.gap;
+      const [r1, r2, r3] = lead.map((t) => Number(t.dataset.ratio));
+      const side = Math.floor((width - g - r1 * g) / (1 + r1 * (1 / r2 + 1 / r3)));
+      const big = width - g - side;
+      const tall = Math.floor(big / r1);
+      const top = Math.floor(side / r2);
+      const boxes = [
+        [0, 0, big, tall],
+        [big + g, 0, side, top],
+        [big + g, top + g, side, tall - top - g]
+      ];
+      lead.forEach((t, i) => {
+        const [x, y, w, h] = boxes[i];
+        Object.assign(t.style, { position: "absolute", left: x + "px", top: y + "px",
+          width: w + "px", height: h + "px", aspectRatio: "auto" });
+      });
+      wrap.style.position = "relative";
+      wrap.style.paddingTop = tall + (tiles.length > 3 ? g : 0) + "px";
+    }
+
     /* A film joins the row unless it would squash it well below the
        height we are aiming for. Closing the row one film early is often
        nearer the aim than cramming that film in, and cramming is what
        left a single tile alone on the last row. */
     for (const tile of tiles) {
       const ratio = Number(tile.dataset.ratio);
+
+      if (lead.includes(tile)) continue;
 
       if (row.length) {
         const withIt = (width - SHOTS.gap * row.length) / (sum + ratio);
