@@ -46,8 +46,15 @@
     letter-spacing: -0.05em;
     text-wrap: balance;
   }
+  /* sales page or booking page: one of the two is shown */
+  .reel-wrap.is-booking .sale, .reel-wrap:not(.is-booking) .booking { display: none !important; }
+  .reel-wrap.is-booking { padding-top: 3.5rem; }
+  .book-now { margin-top: 1.4rem; }
+  .book-now .btn-send { width: 100%; border-radius: 999px; }
+  .book-back { display: block; margin-bottom: 1.2rem; }
+
   /* the niche switch, the same pill as the partner board's money switch */
-  .niches { display: flex; flex-wrap: wrap; gap: 0.3rem; margin-top: 1.2rem; padding: 0.25rem; width: fit-content; max-width: 100%; border-radius: 999px; border: 1px solid var(--line-soft, rgba(255,255,255,0.12)); }
+  .niches { display: flex; flex-wrap: wrap; gap: 0.3rem; margin: 0 0 1rem; padding: 0.25rem; width: fit-content; max-width: 100%; border-radius: 999px; border: 1px solid var(--line-soft, rgba(255,255,255,0.12)); }
   .niches button {
     border: 0; border-radius: 999px; padding: 0.5rem 1rem; cursor: pointer; background: transparent; color: var(--dim);
     font-family: inherit; font-size: 0.68rem; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase;
@@ -440,11 +447,9 @@
 </head>
 <body>
 
-  <main class="reel-wrap">
+  <main class="reel-wrap" id="reel-main">
 
-    <header class="reel-head">
-      <p class="reel-kicker">Noir au Noir</p>
-      <div class="niches" id="niches" role="group" aria-label="Who it is for"></div>
+    <header class="reel-head sale">
       <!-- filled only when a partner's link brought them here -->
       <p class="reel-sent" id="reel-sent" hidden></p>
       <h1 class="reel-title">One take. Straight to your feed.</h1>
@@ -453,11 +458,28 @@
         happens in your kitchen, your shop or your studio.</span> Pick how many you want this month,
         from <span id="intro-min">8</span> to <span id="intro-max">13</span>.
       </p>
-      <p class="reel-run">Runtime approx. <b id="runtime">00:02:00:00</b> &middot; 1 visit</p>
       <p class="reel-offer" id="reel-offer" hidden></p>
     </header>
 
-    <section class="reel-pane">
+    <!-- who it is for: switches the words and the films below -->
+    <div class="niches sale" id="niches" role="group" aria-label="Who it is for"></div>
+
+    <!-- Ten slots, filled by whatever sits in reels/examples as 01.mp4
+         through 10.mp4. A slot whose file is missing takes itself out,
+         and the whole section hides when none of them load, so the page
+         is never a wall of broken tiles. -->
+    <section class="reel-pane sale" id="shots-pane" hidden>
+      <p class="inc-head">Some of them</p>
+      <div class="shots" id="shots"></div>
+      <!-- only on a phone, where the rows become one rail you swipe -->
+      <div class="shots-nav">
+        <button type="button" class="step-btn" id="shots-prev" aria-label="Previous film">&larr;</button>
+        <button type="button" class="step-btn" id="shots-next" aria-label="Next film">&rarr;</button>
+      </div>
+      <p class="shots-note">Tap one to play it. They are silent on purpose, the feed is too.</p>
+    </section>
+
+    <section class="reel-pane sale">
       <div class="reel-top" aria-live="polite">
         <div class="reel-figure">
           <b id="count">8</b>
@@ -485,27 +507,8 @@
       </div>
     </section>
 
-    <section class="reel-pane best">
-      <h2 id="best-title">Every week</h2>
-      <p id="best-text">Two or more reels a week. Enough to stay visible without thinking about it.</p>
-    </section>
 
-    <!-- Ten slots, filled by whatever sits in reels/examples as 01.mp4
-         through 10.mp4. A slot whose file is missing takes itself out,
-         and the whole section hides when none of them load, so the page
-         is never a wall of broken tiles. -->
-    <section class="reel-pane" id="shots-pane" hidden>
-      <p class="inc-head">Some of them</p>
-      <div class="shots" id="shots"></div>
-      <!-- only on a phone, where the rows become one rail you swipe -->
-      <div class="shots-nav">
-        <button type="button" class="step-btn" id="shots-prev" aria-label="Previous film">&larr;</button>
-        <button type="button" class="step-btn" id="shots-next" aria-label="Next film">&rarr;</button>
-      </div>
-      <p class="shots-note">Tap one to play it. They are silent on purpose, the feed is too.</p>
-    </section>
-
-    <section class="reel-pane">
+    <section class="reel-pane sale">
       <p class="inc-head">What is included</p>
       <ul class="inc">
         <li><b>01</b><span>Filmed in one continuous take</span></li>
@@ -517,10 +520,18 @@
       </ul>
     </section>
 
-    <!-- The selection and the day it happens are one thing, so they are
+    <div class="book-now sale">
+      <button class="btn-send" type="button" id="book-now">Book now</button>
+    </div>
+
+    <!-- The booking is its own page: Book now hides the sales page and
+         shows this, Back brings it back. Same file, so the count, the
+         niche, the currency and the partner all come along.
+         The selection and the day it happens are one thing, so they are
          one pane. Asking for a day rides the same relay route as the call
          back form, so it pings Telegram and lands in the agenda. -->
-    <section class="reel-pane" id="lock">
+    <section class="reel-pane booking" id="lock">
+      <button type="button" class="code-open book-back" id="book-back">&larr; Back to the reels</button>
       <p class="pick-line">Your selection: <em class="num" id="pick-count">8</em> reels<span id="pick-free"></span> for <em class="num" id="pick-total">&euro;320</em>.</p>
 
       <!-- A code worth free reels for a few days. Checked by the relay,
@@ -1169,7 +1180,6 @@ function draw() {
   $("count").textContent = count;
   $("total").textContent = money(total);
   $("rate").textContent = money(PRICE);
-  $("runtime").textContent = timecode(count + free);
   $("inc-count").textContent = count + free;
   $("pick-count").textContent = count;
   $("pick-total").textContent = money(total);
@@ -1183,9 +1193,6 @@ function draw() {
   // the playhead sits in the middle of the frame it is on
   $("playhead").style.left = ((at + 0.5) / COUNTS.length * 100) + "%";
 
-  const band = CONFIG.bands.find((b) => count <= b.upTo) || CONFIG.bands[CONFIG.bands.length - 1];
-  $("best-title").textContent = band.title;
-  $("best-text").textContent = band.text;
 
   $("down").disabled = count <= MIN;
   $("up").disabled = count >= CONFIG.max;
@@ -1551,6 +1558,32 @@ form.addEventListener("submit", async (event) => {
   }
 });
 
+
+/* ============ BOOK NOW ============ */
+/* ?book in the address opens the booking page, and so does #lock, which
+   older mails and the delivery page link to. The browser's back button
+   goes from the booking page to the reels, like a real second page. */
+function showBooking(on) {
+  $("reel-main").classList.toggle("is-booking", on);
+  scrollTo(0, 0);
+}
+$("book-now").addEventListener("click", () => {
+  const q = new URLSearchParams(location.search);
+  q.set("book", "");
+  const hash = location.hash === "#lock" ? "" : location.hash;
+  history.pushState({ book: true }, "", location.pathname + "?" + q.toString().replace(/(usd|book)=(&|$)/g, "$1$2") + hash);
+  showBooking(true);
+});
+$("book-back").addEventListener("click", () => {
+  if (history.state && history.state.book) { history.back(); return; }
+  const q = new URLSearchParams(location.search);
+  q.delete("book");
+  const rest = q.toString().replace(/usd=(&|$)/, "usd$1");
+  history.replaceState(null, "", location.pathname + (rest ? "?" + rest : "") + (location.hash === "#lock" ? "" : location.hash));
+  showBooking(false);
+});
+addEventListener("popstate", () => showBooking(new URLSearchParams(location.search).has("book")));
+if (QUERY.has("book") || location.hash === "#lock") showBooking(true);
 
 draw();
 </script>
