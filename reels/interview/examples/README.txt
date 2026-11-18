@@ -10,7 +10,7 @@ Vertical or horizontal, both work. The page reads the shape out of the
 file: a vertical one takes one slot, a horizontal one takes two and
 keeps its own shape, so nothing is ever cropped to fit.
 
-Keep them silent or near enough, and small: they sit in a public repo
+Keep their sound (these are interviews), and keep them small: they sit in a public repo
 and every visitor loads the first frame of each. Eight files of a few
 megabytes each is fine, eight of fifty is not.
 
