@@ -46,6 +46,17 @@
     letter-spacing: -0.05em;
     text-wrap: balance;
   }
+  /* the niche switch, the same pill as the partner board's money switch */
+  .niches { display: flex; flex-wrap: wrap; gap: 0.3rem; margin-top: 1.2rem; padding: 0.25rem; width: fit-content; max-width: 100%; border-radius: 999px; border: 1px solid var(--line-soft, rgba(255,255,255,0.12)); }
+  .niches button {
+    border: 0; border-radius: 999px; padding: 0.5rem 1rem; cursor: pointer; background: transparent; color: var(--dim);
+    font-family: inherit; font-size: 0.68rem; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase;
+  }
+  .niches button[aria-pressed="true"] { background: var(--text); color: var(--bg); }
+  @media (max-width: 30rem) {
+    .niches { flex-wrap: nowrap; gap: 0.1rem; }
+    .niches button { padding: 0.5rem 0.7rem; font-size: 0.6rem; letter-spacing: 0.08em; white-space: nowrap; }
+  }
   .reel-intro { margin-top: 1.2rem; max-width: 46ch; font-size: 0.98rem; line-height: 1.7; color: var(--dim); }
 
   /* the timecode line, in the house's label style rather than a second face */
@@ -433,6 +444,7 @@
 
     <header class="reel-head">
       <p class="reel-kicker">Noir au Noir</p>
+      <div class="niches" id="niches" role="group" aria-label="Who it is for"></div>
       <!-- filled only when a partner's link brought them here -->
       <p class="reel-sent" id="reel-sent" hidden></p>
       <h1 class="reel-title">One take. Straight to your feed.</h1>
@@ -572,6 +584,7 @@
    without one its examples section simply stays hidden. */
 const NICHES = {
   restaurant: {
+    chip: "Restaurants",
     title: "One take reels for restaurants",
     line: "Short reels filmed in a single continuous shot. No heavy edit, just the moment as it happens in your kitchen and your dining room: the pass, the plating, the first bite.",
     place: "Your restaurant, and the best moment of the day to film",
@@ -582,6 +595,8 @@ const NICHES = {
      reel, so it is heard rather than watched, and the examples play with
      sound when tapped */
   interview: {
+    chip: "Interviews",
+    examples: "/reels/interview/examples/",
     title: "Interview reels",
     heading: "One question. One take.",
     line: "Short interviews filmed in a single continuous take. You answer one question at a time, in your own words: no script to read, no cut in the middle of a sentence.",
@@ -601,13 +616,22 @@ const NICHES = {
     lead: true
   },
   tattoo: {
+    chip: "Tattoo artists",
+    examples: "/reels/tattoo/examples/",
     title: "One take reels for tattoo artists",
     line: "Short reels filmed in a single continuous shot. No heavy edit, just the moment as it happens in your studio: the stencil, the line work, the reveal.",
     place: "Your studio, and which session we can film"
   }
 };
-const NICHE_KEY = (location.pathname.match(/\/reels\/([a-z-]+)\/?$/) || [])[1] || "";
-const NICHE = NICHES[NICHE_KEY] || {};
+/* One page shows them all: the buttons at the top switch between the
+   niches in place. The link decides which one opens first, ?for=tattoo,
+   and the old niche addresses (/reels/tattoo/) still open their own. */
+const CHIP_ORDER = ["restaurant", "tattoo", "interview"];
+const FOR = new URLSearchParams(location.search).get("for");
+let NICHE_KEY = NICHES[FOR] ? FOR
+  : (location.pathname.match(/\/reels\/([a-z-]+)\/?$/) || [])[1] || "restaurant";
+if (!NICHES[NICHE_KEY]) NICHE_KEY = "restaurant";
+let NICHE = NICHES[NICHE_KEY];
 
 /* ============ WHICH CURRENCY ============ */
 /* The link decides: noiraunoir.com/reels/tattoo/?usd shows dollars,
@@ -622,7 +646,9 @@ const USD = QUERY.has("usd") || String(QUERY.get("cur") || "").toLowerCase() ===
    quietly drops out and the section stays hidden until at least one has
    loaded. Nothing preloads beyond its first frame and nothing plays
    until it is asked to. */
-const SHOTS = { folder: NICHE.examples || "examples/", count: 8, ext: ".mp4", gap: 8, row: 270 };
+const SHOTS = { count: 8, ext: ".mp4", gap: 8, row: 270 };
+
+let rebuildShots = () => {};
 
 (function () {
   const wrap = document.getElementById("shots");
@@ -630,6 +656,15 @@ const SHOTS = { folder: NICHE.examples || "examples/", count: 8, ext: ".mp4", ga
 
   const pane = document.getElementById("shots-pane");
   const phone = () => matchMedia("(max-width: 40rem)").matches;
+
+  /* Built again whenever the niche changes: the old films are stopped
+     and let go first, so nothing keeps downloading in the background. */
+  function build() {
+  for (const old of wrap.querySelectorAll("video")) { old.pause(); old.removeAttribute("src"); old.load(); }
+  wrap.innerHTML = "";
+  wrap.scrollLeft = 0;
+  pane.hidden = true;
+  const folder = NICHE.examples || "/reels/examples/";
 
   for (let n = 1; n <= SHOTS.count; n++) {
     const num = String(n).padStart(2, "0"); // the label on the tile
@@ -654,8 +689,8 @@ const SHOTS = { folder: NICHE.examples || "examples/", count: 8, ext: ".mp4", ga
        not let one start (low battery, low power mode) the tile would be
        an empty black box. A still beside each film, 1.jpg next to 1.mp4,
        stands in until it runs; without one the tile is only darker. */
-    film.poster = SHOTS.folder + n + ".jpg";
-    film.src = SHOTS.folder + n + SHOTS.ext;
+    film.poster = folder + n + ".jpg";
+    film.src = folder + n + SHOTS.ext;
 
     film.addEventListener("error", () => {
       tile.remove();
@@ -700,6 +735,9 @@ const SHOTS = { folder: NICHE.examples || "examples/", count: 8, ext: ".mp4", ga
     tile.append(film, mark, play);
     wrap.appendChild(tile);
   }
+  }
+  build();
+  rebuildShots = build;
 
   /* Rows that reach both edges. Tiles go into a row until the row would
      be shorter than the height we are aiming for, then the row is scaled
@@ -1022,12 +1060,24 @@ const MIN = Math.ceil(CONFIG.minSpend / PRICE);
 const $ = (id) => document.getElementById(id);
 const money = (n) => CONFIG.currency + n.toLocaleString("en-GB");
 
-// the words that differ by niche, and the minimum in this currency
-if (NICHE.line) $("niche-line").textContent = NICHE.line;
-if (NICHE.place) $("lock-note").placeholder = NICHE.place;
-if (NICHE.title) document.title = NICHE.title + " | Noir au Noir";
-if (NICHE.heading) document.querySelector(".reel-title").textContent = NICHE.heading;
-if (NICHE.shotsNote) document.querySelector(".shots-note").textContent = NICHE.shotsNote;
+// the words that differ by niche; what the page says without one is
+// kept, so switching back puts it back
+const PLAIN = {
+  line: $("niche-line").textContent,
+  place: $("lock-note").placeholder,
+  title: document.title,
+  heading: document.querySelector(".reel-title").textContent,
+  shotsNote: document.querySelector(".shots-note").textContent,
+  included: document.querySelector(".inc").innerHTML
+};
+function applyNiche() {
+$("niche-line").textContent = NICHE.line || PLAIN.line;
+$("lock-note").placeholder = NICHE.place || PLAIN.place;
+document.title = NICHE.title ? NICHE.title + " | Noir au Noir" : PLAIN.title;
+document.querySelector(".reel-title").textContent = NICHE.heading || PLAIN.heading;
+document.querySelector(".shots-note").textContent = NICHE.shotsNote || PLAIN.shotsNote;
+for (const b of document.querySelectorAll("#niches button")) b.setAttribute("aria-pressed", String(b.dataset.niche === NICHE_KEY));
+document.querySelector(".inc").innerHTML = PLAIN.included;
 // its own list of what is included; {count} becomes the live number
 if (NICHE.included) {
   const list = document.querySelector(".inc");
@@ -1050,6 +1100,32 @@ if (NICHE.included) {
     list.appendChild(li);
   });
 }
+}
+
+/* The buttons. A tap swaps the words and the films in place and puts
+   the niche in the address, so a link copied from here opens on it. */
+(function () {
+  const row = $("niches");
+  for (const key of CHIP_ORDER) {
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.dataset.niche = key;
+    btn.textContent = NICHES[key].chip;
+    btn.addEventListener("click", () => {
+      if (key === NICHE_KEY) return;
+      NICHE_KEY = key;
+      NICHE = NICHES[key];
+      applyNiche();
+      rebuildShots();
+      draw();
+      const q = new URLSearchParams(location.search);
+      q.set("for", key);
+      history.replaceState(null, "", "/reels/?" + q.toString().replace(/usd=(&|$)/, "usd$1") + location.hash);
+    });
+    row.appendChild(btn);
+  }
+})();
+applyNiche();
 $("min-badge").textContent = "Minimum order " + money(CONFIG.minSpend);
 const pad = (n) => String(n).padStart(2, "0");
 
