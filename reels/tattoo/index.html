@@ -578,6 +578,25 @@ const NICHES = {
     // the examples made so far are all restaurants, so this page shares them
     examples: "/reels/examples/"
   },
+  /* not a trade but a kind of reel: somebody answering, one question per
+     reel, so it is heard rather than watched, and the examples play with
+     sound when tapped */
+  interview: {
+    title: "Interview reels",
+    heading: "One question. One take.",
+    line: "Short interviews filmed in a single continuous take. You answer one question at a time, in your own words: no script to read, no cut in the middle of a sentence.",
+    place: "Where we film, and who will be answering",
+    included: [
+      "Every answer filmed in one continuous take",
+      "Vertical 9:16, or horizontal 16:9 if you ask",
+      "{count} interview reels, trimmed, graded and with clean sound",
+      "The questions prepared together before the visit",
+      "Clip-on microphones, so every word is heard",
+      "Rebook next month at the same rate"
+    ],
+    shotsNote: "Tap one to hear it. Tap again to stop.",
+    sound: true
+  },
   tattoo: {
     title: "One take reels for tattoo artists",
     line: "Short reels filmed in a single continuous shot. No heavy edit, just the moment as it happens in your studio: the stencil, the line work, the reveal.",
@@ -656,6 +675,15 @@ const SHOTS = { folder: NICHE.examples || "examples/", count: 8, ext: ".mp4", ga
        want to look at, or starting one you stopped. A tile stopped by
        hand stays stopped until it leaves the screen. */
     tile.addEventListener("click", () => {
+      // an interview is for hearing: a tap turns the sound on for this
+      // one and off for every other, and a second tap stops it
+      if (NICHE.sound && (film.muted || film.paused)) {
+        for (const other of wrap.querySelectorAll("video")) if (other !== film) other.muted = true;
+        film.muted = false;
+        delete tile.dataset.held;
+        film.play().then(() => tile.classList.add("playing")).catch(() => {});
+        return;
+      }
       if (film.paused) {
         delete tile.dataset.held;
         film.play().then(() => tile.classList.add("playing")).catch(() => {});
@@ -789,6 +817,8 @@ const SHOTS = { folder: NICHE.examples || "examples/", count: 8, ext: ".mp4", ga
         });
       } else if (!run && !film.paused) {
         film.pause();
+        // an interview heard and scrolled past comes back silent
+        film.muted = true;
         tile.classList.remove("playing");
         // out of sight is a clean slate: it may run again when it returns
         delete tile.dataset.held;
@@ -961,6 +991,30 @@ const money = (n) => CONFIG.currency + n.toLocaleString("en-GB");
 if (NICHE.line) $("niche-line").textContent = NICHE.line;
 if (NICHE.place) $("lock-note").placeholder = NICHE.place;
 if (NICHE.title) document.title = NICHE.title + " | Noir au Noir";
+if (NICHE.heading) document.querySelector(".reel-title").textContent = NICHE.heading;
+if (NICHE.shotsNote) document.querySelector(".shots-note").textContent = NICHE.shotsNote;
+// its own list of what is included; {count} becomes the live number
+if (NICHE.included) {
+  const list = document.querySelector(".inc");
+  list.innerHTML = "";
+  NICHE.included.forEach((text, i) => {
+    const li = document.createElement("li");
+    const b = document.createElement("b");
+    b.textContent = String(i + 1).padStart(2, "0");
+    const span = document.createElement("span");
+    const [before, after] = text.split("{count}");
+    if (after !== undefined) {
+      const num = document.createElement("span");
+      num.className = "num";
+      num.id = "inc-count";
+      span.append(before, num, after);
+    } else {
+      span.textContent = text;
+    }
+    li.append(b, span);
+    list.appendChild(li);
+  });
+}
 $("min-badge").textContent = "Minimum order " + money(CONFIG.minSpend);
 const pad = (n) => String(n).padStart(2, "0");
 
