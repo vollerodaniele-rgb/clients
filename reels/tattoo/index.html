@@ -164,7 +164,15 @@
     color: var(--text); background: var(--well); border: 1px solid var(--glass-edge); border-radius: 999px;
   }
   .code-box input:focus { outline: none; border-color: rgba(255, 255, 255, 0.34); }
-  .code-msg { margin-top: 0.6rem; font-size: 0.85rem; color: var(--dim); min-height: 1.2rem; }
+  .code-msg { margin-top: 0.6rem; font-size: 0.85rem; color: var(--dim); }
+  .code-msg:empty { display: none; }
+  /* an iPhone draws an empty date box as nothing at all, so it says what to do */
+  .field .date-wrap { position: relative; display: block; margin: 0; padding: 0; }
+  .field .date-wrap input { width: 100%; box-sizing: border-box; }
+  .field .date-hint {
+    position: absolute; left: 1.1rem; top: 50%; transform: translateY(-50%); margin: 0; pointer-events: none;
+    font-size: 1rem; font-weight: 400; letter-spacing: normal; text-transform: none; color: rgba(242, 242, 242, 0.45);
+  }
   .code-msg b { color: var(--text); font-weight: 500; }
 
   /* ---------- the strip ---------- */
@@ -549,7 +557,7 @@
 
       <form class="lock-form" id="lock-form" novalidate>
         <label class="field"><span>The day you want to be filmed</span>
-          <input type="date" id="lock-date" required>
+          <span class="date-wrap"><input type="date" id="lock-date" required><span class="date-hint" id="date-hint" hidden>Tap to pick a day</span></span>
         </label>
         <label class="field"><span>Your name</span>
           <input type="text" id="lock-name" maxlength="60" autocomplete="name" placeholder="Who are we filming for?" required>
@@ -1117,6 +1125,9 @@ if (NICHE.included) {
    the niche in the address, so a link copied from here opens on it. */
 (function () {
   const row = $("niches");
+  /* Only on the general page. A link made for one niche (/reels/tattoo/
+     or ?for=tattoo) keeps that visitor on their own page. */
+  if (FOR || /\/reels\/[a-z-]+\/?$/.test(location.pathname)) { row.remove(); return; }
   for (const key of CHIP_ORDER) {
     const btn = document.createElement("button");
     btn.type = "button";
@@ -1365,6 +1376,14 @@ const soonest = new Date();
 soonest.setDate(soonest.getDate() + CONFIG.noticeDays);
 const furthest = new Date();
 furthest.setDate(furthest.getDate() + CONFIG.horizonDays);
+/* only where the browser shows an empty box; elsewhere it already
+   writes dd/mm/yyyy in it */
+const IOS = /iP(hone|ad|od)/.test(navigator.userAgent) ||
+  (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+const dateHint = () => { $("date-hint").hidden = !IOS || !!dateField.value; };
+dateField.addEventListener("input", dateHint);
+dateField.addEventListener("change", dateHint);
+dateHint();
 dateField.min = iso(soonest);
 dateField.max = iso(furthest);
 
