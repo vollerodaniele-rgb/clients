@@ -1436,18 +1436,66 @@ async function setupReelsOnly(data) {
   all.className = "ev-go";
   all.textContent = "Download all";
   all.addEventListener("click", () => downloadAllReels(all));
+  const niche = /^(restaurant|tattoo|interview)$/.test(data.reelsNiche || "") ? data.reelsNiche : "";
   const book = document.createElement("a");
   book.className = "ev-ghost";
-  book.href = "../reels/#lock";
+  book.href = "../reels/" + (niche ? niche + "/" : "") + "#lock";
   book.textContent = "Book next shoot";
   end.append(all, book);
   body.appendChild(end);
+  // a client who is also a partner can pass the work on, with their link
+  if (/^[a-z0-9][a-z0-9-]{1,39}$/.test(data.partner || "")) body.appendChild(reelsInvite(data.partner, niche));
   body.insertAdjacentHTML("beforeend", '<p class="ev-by">Filmed by Noir au Noir.</p>');
 
   layReels();
   let soon = 0;
   addEventListener("resize", () => { clearTimeout(soon); soon = setTimeout(layReels, 120); });
   buildEventBox();
+}
+
+/* "Know someone who wants this?" opens their own link to the reels page
+   for their trade, and the deal in one sentence. On a phone it hands
+   the link straight to the share sheet, so it lands in a chat. */
+function reelsInvite(partner, niche) {
+  const url = location.origin + "/reels/" + (niche ? niche + "/" : "") + "#" + partner;
+  const wrap = document.createElement("div");
+  wrap.className = "ev-invite";
+
+  const open = document.createElement("button");
+  open.type = "button";
+  open.className = "ev-invite-open";
+  open.textContent = niche === "tattoo" ? "Know an artist who wants this?" : "Know someone who wants this?";
+
+  const box = document.createElement("div");
+  box.className = "ev-invite-box";
+  box.hidden = true;
+  const line = document.createElement("p");
+  line.textContent = "Send them your link. When they book, you get 20% of what they pay us for their first 12 months.";
+  const code = document.createElement("code");
+  code.textContent = url.replace(/^https?:\/\//, "");
+  const send = document.createElement("button");
+  send.type = "button";
+  send.className = "ev-go";
+  send.textContent = navigator.share ? "Send your link" : "Copy your link";
+  send.addEventListener("click", async () => {
+    if (navigator.share) {
+      try { await navigator.share({ title: "Noir au Noir", text: "The reels I get filmed:", url }); } catch { /* closed */ }
+      return;
+    }
+    let done = false;
+    try { await navigator.clipboard.writeText(url); done = true; } catch { /* shown below */ }
+    send.textContent = done ? "Copied" : "Hold the link to copy it";
+    setTimeout(() => { send.textContent = "Copy your link"; }, 1800);
+  });
+  box.append(line, code, send);
+
+  open.addEventListener("click", () => {
+    box.hidden = !box.hidden;
+    open.setAttribute("aria-expanded", String(!box.hidden));
+  });
+  open.setAttribute("aria-expanded", "false");
+  wrap.append(open, box);
+  return wrap;
 }
 
 function layReels() {

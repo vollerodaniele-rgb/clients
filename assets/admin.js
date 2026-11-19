@@ -124,6 +124,7 @@ function render() {
       ));
       body.appendChild(textField("Where", plan.nextShoot, "location"));
     }, plan.nextShoot.date || "not planned"));
+    app.appendChild(invitePanel());
     return;
   }
 
@@ -1054,6 +1055,68 @@ function kindPanel(isProject) {
       "are on marked, everything before it filled in, everything after it grey.";
     body.appendChild(hint);
   }, isProject ? stageSummary(project) : plan.kind === "reels" ? "one take reels" : plan.kind === "event" ? "event gallery" : "monthly");
+}
+
+/* A reels client who likes the work is the best salesperson there is.
+   One tap makes them a partner (the same as making one on the Agenda
+   sheet) and their delivery page then shows "Know someone who wants
+   this?" with their own link to their niche's reels page. Only the
+   partner's id is kept in their plan: it is already in every link they
+   share, and nothing about money is. */
+function invitePanel() {
+  return panel("Bring a friend", (body) => {
+    body.appendChild(switchField("Their reels page", plan, "reelsNiche",
+      [["", "General"], ["restaurant", "Restaurants"], ["tattoo", "Tattoo artists"], ["interview", "Interviews"]],
+      () => save()));
+
+    const note = document.createElement("p");
+    note.className = "muted";
+    note.style.cssText = "font-size:0.85rem;margin-top:0.8rem";
+    const msg = document.createElement("p");
+    msg.className = "muted";
+    msg.style.cssText = "font-size:0.85rem;margin-top:0.5rem";
+
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "btn-mini";
+    btn.style.marginTop = "0.8rem";
+
+    if (plan.partner) {
+      note.textContent = "They are partner \"" + plan.partner + "\". Their page shows a button to send " +
+        "their link; whoever books through it is credited to them on the Agenda sheet.";
+      btn.textContent = "Hide the button";
+      btn.addEventListener("click", async () => {
+        plan.partner = "";
+        await save();
+        render();
+      });
+    } else {
+      note.textContent = "Make them a partner and their page gets a \"Know someone who wants this?\" " +
+        "button with their own link. They earn 20% of what anyone they send pays, for 12 months.";
+      btn.textContent = "Make them a partner";
+      btn.addEventListener("click", async () => {
+        if (!token()) { msg.textContent = "Save your access key first (top of the page)."; return; }
+        btn.disabled = true;
+        msg.textContent = "Making it...";
+        try {
+          const res = await fetch(`${RELAY_URL}/ref/new`, {
+            method: "POST",
+            headers: { "X-Studio-Key": token(), "Content-Type": "application/json" },
+            body: JSON.stringify({ name: String(plan.name || CLIENT).trim() || CLIENT, note: "reels client " + CLIENT })
+          });
+          const answer = await res.json().catch(() => ({}));
+          if (!res.ok || !answer.id) throw new Error(answer.error || String(res.status));
+          plan.partner = answer.id;
+          await save();
+          render();
+        } catch (err) {
+          msg.textContent = "Could not make it: " + err.message;
+          btn.disabled = false;
+        }
+      });
+    }
+    body.append(note, btn, msg);
+  }, plan.partner ? "partner" : "not a partner");
 }
 
 function stageSummary(project) {

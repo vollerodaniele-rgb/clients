@@ -2386,6 +2386,22 @@ body.reels-only .pt-brand { flex: 1; text-align: center; }
 }
 .ev-ghost:hover { border-color: rgba(255, 255, 255, 0.5); }
 
+/* a reels client who is a partner: their link, under the two buttons */
+.ev-invite { margin-top: 1.4rem; text-align: center; }
+.ev-invite-open {
+  border: 0; background: none; cursor: pointer; padding: 0.4rem; color: var(--dim);
+  font-family: var(--font-body); font-size: 0.9rem; text-decoration: underline; text-underline-offset: 4px;
+}
+.ev-invite-open:hover { color: var(--text); }
+.ev-invite-box {
+  max-width: 26rem; margin: 0.9rem auto 0; padding: 1.3rem 1.2rem; display: grid; gap: 0.8rem; justify-items: center;
+  border: 1px solid var(--glass-edge); border-radius: 20px; background: var(--glass); box-shadow: var(--glass-lip);
+  backdrop-filter: var(--glass-blur); -webkit-backdrop-filter: var(--glass-blur);
+}
+.ev-invite-box[hidden] { display: none; }
+.ev-invite-box p { font-size: 0.92rem; line-height: 1.6; color: var(--dim); }
+.ev-invite-box code { font-family: var(--font-body); font-size: 0.85rem; color: var(--text); word-break: break-all; }
+
 .ev-box {
   position: fixed; inset: 0; z-index: 60; display: flex; align-items: center; justify-content: center; gap: 14px;
   padding: 16px; background: rgba(0, 0, 0, 0.55);
