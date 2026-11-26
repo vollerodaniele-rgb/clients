@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Edit idea</title>
+  <meta name="robots" content="noindex, nofollow">
+  <!-- asked for with a timestamp, so this page never runs the ten
+       minute old copy GitHub Pages would otherwise hand back -->
+  <script>
+    (function () {
+      var stamp = Date.now();
+      var here = document.currentScript;
+      var css = document.createElement("link");
+      css.rel = "stylesheet";
+      css.href = "../assets/styles.css?t=" + stamp;
+      here.parentNode.insertBefore(css, here);
+      var js = document.createElement("script");
+      js.src = "../assets/idea-editor.js?t=" + stamp;
+      js.async = false;
+      here.parentNode.insertBefore(js, here);
+    })();
+  </script>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📄</text></svg>">
+  <style>
+    .dash { max-width: 52rem; margin: 0 auto; padding: 3rem 1.5rem 6rem; }
+    .dash-title { font-family: var(--font-display); font-size: 2.2rem; font-weight: 500; letter-spacing: -0.03em; }
+    .dash-sub { color: var(--dim); margin: 0.4rem 0 2rem; }
+    a.back { color: var(--dim); font-size: 0.85rem; text-decoration: none; }
+    a.back:hover { color: var(--text); }
+
+    .panel {
+      border: 1px solid var(--line); border-radius: var(--radius);
+      padding: 1.4rem 1.5rem; margin-bottom: 1.4rem;
+    }
+    .panel h2 {
+      font-family: var(--font-display); font-size: 1.3rem; font-weight: 500;
+      margin-bottom: 1rem;
+      letter-spacing: -0.03em;
+    }
+    .row { display: flex; gap: 0.8rem; flex-wrap: wrap; margin-bottom: 0.8rem; }
+    .row .field { min-width: 9rem; }
+    .field textarea { min-height: 4rem; }
+
+    .item {
+      border: 1px solid var(--line-soft); border-radius: 8px;
+      padding: 0.9rem 1rem 0.4rem; margin-bottom: 0.9rem; position: relative;
+    }
+    .item .remove { position: absolute; top: 0.7rem; right: 0.8rem; }
+
+    .btn-mini {
+      font-size: 0.72rem; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase;
+      background: rgba(255, 255, 255, 0.06); border: 1px solid rgba(255, 255, 255, 0.14); color: var(--dim);
+      border-radius: 999px; padding: 0.3rem 0.9rem; cursor: pointer;
+      text-decoration: none; display: inline-block;
+      transition: color 0.15s, border-color 0.15s;
+    }
+    .btn-mini:hover { color: var(--text); border-color: var(--text); }
+
+    .savebar {
+      position: sticky; bottom: 0; background: var(--bg);
+      border-top: 1px solid var(--line); padding: 1rem 0;
+      display: flex; gap: 1rem; align-items: center; flex-wrap: wrap;
+    }
+    .savebar .form-msg { flex: 1; }
+
+    select {
+      background: var(--bg); border: 1px solid var(--line); border-radius: 8px;
+      color: var(--text); font-family: var(--font-body); font-size: 0.95rem;
+      padding: 0.68rem 0.9rem;
+    }
+    .pics { display: grid; grid-template-columns: repeat(auto-fill, minmax(9rem, 1fr)); gap: 0.7rem; margin: 0.8rem 0; }
+    .pic { border: 1px solid var(--line-soft); border-radius: 8px; overflow: hidden; }
+    .pic img { display: block; width: 100%; height: 7rem; object-fit: cover; }
+    .pic input { width: 100%; border: 0; border-top: 1px solid var(--line-soft); border-radius: 0; font-size: 0.8rem; padding: 0.45rem 0.55rem; background: transparent; color: var(--text); }
+    .pic .acts { display: flex; gap: 0.3rem; padding: 0.4rem; }
+    .pic .acts button { flex: 1; padding: 0.2rem 0.3rem; font-size: 0.62rem; }
+    .drop { border: 1px dashed var(--line); border-radius: 10px; padding: 1.2rem; text-align: center; color: var(--dim); font-size: 0.9rem; cursor: pointer; }
+    .drop.over { border-color: var(--text); color: var(--text); }
+    label.check { display: flex; align-items: center; gap: 0.5rem; font-size: 0.85rem; color: var(--dim); }
+  </style>
+</head>
+<body>
+  <div class="dash">
+    <a class="back" href="index.html">&larr; back to the dashboard</a>
+    <h1 class="dash-title" id="editor-title">Idea</h1>
+    <p class="dash-sub" id="editor-sub">Change anything, then Save &amp; Publish.</p>
+
+    <div id="app"><p class="muted">Loading...</p></div>
+
+    <div class="savebar">
+      <button class="btn-send" id="save-btn">Save &amp; Publish</button>
+      <a class="btn-mini" id="view-link" href="#" target="_blank" rel="noopener">Open the page</a>
+      <p class="form-msg" id="save-msg"></p>
+    </div>
+  </div>
+</body>
+</html>

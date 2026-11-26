@@ -1,0 +1,85 @@
+{
+  "kicker": "Proposal",
+  "client": "Michael Page",
+  "format": "Short form documentary",
+  "hook": "This is not about filming a fighter. It's about capturing the hunger, the pressure, and the mindset behind the name.",
+  "intro": {
+    "title": "Introduction",
+    "text": "Noir au Noir is a creative production company specializing in high-end visual storytelling across fashion, luxury, hospitality, and culture.\n\nFrom cinematic campaigns and editorial photography to short documentaries, we create distinctive visuals that combine artistic direction, storytelling, and cinematic precision."
+  },
+  "pillars": {
+    "title": "Precision. Passion. Perfection.",
+    "items": [
+      {
+        "text": "Cinematic, high-end films built around Michael Page's world. The work, the ambition, the pressure, and the story most people never get to see."
+      },
+      {
+        "text": "Capture what drives Michael Page: the ambition, the discipline, the intensity, and the emotion behind the name."
+      },
+      {
+        "text": "Turn Michael Page's journey into something people feel, not just watch. Cinema instead of content."
+      }
+    ]
+  },
+  "concept": {
+    "title": "The concept",
+    "points": [
+      "Raw moments from training, weight cuts, camp, and life behind the scenes",
+      "Obsessive repetition capturing the pursuit of perfection in his movement and technique",
+      "Cinematic close-ups of Page, his environment, details, and movement",
+      "Sound, silence, crowd energy, and atmosphere creating tension and emotion",
+      "Michael's voice-over sharing his mindset, ambition, struggles, and vision"
+    ]
+  },
+  "examples": {
+    "title": "Example",
+    "note": "This is a general idea of the concept. The final film would be shorter, more dynamic, and built specifically for social media with high-end visuals, real action, and space for you to speak and share your story, mindset, and passion.",
+    "videos": []
+  },
+  "moodboard": {
+    "title": "Moodboard",
+    "images": [
+      {
+        "src": "ideas/cEDWjxfmdGzl/1.jpg",
+        "caption": ""
+      },
+      {
+        "src": "ideas/cEDWjxfmdGzl/2.jpg",
+        "caption": ""
+      },
+      {
+        "src": "ideas/cEDWjxfmdGzl/3.jpg",
+        "caption": ""
+      },
+      {
+        "src": "ideas/cEDWjxfmdGzl/4.jpg",
+        "caption": ""
+      },
+      {
+        "src": "ideas/cEDWjxfmdGzl/5.jpg",
+        "caption": ""
+      },
+      {
+        "src": "ideas/cEDWjxfmdGzl/6.jpg",
+        "caption": ""
+      },
+      {
+        "src": "ideas/cEDWjxfmdGzl/7.jpg",
+        "caption": ""
+      },
+      {
+        "src": "ideas/cEDWjxfmdGzl/8.jpg",
+        "caption": ""
+      },
+      {
+        "src": "ideas/cEDWjxfmdGzl/9.jpg",
+        "caption": ""
+      }
+    ]
+  },
+  "closing": "A project at this level deserves a real conversation. Let's discuss it properly.",
+  "cta": {
+    "title": "Ready?",
+    "button": "Book a call"
+  }
+}

@@ -19,7 +19,7 @@
       here.parentNode.insertBefore(css, here);
       // lock.js after dashboard.js, which is where the key name and the
       // unlock switch live, and before sheets.js, which is what it holds
-      ["dashboard.js", "lock.js", "proposals.js", "boxes.js", "transfers.js", "agenda.js", "calendar.js", "people.js", "usage.js", "links.js", "sheets.js"].forEach(function (file) {
+      ["dashboard.js", "lock.js", "proposals.js", "ideas.js", "boxes.js", "transfers.js", "agenda.js", "calendar.js", "people.js", "usage.js", "links.js", "sheets.js"].forEach(function (file) {
         var js = document.createElement("script");
         js.src = "../assets/" + file + "?t=" + stamp;
         js.async = false;
@@ -472,6 +472,30 @@
           <button class="btn-mini solid" id="prop-create" style="align-self:flex-end">Create</button>
         </div>
         <p class="form-msg" id="prop-msg" style="margin-top:0.7rem"></p>
+      </div>
+    </div>
+
+    <!-- the idea deck that used to be a PowerPoint, as a page they open -->
+    <div class="panel" id="idea-panel">
+      <h2>Ideas</h2>
+      <div id="idea-list"><p class="muted" style="font-size:0.9rem">Loading ideas...</p></div>
+
+      <div style="border-top:1px solid var(--line-soft); margin-top:1.2rem; padding-top:1.2rem">
+        <p class="how" style="margin-bottom:0.9rem">
+          The idea deck you used to send as a PowerPoint, as a page they open
+          on their phone: the hook, the concept, examples and a moodboard.
+          No prices. Fill in who it is for, then the rest on the next screen.
+        </p>
+        <div class="row">
+          <label class="field" style="flex:1; min-width:10rem"><span>Who it is for</span>
+            <input id="idea-client" type="text" maxlength="40" placeholder="Michael Page">
+          </label>
+          <label class="field" style="flex:1; min-width:10rem"><span>What it is</span>
+            <input id="idea-format" type="text" maxlength="60" placeholder="Short form documentary">
+          </label>
+          <button class="btn-mini solid" id="idea-create" style="align-self:flex-end">Create</button>
+        </div>
+        <p class="form-msg" id="idea-msg" style="margin-top:0.7rem"></p>
       </div>
     </div>
 
