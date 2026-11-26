@@ -105,3 +105,27 @@
 /* the running line stays on one line, the deck's name gives way */
 .idea-bar span:first-child { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .idea-bar span:last-child { flex: none; }
+
+/* ============ GLASS ============ */
+/* Every slide sits on a pane over the two lights, like the rest of the
+   house; the cover gets its own soft light behind the name. */
+.idea-sec {
+  margin-top: 1.4rem; padding: clamp(1.4rem, 4vw, 2.8rem);
+  border: 1px solid var(--glass-edge); border-radius: 20px;
+  background: var(--glass); box-shadow: var(--glass-lip);
+  backdrop-filter: var(--glass-blur); -webkit-backdrop-filter: var(--glass-blur);
+}
+.idea-bar { margin-bottom: 2rem; }
+.idea-pillar { background: rgba(255, 255, 255, 0.03); backdrop-filter: none; -webkit-backdrop-filter: none; }
+.idea-end { padding-bottom: clamp(2rem, 5vw, 3.4rem); box-shadow: var(--glass-lip), 0 0 80px -24px rgba(255, 255, 255, 0.2); border-color: rgba(242, 242, 242, 0.4); }
+
+.idea-cover { position: relative; }
+.idea-cover::before {
+  content: ""; position: absolute; left: 50%; top: 50%; width: min(52rem, 120vw); height: 30rem; z-index: -1;
+  transform: translate(-50%, -50%); pointer-events: none;
+  background: radial-gradient(closest-side, rgba(255, 255, 255, 0.1), transparent);
+}
+
+@media (max-width: 44rem) {
+  .idea-sec { padding-top: 1.3rem; }
+}
