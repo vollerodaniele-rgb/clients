@@ -116,10 +116,30 @@ async function load() {
   </section>`);
 
   main.innerHTML = out.join("");
+  noteOpened();
 
   for (const b of main.querySelectorAll(".idea-pic")) {
     b.addEventListener("click", () => openBox(b.dataset.src, b.querySelector("img").alt));
   }
+}
+
+/* Tells the studio it was opened, exactly as a proposal does: a
+   Telegram message with the device, the area and the network, and a
+   count on the dashboard. Not your own visits (an admin key in this
+   browser means it is you), and only after five seconds on screen, so
+   a WhatsApp or mail link preview fetching the page does not count. */
+function noteOpened() {
+  try {
+    if (localStorage.getItem("clients-admin-token")) return;
+  } catch { /* storage blocked, carry on */ }
+  setTimeout(() => {
+    if (document.visibilityState !== "visible") return;
+    fetch("https://kresha-idea-box.vollerodaniele.workers.dev/seen", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ client: SLUG, kind: "idea" })
+    }).catch(() => { /* never let this bother the reader */ });
+  }, 5000);
 }
 
 /* pictures sit beside the deck's file; a full address is used as it is */

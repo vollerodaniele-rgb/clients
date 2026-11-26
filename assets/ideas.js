@@ -30,12 +30,30 @@ async function loadIdeas() {
       .map((f) => f.name.replace(/\.json$/, ""));
     if (!slugs.length) { wrap.innerHTML = '<p class="muted" style="font-size:0.9rem">No ideas yet.</p>'; return; }
 
+    // how often each has been opened, counted by the relay like proposals
+    const seen = {};
+    try {
+      const sr = await fetch(`https://api.github.com/repos/${OWNER}/${REPO}/issues?labels=seen&state=all&per_page=100`,
+        { headers, cache: "no-store" });
+      if (sr.ok) {
+        for (const issue of await sr.json()) {
+          const tag = issue.labels.map((l) => l.name).find((n) => n.startsWith("idea:"));
+          if (!tag) continue;
+          const times = (issue.body || "").match(/Opened (\d+) time/);
+          const last = (issue.body || "").match(/Last on (\S+)/);
+          seen[tag.slice(5)] = { times: times ? Number(times[1]) : 0, last: last ? last[1] : "" };
+        }
+      }
+    } catch { /* the list still shows without the counts */ }
+
     const rows = await Promise.all(slugs.map(async (slug) => {
+      const s = seen[slug];
+      const opened = s ? " · opened " + s.times + " time" + (s.times === 1 ? "" : "s") + (s.last ? ", last " + ago(s.last) : "") : " · not opened yet";
       try {
         const d = await (await fetch(`../ideas/${slug}.json`, { cache: "no-store" })).json();
-        return { slug, name: d.client || slug, what: d.format || "" };
+        return { slug, name: d.client || slug, what: (d.format || "") + opened };
       } catch {
-        return { slug, name: slug, what: "" };
+        return { slug, name: slug, what: opened };
       }
     }));
 
