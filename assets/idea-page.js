@@ -108,8 +108,20 @@ async function load() {
   const subject = encodeURIComponent((d.client ? d.client + ": " : "") + ((d.format || "Your idea")));
   out.push(`<section class="idea-sec idea-end">${head()}
     <h2 class="idea-ready">${esc(cta.title || "Ready?")}</h2>
-    <div class="idea-acts">
-      <a class="btn-send" href="/call/">${esc(cta.button || "Book a call")}</a>
+    <div class="idea-answer" id="idea-answer">
+      <p class="idea-ask">What do you think of the idea?</p>
+      <div class="idea-acts">
+        <button type="button" class="btn-send" id="idea-like">I like it</button>
+        <button type="button" class="idea-ghost" id="idea-change">Change something</button>
+      </div>
+      <div class="idea-change-box" id="idea-change-box" hidden>
+        <textarea id="idea-note" maxlength="1000" rows="4" placeholder="What would you change?"></textarea>
+        <button type="button" class="btn-send" id="idea-send">Send</button>
+      </div>
+      <p class="idea-answer-msg" id="idea-answer-msg" role="status"></p>
+    </div>
+    <div class="idea-acts idea-acts-small">
+      <a class="idea-ghost" href="/call/">${esc(cta.button || "Book a call")}</a>
       <a class="idea-ghost" href="mailto:info@noiraunoir.com?subject=${subject}">Write to us</a>
     </div>
     <p class="idea-by">NOIR AU NOIR</p>
@@ -117,10 +129,54 @@ async function load() {
 
   main.innerHTML = out.join("");
   noteOpened();
+  wireAnswer(d, subject);
 
   for (const b of main.querySelectorAll(".idea-pic")) {
     b.addEventListener("click", () => openBox(b.dataset.src, b.querySelector("img").alt));
   }
+}
+
+/* "I like it" is one tap; "Change something" asks what first. Either
+   lands in the studio's Telegram. If the relay cannot be reached the
+   same answer opens as a mail instead, so a tap is never lost. */
+function wireAnswer(d, subject) {
+  const msg = $("idea-answer-msg");
+  const box = $("idea-change-box");
+
+  const send = async (answer, note) => {
+    msg.textContent = "Sending...";
+    for (const b of document.querySelectorAll("#idea-answer button")) b.disabled = true;
+    try {
+      const res = await fetch("https://kresha-idea-box.vollerodaniele.workers.dev/idea/answer", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ client: SLUG, answer, note: note || "" })
+      });
+      if (!res.ok) throw new Error(String(res.status));
+      $("idea-answer").querySelector(".idea-acts").hidden = true;
+      box.hidden = true;
+      msg.textContent = answer === "like"
+        ? "Thank you. We will be in touch to plan it."
+        : "Thank you. We will look at it and come back to you.";
+    } catch (err) {
+      console.error("answer failed:", err);
+      const body = answer === "like" ? "I like the idea." : "I would change: " + (note || "");
+      location.href = "mailto:info@noiraunoir.com?subject=" + subject + "&body=" + encodeURIComponent(body);
+      msg.textContent = "Your mail app should open with the answer in it.";
+      for (const b of document.querySelectorAll("#idea-answer button")) b.disabled = false;
+    }
+  };
+
+  $("idea-like").addEventListener("click", () => send("like"));
+  $("idea-change").addEventListener("click", () => {
+    box.hidden = !box.hidden;
+    if (!box.hidden) $("idea-note").focus();
+  });
+  $("idea-send").addEventListener("click", () => {
+    const note = $("idea-note").value.trim();
+    if (!note) { msg.textContent = "Write what you would change first."; $("idea-note").focus(); return; }
+    send("change", note);
+  });
 }
 
 /* Tells the studio it was opened, exactly as a proposal does: a

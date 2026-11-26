@@ -129,3 +129,19 @@
 @media (max-width: 44rem) {
   .idea-sec { padding-top: 1.3rem; }
 }
+
+/* the answer: two buttons, a note box for a change, then the quieter ways */
+.idea-ask { margin-top: 1.4rem; font-size: 1rem; color: var(--dim); }
+.idea-answer .idea-acts { margin-top: 1.2rem; }
+.idea-answer button.btn-send, .idea-answer button.idea-ghost { border-radius: 999px; cursor: pointer; }
+.idea-change-box { max-width: 30rem; margin: 1.2rem auto 0; display: grid; gap: 0.7rem; justify-items: center; }
+.idea-change-box[hidden] { display: none; }
+.idea-change-box textarea {
+  width: 100%; box-sizing: border-box; padding: 0.9rem 1rem; border-radius: 14px; resize: vertical;
+  border: 1px solid var(--line); background: rgba(0, 0, 0, 0.3); color: var(--text); font-family: var(--font-body); font-size: 1rem;
+}
+.idea-answer-msg { margin-top: 1rem; min-height: 1.2rem; font-size: 0.95rem; color: var(--text); }
+.idea-answer-msg:empty { display: none; }
+.idea-acts-small { margin-top: 2.2rem; }
+.idea-acts-small .idea-ghost { padding: 0.65rem 1.2rem; font-size: 0.64rem; }
+.idea-change-box textarea:focus { outline: none; border-color: rgba(255, 255, 255, 0.5); }
