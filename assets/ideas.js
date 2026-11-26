@@ -26,7 +26,7 @@ async function loadIdeas() {
     if (!res.ok) throw new Error("GitHub " + res.status);
 
     const slugs = (await res.json())
-      .filter((f) => f.type === "file" && f.name.endsWith(".json"))
+      .filter((f) => f.type === "file" && f.name.endsWith(".json") && !f.name.startsWith("_"))
       .map((f) => f.name.replace(/\.json$/, ""));
     if (!slugs.length) { wrap.innerHTML = '<p class="muted" style="font-size:0.9rem">No ideas yet.</p>'; return; }
 
@@ -130,7 +130,7 @@ async function createIdea() {
     if (!page.ok) throw new Error("template not readable (" + page.status + ")");
     await commitFiles({
       [`i/${slug}/index.html`]: await page.text(),
-      [`ideas/${slug}.json`]: JSON.stringify(blankIdea(client, format), null, 2) + "\n"
+      [`ideas/${slug}.json`]: JSON.stringify(await presetIdea(client, format), null, 2) + "\n"
     }, `Add the ${client} idea`);
 
     msg.innerHTML = `Ready in about a minute at <b>${escHtml(location.origin + "/i/" + slug + "/")}</b> &middot; ` +
@@ -145,6 +145,40 @@ async function createIdea() {
   } finally {
     btn.disabled = false;
   }
+}
+
+/* A new deck starts as a copy of the preset (ideas/_preset.json, the
+   Michael Page deck with its moodboard in ideas/_preset/), with the
+   preset's name swapped for the new one everywhere. The pictures stay
+   in the preset's folder and are only pointed at, so removing a deck
+   never takes them away from the next one. Without a preset it starts
+   from the plain wording below. */
+async function presetIdea(client, format) {
+  let d;
+  try {
+    const res = await fetch(`../ideas/_preset.json?t=${Date.now()}`, { cache: "no-store" });
+    if (!res.ok) throw new Error(String(res.status));
+    d = await res.json();
+  } catch {
+    return blankIdea(client, format);
+  }
+  const was = String(d.client || "").trim();
+  // "Michael's", "Page's", "close-ups of Page", "Micheals": each part of the old name alone too
+  const parts = was.split(/\s+/).filter((w) => w.length > 2)
+    .map((w) => new RegExp("\\b" + w.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + "('?s)?\\b", "g"));
+  const swap = (text) => {
+    if (!was) return text;
+    let t = String(text).split(was + "'s").join(client + "'s").split(was).join(client);
+    for (const re of parts) t = t.replace(re, (m, s) => (s ? client + "'s" : client));
+    return t;
+  };
+  const walk = (v) => Array.isArray(v) ? v.map(walk)
+    : v && typeof v === "object" ? Object.fromEntries(Object.entries(v).map(([k, x]) => [k, k === "src" ? x : walk(x)]))
+    : typeof v === "string" ? swap(v) : v;
+  d = walk(d);
+  d.client = client;
+  if (format) d.format = format;
+  return d;
 }
 
 /* The wording that repeats from one deck to the next. Everything else
