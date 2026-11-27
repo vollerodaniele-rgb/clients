@@ -63,8 +63,12 @@ function render(files) {
     return;
   }
 
+  // the studio's own browser (it holds the admin key) is not a client
+  // downloading, so the relay neither ticks it nor pings Telegram
+  let me = "";
+  try { if (localStorage.getItem("clients-admin-token")) me = "&me=1"; } catch { /* storage blocked */ }
   const href = (name) =>
-    `${RELAY}/transfer/file?id=${encodeURIComponent(ID)}&name=${encodeURIComponent(name)}`;
+    `${RELAY}/transfer/file?id=${encodeURIComponent(ID)}&name=${encodeURIComponent(name)}${me}`;
 
   for (const f of files) {
     const a = document.createElement("a");
