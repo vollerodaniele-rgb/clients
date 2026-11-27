@@ -19,7 +19,7 @@
       here.parentNode.insertBefore(css, here);
       // lock.js after dashboard.js, which is where the key name and the
       // unlock switch live, and before sheets.js, which is what it holds
-      ["dashboard.js", "lock.js", "proposals.js", "ideas.js", "boxes.js", "transfers.js", "agenda.js", "calendar.js", "people.js", "usage.js", "links.js", "sheets.js"].forEach(function (file) {
+      ["dashboard.js", "lock.js", "proposals.js", "ideas.js", "boxes.js", "transfers.js", "agenda.js", "calendar.js", "people.js", "usage.js", "links.js", "sheets.js", "drop.js"].forEach(function (file) {
         var js = document.createElement("script");
         js.src = "../assets/" + file + "?t=" + stamp;
         js.async = false;

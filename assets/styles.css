@@ -2446,3 +2446,17 @@ body.reels-only .pt-brand { flex: 1; text-align: center; }
 }
 @media (prefers-reduced-motion: reduce) { .ev-box, .ev-card { animation: none; } }
 @media (prefers-reduced-motion: reduce) { .ev-tile img, .ev-tile video, .ev-tile canvas { transition: none; } }
+
+/* ============ DROP BOXES ============ */
+/* Every file picker on an admin page (assets/drop.js): drop files on
+   it, or click it to choose them. */
+.dropzone {
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.25rem;
+  flex: 1 1 14rem; min-height: 5.5rem; padding: 1.1rem 1.2rem; box-sizing: border-box; width: 100%;
+  border: 1px dashed rgba(242, 242, 242, 0.32); border-radius: 14px; text-align: center; cursor: pointer;
+  background: var(--glass); color: var(--dim); font-size: 0.88rem; line-height: 1.4;
+  transition: border-color 0.15s, background 0.15s, color 0.15s;
+}
+.dropzone b { color: var(--text); font-weight: 600; font-size: 0.8rem; letter-spacing: 0.12em; text-transform: uppercase; }
+.dropzone:hover, .dropzone:focus-visible { border-color: rgba(242, 242, 242, 0.6); color: var(--text); outline: none; }
+.dropzone.over { border-style: solid; border-color: var(--text); background: rgba(255, 255, 255, 0.1); color: var(--text); }

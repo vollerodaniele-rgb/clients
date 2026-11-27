@@ -21,7 +21,7 @@
       here.parentNode.insertBefore(css, here);
       // admin.js first, for OWNER, REPO and the key name; then the
       // lock, which holds admin.js back until a key is in
-      ["admin.js", "lock.js"].forEach(function (file) {
+      ["admin.js", "drop.js", "lock.js"].forEach(function (file) {
         var js = document.createElement("script");
         js.src = "../assets/" + file + "?t=" + stamp;
         js.async = false;
