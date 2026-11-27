@@ -238,18 +238,32 @@ function buildTransferBody(t, body) {
   pick.addEventListener("change", async () => {
     const chosen = [...pick.files];
     pick.value = "";
+    /* One file failing never stops the rest: each is tried up to three
+       times, then the next one goes, and the end says exactly which
+       ones did not make it and why. */
+    let sent = 0;
+    const failed = [];
     for (let i = 0; i < chosen.length; i++) {
       const file = chosen[i];
-      try {
-        await sendTransferFile(t.id, file, (pct) => {
-          msg.textContent = `Sending ${file.name} (${i + 1} of ${chosen.length}) ${pct}%`;
-        });
-      } catch (err) {
-        msg.textContent = `${file.name} did not send: ${err.message}`;
-        break;
+      for (let tries = 1; ; tries++) {
+        try {
+          await sendTransferFile(t.id, file, (pct) => {
+            msg.textContent = `Sending ${file.name} (${i + 1} of ${chosen.length}) ${pct}%` +
+              (tries > 1 ? `, try ${tries}` : "");
+          });
+          sent++;
+          break;
+        } catch (err) {
+          const again = /too many|429|connection dropped|could not store|50\d/i.test(err.message);
+          if (tries < 3 && again) { await new Promise((r) => setTimeout(r, 4000 * tries)); continue; }
+          failed.push(`${file.name} (${err.message})`);
+          break;
+        }
       }
     }
-    msg.textContent = "Files added.";
+    msg.textContent = failed.length
+      ? `Sent ${sent} of ${chosen.length}. Not sent: ${failed.join(", ")}. Drop those again to retry.`
+      : `All ${sent} sent.`;
     drawFiles();
     loadTransfers();
   });
@@ -334,8 +348,21 @@ function buildTransferBody(t, body) {
 
 function sendTransferFile(id, file, onProgress) {
   const url = `${TRANSFER_RELAY}/transfer/upload?id=${encodeURIComponent(id)}` +
-    `&name=${encodeURIComponent(file.name)}`;
+    `&name=${encodeURIComponent(transferName(file.name))}`;
   return transferSendFile(url, file, onProgress);
+}
+
+/* The relay only stores plain names (letters, digits, space, dot,
+   dash, underscore). A phone or editor name like "Reel (2) é.mp4" is
+   tidied to "Reel-2-e.mp4" here rather than refused there. Same as
+   tidyName in admin.js. */
+function transferName(name) {
+  const dot = name.lastIndexOf(".");
+  const ext = dot > 0 ? name.slice(dot).replace(/[^A-Za-z0-9.]/g, "") : "";
+  let base = (dot > 0 ? name.slice(0, dot) : name).normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^A-Za-z0-9 ._-]+/g, "-").replace(/-{2,}/g, "-").replace(/^[^A-Za-z0-9]+|[-. ]+$/g, "");
+  if (!base) base = "file";
+  return base.slice(0, 110) + ext.slice(0, 10);
 }
 
 /* One request carries at most 100MB, so anything bigger goes up in

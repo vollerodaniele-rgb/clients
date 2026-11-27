@@ -626,23 +626,24 @@ function fileArea(d) {
     let sent = 0;
     let replaced = 0;
     const skipped = [];
-    let failed = "";
+    const failed = [];
 
     for (let i = 0; i < files.length; i++) {
       const file = files[i];
+      const name = tidyName(file.name);
 
-      if (here.get(file.name) === file.size) {
+      if (here.get(name) === file.size) {
         skipped.push(file.name + " (already in this month)");
         continue;
       }
       const elsewhere = [...known].find(([month, names]) =>
-        month !== d.month && names.get(file.name) === file.size);
+        month !== d.month && names.get(name) === file.size);
       if (elsewhere) {
         skipped.push(file.name + " (already in " + called(elsewhere[0]) + ")");
         continue;
       }
 
-      const replacing = here.has(file.name);
+      const replacing = here.has(name);
       const label = `${file.name} (${i + 1} of ${files.length})`;
       try {
         await uploadDelivery(d.month, file, (pct) => {
@@ -651,17 +652,17 @@ function fileArea(d) {
         sent++;
         if (replacing) replaced++;
         // the same file picked twice in one go is sent once
-        here.set(file.name, file.size);
+        here.set(name, file.size);
       } catch (err) {
-        failed = `${file.name} did not send: ${err.message}`;
-        break;
+        // one file failing never stops the rest; the end names each one
+        failed.push(`${file.name} (${err.message})`);
       }
     }
 
     const said = [];
     if (sent) said.push(`Sent ${sent}` + (replaced ? `, of which ${replaced} replaced an older export` : "") + ".");
     if (skipped.length) said.push(`Skipped ${skipped.length}, already delivered: ${skipped.join(", ")}.`);
-    if (failed) said.push(failed);
+    if (failed.length) said.push(`Not sent: ${failed.join(", ")}. Drop those again to retry.`);
     msg.textContent = said.join(" ") || "Nothing to send.";
 
     // the post pickers read the delivered files once, so they learn again
@@ -715,8 +716,21 @@ async function deliveredSoFar() {
 
 function uploadDelivery(month, file, onProgress) {
   const url = `${RELAY_URL}/deliver?client=${encodeURIComponent(CLIENT)}` +
-    `&month=${encodeURIComponent(month)}&name=${encodeURIComponent(file.name)}`;
+    `&month=${encodeURIComponent(month)}&name=${encodeURIComponent(tidyName(file.name))}`;
   return sendFile(url, file, onProgress);
+}
+
+/* The relay only stores plain names (letters, digits, space, dot,
+   dash, underscore). A phone or editor name like "Reel (2) é.mp4" is
+   tidied to "Reel-2-e.mp4" here rather than refused there. Same as
+   transferName in transfers.js. */
+function tidyName(name) {
+  const dot = name.lastIndexOf(".");
+  const ext = dot > 0 ? name.slice(dot).replace(/[^A-Za-z0-9.]/g, "") : "";
+  let base = (dot > 0 ? name.slice(0, dot) : name).normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^A-Za-z0-9 ._-]+/g, "-").replace(/-{2,}/g, "-").replace(/^[^A-Za-z0-9]+|[-. ]+$/g, "");
+  if (!base) base = "file";
+  return base.slice(0, 110) + ext.slice(0, 10);
 }
 
 /* One request carries at most 100MB, so anything bigger goes up in
