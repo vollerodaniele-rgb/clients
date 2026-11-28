@@ -26,6 +26,24 @@ const $ = (id) => document.getElementById(id);
 
 document.addEventListener("DOMContentLoaded", loadPlan);
 
+/* Tells the studio this page was opened, so the morning brief can spot
+   a client who has gone quiet. Only the date is kept, no ping. Not his
+   own visits (the admin key in this browser), and only after three
+   seconds on screen, so a link preview fetching the page does not count. */
+function noteOpened() {
+  try {
+    if (localStorage.getItem("clients-admin-token")) return;
+  } catch { /* storage blocked, carry on */ }
+  setTimeout(() => {
+    if (document.visibilityState !== "visible") return;
+    fetch(CONFIG.submitUrl + "/seen", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ client: CLIENT, kind: "portal" })
+    }).catch(() => { /* never let this bother the client */ });
+  }, 3000);
+}
+
 async function loadPlan() {
   // before the data, so the other pages are tucked away at once rather
   // than showing for as long as the fetch takes
@@ -39,6 +57,8 @@ async function loadPlan() {
     console.error("plan load failed:", err);
     return;
   }
+
+  if (!data.rolling) noteOpened();
 
   // the example only: everything below then draws a current month
   // without knowing that is what it is doing
